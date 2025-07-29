@@ -2,6 +2,7 @@
 
 from typing import List, Dict, Tuple
 from .terminal_chat import TerminalChat
+from .actions import get_actions_with_vibe_tests
 
 
 class VibeTestRunner:
@@ -15,23 +16,7 @@ class VibeTestRunner:
         """
         self.model = model
         self.chat_interface = TerminalChat(model=model)
-        
-        # Test phrases built into the application
-        self.chat_phrases = [
-            "Just talk to me without using any tools",
-            "null option",
-            "chat only with no functions please",
-            "chat only please",
-            "null null null null null"
-        ]
-        
-        self.getWeather_phrases = [
-            "Is it raining right now?",
-            "Do I need a Jacket when I go outside due to weather?",
-            "Is it going to be hot today?",
-            "Do I need an umbrella due to rain today?",
-            "Do I need sunscreen today due to UV?"
-        ]
+        self.actions_with_tests = get_actions_with_vibe_tests()
     
     def check_prerequisites(self) -> bool:
         """Check if Ollama is available and model can be used."""
@@ -52,14 +37,13 @@ class VibeTestRunner:
         
         return True
     
-    def run_phrase_test(self, phrases: List[str], expected_result: str, 
-                       test_name: str, iterations: int) -> Tuple[bool, Dict]:
-        """Run a test on a set of phrases.
+    def run_action_test(self, action_name: str, phrases: List[str], 
+                       iterations: int) -> Tuple[bool, Dict]:
+        """Run a test on a specific action with its phrases.
         
         Args:
-            phrases: List of test phrases
-            expected_result: Expected function choice ('yes' or 'no')
-            test_name: Name of the test for reporting
+            action_name: Name of the action being tested
+            phrases: List of test phrases for this action
             iterations: Number of times to test each phrase
             
         Returns:
@@ -69,7 +53,7 @@ class VibeTestRunner:
         total_tests = 0
         results = {}
         
-        print(f"\n🧪 {test_name} Test (Model: {self.model})")
+        print(f"\n🧪 {action_name} Action Test (Model: {self.model})")
         print("=" * 80)
         
         for phrase in phrases:
@@ -78,7 +62,7 @@ class VibeTestRunner:
             for i in range(iterations):
                 try:
                     chosen_function = self.chat_interface.analyze_with_ai(phrase)
-                    if chosen_function == expected_result:
+                    if chosen_function == action_name:
                         phrase_correct += 1
                     total_tests += 1
                 except Exception as e:
@@ -111,7 +95,7 @@ class VibeTestRunner:
         }
     
     def run_all_tests(self, iterations: int = 1) -> bool:
-        """Run all vibe tests.
+        """Run all vibe tests for all actions that have test phrases.
         
         Args:
             iterations: Number of iterations per phrase
@@ -127,38 +111,57 @@ class VibeTestRunner:
             return False
         
         print(f"✅ Using model: {self.model}")
-        print("🧠 Testing AI's ability to interpret human intent and choose appropriate functions...\n")
+        print(f"🧠 Testing AI's ability to interpret human intent and choose appropriate functions...")
+        print(f"📋 Found {len(self.actions_with_tests)} actions with vibe test phrases\n")
         
-        # Run chat direction test
-        chat_only_passed, chat_only_results = self.run_phrase_test(
-            self.chat_phrases, "null", "Chat Only Direciton", iterations
-        )
+        if not self.actions_with_tests:
+            print("❌ No actions with vibe test phrases found!")
+            return False
         
-        # Run getWeather direction test  
-        getweather_passed, getWeather_results = self.run_phrase_test(
-            self.getWeather_phrases, "getWeather", "getWeather Direction", iterations
-        )
+        # Run tests for each action
+        test_results = {}
+        all_tests_passed = True
+        
+        for action_name, action_info in self.actions_with_tests.items():
+            test_phrases = action_info['vibe_test_phrases']
+            
+            if not test_phrases:
+                print(f"⚠️  Skipping {action_name} - no test phrases defined")
+                continue
+            
+            test_passed, results = self.run_action_test(
+                action_name, test_phrases, iterations
+            )
+            
+            test_results[action_name] = {
+                'passed': test_passed,
+                'results': results
+            }
+            
+            if not test_passed:
+                all_tests_passed = False
         
         # Final results summary
         print(f"\n📊 Final Test Results:")
         print("=" * 50)
-        print(f"Chat Only Direction Test: {'✅ PASSED' if chat_only_passed else '❌ FAILED'} "
-              f"({chat_only_results['success_rate']:.1f}%)")
-        print(f"GetWeather Direction Test:  {'✅ PASSED' if getweather_passed else '❌ FAILED'} "
-              f"({getWeather_results['success_rate']:.1f}%)")
         
-        overall_success = chat_only_passed and getweather_passed
-        status_icon = "✅" if overall_success else "❌"
-        status_text = "ALL TESTS PASSED" if overall_success else "SOME TESTS FAILED"
+        for action_name, test_data in test_results.items():
+            status_icon = "✅ PASSED" if test_data['passed'] else "❌ FAILED"
+            success_rate = test_data['results']['success_rate']
+            print(f"{action_name} Action Test: {status_icon} ({success_rate:.1f}%)")
+        
+        status_icon = "✅" if all_tests_passed else "❌"
+        status_text = "ALL TESTS PASSED" if all_tests_passed else "SOME TESTS FAILED"
         print(f"\nOverall Result: {status_icon} {status_text}")
         
-        if not overall_success:
+        if not all_tests_passed:
             print("\n💡 Tips for improving results:")
             print("   • Try a different model with --model")
             print("   • Increase iterations with -n for better statistics")
             print("   • Ensure Ollama server is running optimally")
+            print("   • Check action descriptions and test phrases for clarity")
         
-        return overall_success
+        return all_tests_passed
     
     def run_quick_test(self) -> bool:
         """Run a quick single-iteration test for fast feedback."""
