@@ -8,10 +8,10 @@ version = "0.1.0"
 description = "A simple Python package for Ollama utilities"
 authors = [{name = "The Lazy Artist", email = "TheRealLazyArtist@iCloud.com"}]
 requires-python = ">=3.8"
-dependencies = []
+dependencies = ["requests>=2.25.0"]
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
-keywords = ["ollama", "llama", "ai", "python", "utilities"]
+keywords = ["ollama", "llama", "ai", "python", "utilities", "chat", "terminal"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
