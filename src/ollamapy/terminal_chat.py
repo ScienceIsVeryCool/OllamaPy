@@ -4,13 +4,13 @@ import sys
 from typing import List, Dict
 from difflib import SequenceMatcher
 from .ollama_client import OllamaClient
-from .actions import yes, no
+from .actions import get_available_actions
 
 
 class TerminalChat:
     """Terminal-based chat interface with AI meta-reasoning."""
     
-    def __init__(self, model: str = "gemma3:4b", system_message: str = "You are a helpful assistant."):
+    def __init__(self, model: str = "llama3.2:3b", system_message: str = "You are a helpful assistant."):
         """Initialize the chat interface.
         
         Args:
@@ -21,10 +21,7 @@ class TerminalChat:
         self.model = model
         self.system_message = system_message
         self.conversation: List[Dict[str, str]] = []
-        self.actions = {
-            "yes": yes,
-            "no": no
-        }
+        self.actions = get_available_actions()
         
     def setup(self) -> bool:
         """Setup the chat environment and ensure model is available."""
@@ -54,8 +51,10 @@ class TerminalChat:
         if available_models:
             print(f"📚 Available models: {', '.join(available_models[:3])}{'...' if len(available_models) > 3 else ''}")
         
-        print("\n🧠 Meta-reasoning mode: AI will analyze your input and choose between 'yes' or 'no' actions.")
-        print("💬 Chat started! Type 'quit', 'exit', or 'bye' to end the conversation.")
+        print(f"\n🧠 Meta-reasoning mode: AI will analyze your input and choose from {len(self.actions)} available actions:")
+        for action_name in self.actions:
+            print(f"   • {action_name}")
+        print("\n💬 Chat started! Type 'quit', 'exit', or 'bye' to end the conversation.")
         print("   Type 'clear' to clear conversation history.")
         print("   Type 'help' for more commands.\n")
         
@@ -69,7 +68,8 @@ class TerminalChat:
         print("  help            - Show this help message")
         print("  model           - Show current model")
         print("  models          - List available models")
-        print("\n🧠 Meta-reasoning: The AI analyzes your input and chooses to run either 'yes' or 'no' function.")
+        print("  actions         - Show available actions the AI can choose")
+        print(f"\n🧠 Meta-reasoning: The AI analyzes your input and chooses from {len(self.actions)} available functions.")
         print()
     
     def handle_command(self, user_input: str) -> bool:
@@ -101,6 +101,12 @@ class TerminalChat:
                 print("❌ No models found")
             return False
         
+        elif command == 'actions':
+            print(f"🔧 Available actions ({len(self.actions)}):")
+            for name, info in self.actions.items():
+                print(f"   • {name}: {info['description']}")
+            return False
+        
         return False
     
     def get_user_input(self) -> str:
@@ -115,23 +121,31 @@ class TerminalChat:
             sys.exit(0)
     
     def analyze_with_ai(self, user_input: str) -> str:
-        """Use AI to analyze user input and decide between yes/no functions.
+        """Use AI to analyze user input and decide which function to call.
         
         Args:
             user_input: The user's input to analyze
             
         Returns:
-            The chosen function name ('yes' or 'no')
+            The chosen function name
         """
+        # Build the action descriptions for the prompt
+        action_list = "\n".join([
+            f"- {name}: {info['description']}"
+            for name, info in self.actions.items()
+        ])
+        
         analysis_prompt = f"""Given this user input: "{user_input}"
 
-You must choose between calling a 'yes' function or a 'no' function. 
+You must choose which function to call from these available options:
+{action_list}
 
-Respond with exactly 5 repeated words. Each word must be either 'yes' or 'no'. This will help determine which function to call.
+Respond with exactly 5 repeated words. Each word must be the name of one of the available functions. This will help determine which function to call.
 
 Example responses:
 - yes yes yes yes yes
 - no no no no no
+- getWeather getWeather getWeather getWeather getWeather
 
 Your 5 words:"""
 
@@ -145,7 +159,7 @@ Your 5 words:"""
             for chunk in self.client.chat_stream(
                 model=self.model,
                 messages=analysis_messages,
-                system="You are an assistant that must respond with exactly 5 words, each being either 'yes' or 'no'."
+                system=f"You are an assistant that must respond with exactly 5 words, each being one of these function names: {', '.join(self.actions.keys())}"
             ):
                 response_content += chunk
             
@@ -159,8 +173,10 @@ Your 5 words:"""
             
         except Exception as e:
             print(f"\n❌ Error during analysis: {e}")
-            print("🎲 Defaulting to 'no'")
-            return "no"
+            # Default to the first available action
+            default_action = list(self.actions.keys())[0]
+            print(f"🎲 Defaulting to '{default_action}'")
+            return default_action
     
     def determine_function_from_response(self, response: str) -> str:
         """Use confidence-based fuzzy matching to determine which function to call.
@@ -169,25 +185,27 @@ Your 5 words:"""
             response: The AI's response containing the 5 words
             
         Returns:
-            The function name to call ('yes' or 'no')
+            The function name to call
         """
         # Split response into words and take first 5
         words = response.strip().lower().split()[:5]
         
-        yes_confidence = 0.0
-        no_confidence = 0.0
-        
-        for word in words:
-            # Calculate similarity to 'yes' and 'no'
-            yes_similarity = SequenceMatcher(None, word, "yes").ratio()
-            no_similarity = SequenceMatcher(None, word, "no").ratio()
+        # Count occurrences and calculate confidence for each action
+        action_scores = {}
+        for action_name in self.actions:
+            action_scores[action_name] = 0.0
             
-            yes_confidence += yes_similarity
-            no_confidence += no_similarity
+            for word in words:
+                # Calculate similarity between word and action name
+                similarity = SequenceMatcher(None, word.lower(), action_name.lower()).ratio()
+                action_scores[action_name] += similarity
         
-        print(f"📊 Confidence scores - Yes: {yes_confidence:.2f}, No: {no_confidence:.2f}")
+        # Show confidence scores for available actions
+        scores_display = ", ".join([f"{name}: {score:.2f}" for name, score in action_scores.items()])
+        print(f"📊 Confidence scores - {scores_display}")
         
-        return "yes" if yes_confidence > no_confidence else "no"
+        # Return the action with highest score
+        return max(action_scores, key=action_scores.get)
     
     def execute_action(self, function_name: str):
         """Execute the chosen action function.
@@ -197,11 +215,13 @@ Your 5 words:"""
         """
         if function_name in self.actions:
             print("🚀 Executing action:")
-            self.actions[function_name]()
+            self.actions[function_name]['function']()
         else:
             print(f"❌ Unknown function: {function_name}")
-            print("🎲 Defaulting to 'no'")
-            self.actions["no"]()
+            # Execute the first available action as fallback
+            fallback = list(self.actions.keys())[0]
+            print(f"🎲 Defaulting to '{fallback}'")
+            self.actions[fallback]['function']()
     
     def chat_loop(self):
         """Main chat loop with meta-reasoning."""

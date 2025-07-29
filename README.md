@@ -1,16 +1,15 @@
 # OllamaPy
 
-A clean terminal-based chat interface for Ollama, providing an easy way to interact with local AI models through a simple Python wrapper.
+A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency.
 
 ## Features
 
 - 🤖 **Terminal Chat Interface** - Clean, user-friendly chat experience in your terminal
 - 🔄 **Streaming Responses** - Real-time streaming for natural conversation flow
 - 📚 **Model Management** - Automatic model pulling and listing of available models
-- 💾 **Conversation History** - Maintains context throughout your chat session
-- ⚙️ **Customizable** - Support for different models and system messages
-- 🛠️ **Built-in Commands** - Easy-to-use commands for managing your chat session
-- 🧪 **AI Vibe Tests** - Evaluate AI decision-making consistency and reliability
+- 🧠 **Meta-Reasoning** - AI analyzes user input and selects appropriate actions
+- 🛠️ **Extensible Actions** - Easy-to-extend action system for AI decision-making
+- 🧪 **AI Vibe Tests** - Built-in tests to evaluate AI consistency and reliability
 
 ## Prerequisites
 
@@ -48,7 +47,7 @@ Simply run the chat interface:
 ollamapy
 ```
 
-This will start a chat session with the default model (gemma3:4b). If the model isn't available locally, OllamaPy will automatically pull it for you.
+This will start a chat session with the default model (llama3.2:3b). If the model isn't available locally, OllamaPy will automatically pull it for you.
 
 ## Usage Examples
 
@@ -61,7 +60,7 @@ ollamapy
 ### Custom Model
 ```bash
 # Use a specific model
-ollamapy --model llama3.2:3b
+ollamapy --model gemma2:2b
 ollamapy -m codellama:7b
 ```
 
@@ -75,110 +74,57 @@ ollamapy -s "You are a creative writing partner"
 ### Combined Options
 ```bash
 # Use custom model with system message
-ollamapy --model llama3.2:3b --system "You are a helpful coding assistant"
+ollamapy --model mistral:7b --system "You are a helpful coding assistant"
 ```
+
+## Meta-Reasoning System
+
+OllamaPy features a unique meta-reasoning system where the AI analyzes user input and dynamically selects from available actions. The AI examines the intent behind your message and chooses the most appropriate response action.
+
+Currently available actions:
+- **yes** - For positive intent or agreement
+- **no** - For negative intent or disagreement  
+- **getWeather** - For weather-related queries
+
+The system is designed to be easily extensible - new actions can be added by registering functions with names and descriptions.
 
 ## Vibe Tests
 
-OllamaPy includes "vibe tests" - a unique feature that evaluates AI decision-making consistency. These tests measure how well different AI models can interpret natural language intent and choose between 'yes' and 'no' functions based on the sentiment and context of human phrases.
-
-### What Are Vibe Tests?
-
-Vibe tests present AI models with natural language phrases that clearly indicate a positive or negative intent, then measure how consistently the AI chooses the appropriate response function. This helps evaluate:
-
-- **Consistency**: How reliably the AI interprets similar sentiments
-- **Accuracy**: How well the AI matches human intent
-- **Model Comparison**: Performance differences between AI models
-- **Statistical Confidence**: Reliability across multiple test runs
+Vibe tests are a built-in feature that evaluates how consistently AI models interpret human intent. These tests help you understand model behavior and compare performance across different models.
 
 ### Running Vibe Tests
 
 ```bash
-# Run vibe tests with default settings (1 iteration each)
+# Run vibe tests with default settings
 ollamapy --vibetest
 
-# Run vibe tests with multiple iterations for statistical analysis
-ollamapy --vibetest -N 5
+# Run with multiple iterations for statistical confidence
+ollamapy --vibetest -n 5
 
-# Use a specific model for vibe tests
-ollamapy --vibetest --model llama3.2:3b -N 3
-
-# Run comprehensive analysis with maximum iterations
-ollamapy --vibetest -N 10
+# Test a specific model
+ollamapy --vibetest --model gemma2:2b -n 3
 ```
 
-### Understanding Vibe Test Results
+### Understanding Results
 
-Vibe tests evaluate two scenarios:
+Vibe tests evaluate the AI's ability to consistently choose appropriate actions based on clearly-intentioned phrases. The tests measure:
 
-**1. YES Direction Test** - Tests phrases that should trigger the 'yes' function:
-- "Yes is the direction I would like to go this time"
-- "I'm feeling positive about this decision"  
-- "Absolutely, let's move forward with this"
-- "This sounds like a great idea to me"
-- "I agree with this approach completely"
+- **Consistency**: How reliably the AI interprets similar sentiments
+- **Accuracy**: How well the AI matches expected human intent
+- **Statistical Confidence**: Reliability across multiple test runs
 
-**2. NO Direction Test** - Tests phrases that should trigger the 'no' function:
-- "No, I don't think this is the right path"
-- "I disagree with this approach entirely"
-- "This doesn't seem like a good idea to me"
-- "I'm not feeling confident about this decision"
-- "Absolutely not, let's try something else"
-
-### Example Vibe Test Output
-
-```
-🧪 Running vibe tests with model: gemma3:4b, iterations: 3
-============================================================
-
-🧪 YES Direction Test (Model: gemma3:4b)
-================================================================================
-Phrase: 'Yes is the direction I would like to go this time'
-Success: 3/3 (100.0%)
-----------------------------------------
-Phrase: 'I'm feeling positive about this decision'
-Success: 2/3 (66.7%)
-----------------------------------------
-Overall Success Rate: 14/15 (93.3%)
-
-🧪 NO Direction Test (Model: gemma3:4b)
-================================================================================
-Phrase: 'No, I don't think this is the right path'
-Success: 3/3 (100.0%)
-----------------------------------------
-Overall Success Rate: 13/15 (86.7%)
-
-📊 Final Results:
-YES Direction Test: ✅ PASSED
-NO Direction Test: ✅ PASSED  
-Overall: ✅ ALL TESTS PASSED
-```
-
-### Test Requirements and Scoring
-
-- **Pass Threshold**: Tests require a 60% or higher success rate to pass
-- **Statistical Analysis**: Multiple iterations (`-n` parameter) provide better confidence
-- **Model Variations**: Different models show varying performance characteristics
-- **Real-time Feedback**: See confidence scores and decision-making process
-
-### Installation Compatibility
-
-Vibe tests work seamlessly with both installation methods:
-
-- **PyPI Install**: Uses built-in test runner for maximum compatibility
-- **Development Install**: Can optionally use pytest for advanced features
-- **No Dependencies**: Vibe tests work without requiring pytest installation
-- **Fallback System**: Automatically adapts to available testing frameworks
+Tests pass with a 60% or higher success rate, ensuring the AI demonstrates reasonable consistency in decision-making.
 
 ## Chat Commands
 
 While chatting, you can use these built-in commands:
 
 - `quit`, `exit`, `bye` - End the conversation
-- `clear` - Clear conversation history and start fresh
+- `clear` - Clear conversation history
 - `help` - Show available commands
-- `model` - Display current model being used
+- `model` - Display current model
 - `models` - List all available models
+- `actions` - Show available actions the AI can choose from
 
 ## Python API
 
@@ -188,31 +134,31 @@ You can also use OllamaPy programmatically:
 from ollamapy import TerminalChat, OllamaClient
 
 # Start a chat session programmatically
-chat = TerminalChat(model="gemma3:4b", system_message="You are a helpful assistant")
+chat = TerminalChat(model="llama3.2:3b", system_message="You are a helpful assistant")
 chat.run()
 
 # Or use the client directly
 client = OllamaClient()
 messages = [{"role": "user", "content": "Hello!"}]
 
-for chunk in client.chat_stream("gemma3:4b", messages):
+for chunk in client.chat_stream("llama3.2:3b", messages):
     print(chunk, end="", flush=True)
 
 # Run vibe tests programmatically
-from ollamapy.main import run_builtin_vibe_tests
-success = run_builtin_vibe_tests(model="gemma3:4b", iterations=5)
+from ollamapy import run_vibe_tests
+success = run_vibe_tests(model="gemma2:2b", iterations=5)
 ```
 
-### Available Classes
+### Available Classes and Functions
 
 - **`TerminalChat`** - High-level terminal chat interface with meta-reasoning
 - **`OllamaClient`** - Low-level API client for Ollama
-- **`hello()`**, **`greet(name)`** - Simple utility functions
-- **`run_builtin_vibe_tests()`** - Programmatic vibe test execution
+- **`run_vibe_tests()`** - Execute vibe tests programmatically
+- **`get_available_actions()`** - Get registered actions from the action system
 
 ## Configuration
 
-OllamaPy connects to Ollama on `http://localhost:11434` by default. If your Ollama instance is running elsewhere, you can create a custom client:
+OllamaPy connects to Ollama on `http://localhost:11434` by default. If your Ollama instance is running elsewhere:
 
 ```python
 from ollamapy import OllamaClient
@@ -224,12 +170,30 @@ client = OllamaClient(base_url="http://your-ollama-server:11434")
 
 OllamaPy works with any model available in Ollama. Popular options include:
 
-- `gemma3:4b` (default) - Fast and efficient, great for vibe tests
-- `llama3.2:3b` - Good balance of speed and capability
+- `llama3.2:3b` (default) - Fast and capable general-purpose model
+- `gemma2:2b` - Efficient model great for quick responses
+- `gemma2:9b` - Larger Gemma model for complex tasks
 - `codellama:7b` - Specialized for coding tasks
-- `mistral:7b` - General purpose conversations
+- `mistral:7b` - Strong general-purpose model
 
-To see available models: `ollama list` or use the `models` command in chat.
+To see available models on your system: `ollama list`
+
+## Extending Actions
+
+The action system is designed to be extensible. Actions are registered with decorators in the `actions.py` file:
+
+```python
+from ollamapy.actions import register_action
+
+@register_action("greet", "Use when the user wants a greeting or says hello")
+def greet():
+    print("👋 Hello there!")
+```
+
+Each action needs:
+- A unique name (what the AI will say when choosing it)
+- A description (helps the AI understand when to use it)
+- A function that executes the action
 
 ## Development
 
@@ -247,29 +211,6 @@ Run tests:
 pytest
 ```
 
-Run vibe tests in development:
-
-```bash
-# With pytest (development)
-pytest -k vibe --model gemma3:4b -N 3
-
-# With built-in runner (works everywhere) 
-python -m ollamapy.main --vibetest -N 3
-```
-
-Format code:
-
-```bash
-black src/ tests/
-isort src/ tests/
-```
-
-Type checking:
-
-```bash
-mypy src/
-```
-
 ## Troubleshooting
 
 ### "Ollama server is not running!"
@@ -279,9 +220,9 @@ ollama serve
 ```
 
 ### Model not found
-OllamaPy will automatically pull models, but you can also pull them manually:
+OllamaPy will automatically pull models, but you can also pull manually:
 ```bash
-ollama pull gemma3:4b
+ollama pull llama3.2:3b
 ```
 
 ### Connection issues
@@ -291,21 +232,13 @@ curl http://localhost:11434/api/tags
 ```
 
 ### Vibe test issues
-If vibe tests fail to run:
-```bash
-# Verify Ollama is running
-ollama serve
-
-# Test with verbose output
-ollamapy --vibetest -N  1
-
-# Try a different model
-ollamapy --vibetest --model llama3.2:3b
-```
+- Ensure Ollama is running: `ollama serve`
+- Try a different model: `ollamapy --vibetest --model gemma2:2b`
+- Run with single iteration for quick feedback: `ollamapy --vibetest -n 1`
 
 ## Project Information
 
-- **Version**: 0.3.0
+- **Version**: 0.4.4
 - **License**: GPL-3.0-or-later
 - **Author**: The Lazy Artist
 - **Python**: >=3.8
