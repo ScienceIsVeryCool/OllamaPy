@@ -1,7 +1,7 @@
 """Action functions that the AI can choose to execute."""
 
 from typing import Dict, Callable, List
-
+from datetime import datetime
 
 # Function registry to store available actions
 ACTION_REGISTRY: Dict[str, Dict[str, any]] = {}
@@ -56,6 +56,21 @@ def getWeather():
     """Print weather information."""
     print("☀️ It's sunny with a chance of code!")
 
+@register_action(
+    name="getTime", 
+    description="Use when the user asks about the current time. If they ask about what time it is stuff like that.",
+    vibe_test_phrases=[
+        "what is the current time?",
+        "is it noon yet?",
+        "what time is it?",
+        "Is it 4 o'clock?"
+        
+    ]
+)
+def getTime():
+    """Print time."""
+    current_time = datetime.now()
+    print(current_time)
 
 def get_available_actions() -> Dict[str, Dict[str, any]]:
     """Get all registered actions.
