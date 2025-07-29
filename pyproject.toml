@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyllama"
+version = "0.1.0"
+description = "My simple Python package"
+authors = [{name = "The Lazy Artist", email = "TheRealLazyArtist@iCloud.com"}]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+pyllama = "pyllama.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyllama"]
