@@ -17,20 +17,20 @@ class VibeTestRunner:
         self.chat_interface = TerminalChat(model=model)
         
         # Test phrases built into the application
-        self.yes_phrases = [
-            "Yes is the direction I would like to go this time",
-            "I'm feeling positive about this decision",
-            "Absolutely, let's move forward with this",
-            "This sounds like a great idea to me",
-            "I agree with this approach completely"
+        self.chat_phrases = [
+            "Just talk to me without using any tools",
+            "null option",
+            "chat only with no functions please",
+            "chat only please",
+            "null null null null null"
         ]
         
-        self.no_phrases = [
-            "No, I don't think this is the right path",
-            "I disagree with this approach entirely",
-            "This doesn't seem like a good idea to me",
-            "I'm not feeling confident about this decision",
-            "Absolutely not, let's try something else"
+        self.getWeather_phrases = [
+            "Is it raining right now?",
+            "Do I need a Jacket when I go outside due to weather?",
+            "Is it going to be hot today?",
+            "Do I need an umbrella due to rain today?",
+            "Do I need sunscreen today due to UV?"
         ]
     
     def check_prerequisites(self) -> bool:
@@ -129,25 +129,25 @@ class VibeTestRunner:
         print(f"✅ Using model: {self.model}")
         print("🧠 Testing AI's ability to interpret human intent and choose appropriate functions...\n")
         
-        # Run YES direction test
-        yes_passed, yes_results = self.run_phrase_test(
-            self.yes_phrases, "yes", "YES Direction", iterations
+        # Run chat direction test
+        chat_only_passed, chat_only_results = self.run_phrase_test(
+            self.chat_phrases, "null", "Chat Only Direciton", iterations
         )
         
-        # Run NO direction test  
-        no_passed, no_results = self.run_phrase_test(
-            self.no_phrases, "no", "NO Direction", iterations
+        # Run getWeather direction test  
+        getweather_passed, getWeather_results = self.run_phrase_test(
+            self.getWeather_phrases, "getWeather", "getWeather Direction", iterations
         )
         
         # Final results summary
         print(f"\n📊 Final Test Results:")
         print("=" * 50)
-        print(f"YES Direction Test: {'✅ PASSED' if yes_passed else '❌ FAILED'} "
-              f"({yes_results['success_rate']:.1f}%)")
-        print(f"NO Direction Test:  {'✅ PASSED' if no_passed else '❌ FAILED'} "
-              f"({no_results['success_rate']:.1f}%)")
+        print(f"Chat Only Direction Test: {'✅ PASSED' if chat_only_passed else '❌ FAILED'} "
+              f"({chat_only_results['success_rate']:.1f}%)")
+        print(f"GetWeather Direction Test:  {'✅ PASSED' if getweather_passed else '❌ FAILED'} "
+              f"({getWeather_results['success_rate']:.1f}%)")
         
-        overall_success = yes_passed and no_passed
+        overall_success = chat_only_passed and getweather_passed
         status_icon = "✅" if overall_success else "❌"
         status_text = "ALL TESTS PASSED" if overall_success else "SOME TESTS FAILED"
         print(f"\nOverall Result: {status_icon} {status_text}")

@@ -134,20 +134,23 @@ class TerminalChat:
             f"- {name}: {info['description']}"
             for name, info in self.actions.items()
         ])
-        
+        action_list_name_repeated = "\n".join([
+            f"- {name} {name} {name} {name} {name}"
+            for name, info in self.actions.items() # info is still here but not used
+])
         analysis_prompt = f"""Given this user input: "{user_input}"
 
-You must choose which function to call from these available options:
+You must choose which function to call from these available options with respect to the user input:
 {action_list}
 
-Respond with exactly 5 repeated words. Each word must be the name of one of the available functions. This will help determine which function to call.
+Make sure to memorize those, they are important and are the only options you have to choose from.
 
-Example responses:
-- yes yes yes yes yes
-- no no no no no
-- getWeather getWeather getWeather getWeather getWeather
+Respond with only the name of the function you think is most relevent exactly 5 times space separated so that an algorithm can pick up the title of the function correctly without any typos.
 
-Your 5 words:"""
+All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIMES):
+{action_list_name_repeated}
+
+"""
 
         # Create a temporary conversation for analysis
         analysis_messages = [{"role": "user", "content": analysis_prompt}]
@@ -173,10 +176,9 @@ Your 5 words:"""
             
         except Exception as e:
             print(f"\n❌ Error during analysis: {e}")
-            # Default to the first available action
-            default_action = list(self.actions.keys())[0]
-            print(f"🎲 Defaulting to '{default_action}'")
-            return default_action
+            # Default to chat action
+            print(f"🎲 Defaulting to 'chat'")
+            return "chat"
     
     def determine_function_from_response(self, response: str) -> str:
         """Use confidence-based fuzzy matching to determine which function to call.
@@ -207,21 +209,54 @@ Your 5 words:"""
         # Return the action with highest score
         return max(action_scores, key=action_scores.get)
     
-    def execute_action(self, function_name: str):
+    def generate_chat_response(self, user_input: str):
+        """Generate a normal chat response using the AI model.
+        
+        Args:
+            user_input: The user's input to respond to
+        """
+        # Add user message to conversation
+        self.conversation.append({"role": "user", "content": user_input})
+        
+        print("🤖 AI: ", end="", flush=True)
+        
+        response_content = ""
+        try:
+            for chunk in self.client.chat_stream(
+                model=self.model,
+                messages=self.conversation,
+                system=self.system_message
+            ):
+                print(chunk, end="", flush=True)
+                response_content += chunk
+            
+            print()  # New line after response
+            
+            # Add AI response to conversation
+            self.conversation.append({"role": "assistant", "content": response_content})
+            
+        except Exception as e:
+            print(f"\n❌ Error generating response: {e}")
+    
+    def execute_action(self, function_name: str, user_input: str):
         """Execute the chosen action function.
         
         Args:
             function_name: Name of the function to execute
+            user_input: The original user input (needed for chat responses)
         """
         if function_name in self.actions:
             print("🚀 Executing action:")
-            self.actions[function_name]['function']()
+            result = self.actions[function_name]['function']()
+            
+            # If the action returned the special chat signal, generate a normal response
+            if result == "NORMAL_CHAT_RESPONSE":
+                self.generate_chat_response(user_input)
         else:
             print(f"❌ Unknown function: {function_name}")
-            # Execute the first available action as fallback
-            fallback = list(self.actions.keys())[0]
-            print(f"🎲 Defaulting to '{fallback}'")
-            self.actions[fallback]['function']()
+            # Default to chat response as fallback
+            print(f"🎲 Defaulting to chat response")
+            self.generate_chat_response(user_input)
     
     def chat_loop(self):
         """Main chat loop with meta-reasoning."""
@@ -239,7 +274,7 @@ Your 5 words:"""
             chosen_function = self.analyze_with_ai(user_input)
             
             # Execute the chosen function
-            self.execute_action(chosen_function)
+            self.execute_action(chosen_function, user_input)
             
             print()  # Extra line for readability
     
