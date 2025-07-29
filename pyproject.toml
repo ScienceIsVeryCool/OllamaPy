@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ollamapy"
-version = "0.4.0"
-description = "A simple Python package for Ollama utilities"
+version = "0.4.3"
+description = "A simple Python package for Ollama utilities with built-in AI vibe tests"
 authors = [{name = "The Lazy Artist", email = "TheRealLazyArtist@iCloud.com"}]
 requires-python = ">=3.8"
 dependencies = ["requests>=2.25.0"]
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
-keywords = ["ollama", "llama", "ai", "python", "utilities", "chat", "terminal"]
+keywords = ["ollama", "llama", "ai", "python", "utilities", "chat", "terminal", "vibe-tests"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -33,7 +33,7 @@ Repository = "https://github.com/ScienceIsVeryCool/OllamaPy"
 Issues = "https://github.com/ScienceIsVeryCool/OllamaPy/issues"
 
 [project.optional-dependencies]
-dev = ["pytest", "black", "isort", "mypy"]
+dev = ["pytest>=6.0.0", "black", "isort", "mypy"]
 test = ["pytest>=6.0.0"]
 
 [project.scripts]
