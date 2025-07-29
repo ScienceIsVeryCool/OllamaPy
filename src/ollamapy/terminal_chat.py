@@ -8,7 +8,7 @@ from .ollama_client import OllamaClient
 class TerminalChat:
     """Terminal-based chat interface."""
     
-    def __init__(self, model: str = "gemma2:2b", system_message: str = None):
+    def __init__(self, model: str = "gemma3:4b", system_message: str = "You are a helpful assistant."):
         """Initialize the chat interface.
         
         Args:
