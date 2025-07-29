@@ -5,7 +5,7 @@ A simple Python package.
 ## Installation
 
 ```bash
-pip install .
+pipx install .
 ```
 
 ## Usage

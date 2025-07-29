@@ -1,6 +1,6 @@
 """Simple tests."""
 
-from pyllama.main import hello, greet
+from ollamapy.main import hello, greet
 
 
 def test_hello():
