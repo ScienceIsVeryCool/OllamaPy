@@ -17,6 +17,23 @@ class VibeTestRunner:
         self.model = model
         self.chat_interface = TerminalChat(model=model)
         self.actions_with_tests = get_actions_with_vibe_tests()
+        
+        # Define yes/no phrases for compatibility (if needed by tests)
+        self.yes_phrases = [
+            "Yes, I agree completely",
+            "Absolutely, that's correct",
+            "Sure thing!",
+            "Yeah, definitely",
+            "Of course, yes"
+        ]
+        
+        self.no_phrases = [
+            "No, I disagree",
+            "Absolutely not",
+            "I don't think so",
+            "Nope, that's wrong",
+            "Definitely not"
+        ]
     
     def check_prerequisites(self) -> bool:
         """Check if Ollama is available and model can be used."""

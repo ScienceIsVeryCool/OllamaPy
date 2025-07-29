@@ -1,7 +1,7 @@
 """Terminal-based chat interface for Ollama with meta-reasoning."""
 
 import sys
-from typing import List, Dict
+from typing import List, Dict, Optional
 from difflib import SequenceMatcher
 from .ollama_client import OllamaClient
 from .actions import get_available_actions
@@ -136,8 +136,9 @@ class TerminalChat:
         ])
         action_list_name_repeated = "\n".join([
             f"- {name} {name} {name} {name} {name}"
-            for name, info in self.actions.items() # info is still here but not used
-])
+            for name, info in self.actions.items()
+        ])
+        
         analysis_prompt = f"""Given this user input: "{user_input}"
 
 You must choose which function to call from these available options with respect to the user input:
@@ -152,7 +153,7 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
 
 """
 
-        # Create a temporary conversation for analysis
+        # Create a temporary conversation for analysis (not stored in main conversation)
         analysis_messages = [{"role": "user", "content": analysis_prompt}]
         
         print("🧠 AI analyzing... ", end="", flush=True)
@@ -176,9 +177,9 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
             
         except Exception as e:
             print(f"\n❌ Error during analysis: {e}")
-            # Default to chat action
-            print(f"🎲 Defaulting to 'chat'")
-            return "chat"
+            # Default to null action
+            print(f"🎲 Defaulting to 'null'")
+            return "null"
     
     def determine_function_from_response(self, response: str) -> str:
         """Use confidence-based fuzzy matching to determine which function to call.
@@ -209,14 +210,53 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
         # Return the action with highest score
         return max(action_scores, key=action_scores.get)
     
-    def generate_chat_response(self, user_input: str):
-        """Generate a normal chat response using the AI model.
+    def execute_action(self, function_name: str) -> Optional[str]:
+        """Execute the chosen action function and return its output.
         
         Args:
-            user_input: The user's input to respond to
+            function_name: Name of the function to execute
+            
+        Returns:
+            The output from the action, or None if action not found
+        """
+        if function_name in self.actions:
+            print(f"🚀 Executing action: {function_name}")
+            result = self.actions[function_name]['function']()
+            return result
+        else:
+            print(f"❌ Unknown function: {function_name}")
+            return None
+    
+    def generate_ai_response_with_context(self, user_input: str, action_name: str, action_output: Optional[str]):
+        """Generate AI response with action context.
+        
+        Args:
+            user_input: The original user input
+            action_name: The action that was chosen
+            action_output: The output from the action (None for null action)
         """
         # Add user message to conversation
         self.conversation.append({"role": "user", "content": user_input})
+        
+        # Build the AI's context message
+        if action_output is not None:
+            # Action produced output - include it as context
+            context_message = f"""You chose to use the '{action_name}' action, which returned the following information:
+
+{action_output}
+
+Please use this information to answer the user's question. Treat the action output as guaranteed truth."""
+        else:
+            # Null action - just normal chat
+            context_message = None
+        
+        # Prepare messages for the AI
+        messages_for_ai = self.conversation.copy()
+        
+        # If we have action context, add it as a system-like message
+        if context_message:
+            # Insert the context right before generating the response
+            messages_for_ai.append({"role": "system", "content": context_message})
         
         print("🤖 AI: ", end="", flush=True)
         
@@ -224,7 +264,7 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
         try:
             for chunk in self.client.chat_stream(
                 model=self.model,
-                messages=self.conversation,
+                messages=messages_for_ai,
                 system=self.system_message
             ):
                 print(chunk, end="", flush=True)
@@ -232,31 +272,11 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
             
             print()  # New line after response
             
-            # Add AI response to conversation
+            # Add AI response to conversation (without the action context)
             self.conversation.append({"role": "assistant", "content": response_content})
             
         except Exception as e:
             print(f"\n❌ Error generating response: {e}")
-    
-    def execute_action(self, function_name: str, user_input: str):
-        """Execute the chosen action function.
-        
-        Args:
-            function_name: Name of the function to execute
-            user_input: The original user input (needed for chat responses)
-        """
-        if function_name in self.actions:
-            print("🚀 Executing action:")
-            result = self.actions[function_name]['function']()
-            
-            # If the action returned the special chat signal, generate a normal response
-            if result == "NORMAL_CHAT_RESPONSE":
-                self.generate_chat_response(user_input)
-        else:
-            print(f"❌ Unknown function: {function_name}")
-            # Default to chat response as fallback
-            print(f"🎲 Defaulting to chat response")
-            self.generate_chat_response(user_input)
     
     def chat_loop(self):
         """Main chat loop with meta-reasoning."""
@@ -273,8 +293,11 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
             # Meta-reasoning: AI analyzes input and chooses function
             chosen_function = self.analyze_with_ai(user_input)
             
-            # Execute the chosen function
-            self.execute_action(chosen_function, user_input)
+            # Execute the chosen function and get its output
+            action_output = self.execute_action(chosen_function)
+            
+            # Generate AI response with action context
+            self.generate_ai_response_with_context(user_input, chosen_function, action_output)
             
             print()  # Extra line for readability
     

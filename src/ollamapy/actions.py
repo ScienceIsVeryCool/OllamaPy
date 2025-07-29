@@ -1,10 +1,10 @@
 """Action functions that the AI can choose to execute."""
 
-from typing import Dict, Callable, List
+from typing import Dict, Callable, List, Any, Optional
 from datetime import datetime
 
 # Function registry to store available actions
-ACTION_REGISTRY: Dict[str, Dict[str, any]] = {}
+ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
 
 def register_action(name: str, description: str, vibe_test_phrases: List[str] = None):
@@ -36,9 +36,9 @@ def register_action(name: str, description: str, vibe_test_phrases: List[str] = 
         "null null null null null"
     ]
 )
-def null():
+def null() -> Optional[str]:
     """Signal that normal chat response is needed."""
-    return "NORMAL_CHAT_RESPONSE"
+    return None  # Return None to indicate normal chat
 
 
 @register_action(
@@ -52,9 +52,11 @@ def null():
         "Do I need sunscreen today due to UV?"
     ]
 )
-def getWeather():
-    """Print weather information."""
-    print("☀️ It's sunny with a chance of code!")
+def getWeather() -> str:
+    """Get weather information."""
+    # In a real implementation, this would fetch actual weather data
+    return "Current weather: Sunny, 72°F (22°C), Humidity: 45%, UV Index: 6 (High), Wind: 5 mph NW"
+
 
 @register_action(
     name="getTime", 
@@ -64,15 +66,15 @@ def getWeather():
         "is it noon yet?",
         "what time is it?",
         "Is it 4 o'clock?"
-        
     ]
 )
-def getTime():
-    """Print time."""
+def getTime() -> str:
+    """Get current time."""
     current_time = datetime.now()
-    print(current_time)
+    return f"Current time: {current_time.strftime('%I:%M %p on %A, %B %d, %Y')}"
 
-def get_available_actions() -> Dict[str, Dict[str, any]]:
+
+def get_available_actions() -> Dict[str, Dict[str, Any]]:
     """Get all registered actions.
     
     Returns:
@@ -81,7 +83,7 @@ def get_available_actions() -> Dict[str, Dict[str, any]]:
     return ACTION_REGISTRY
 
 
-def get_actions_with_vibe_tests() -> Dict[str, Dict[str, any]]:
+def get_actions_with_vibe_tests() -> Dict[str, Dict[str, Any]]:
     """Get all actions that have vibe test phrases defined.
     
     Returns:
