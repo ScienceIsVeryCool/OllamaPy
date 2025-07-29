@@ -76,7 +76,60 @@ ollamapy -s "You are a creative writing partner"
 # Use custom model with system message
 ollamapy --model llama3.2:3b --system "You are a helpful coding assistant"
 ```
+## Vibe Tests
 
+OllamaPy includes "vibe tests" to evaluate AI decision-making consistency. These tests measure how well the AI can choose between 'yes' and 'no' functions based on the sentiment and intent of natural language phrases.
+
+### Running Vibe Tests
+
+```bash
+# Run vibe tests with default settings (1 iteration each)
+ollamapy --vibetest
+
+# Run vibe tests with multiple iterations for statistical analysis
+ollamapy --vibetest -N 5
+
+# Use a specific model for vibe tests
+ollamapy --vibetest --model llama3.2:3b -N 3
+
+# Run vibe tests with maximum iterations for comprehensive analysis
+ollamapy --vibetest -N 10
+```
+
+### Understanding Vibe Test Results
+
+Vibe tests evaluate two scenarios:
+
+1. **YES Direction Test**: Tests phrases that should trigger the 'yes' function
+   - Example: "Yes is the direction I would like to go this time"
+   - Expected: AI chooses 'yes' function consistently
+
+2. **NO Direction Test**: Tests phrases that should trigger the 'no' function  
+   - Example: "No, I don't think this is the right path"
+   - Expected: AI chooses 'no' function consistently
+
+The tests report:
+- Individual phrase success rates
+- Overall success rate across all phrases
+- Confidence scores for decision-making
+- Statistical analysis across multiple iterations
+
+### Test Requirements
+
+- Tests require a 60% or higher success rate to pass
+- Multiple iterations (`-N` parameter) provide better statistical confidence
+- Different models may show varying performance characteristics
+
+### Example Output
+
+```
+🧪 Vibe Test Results - YES Direction (Model: gemma3:4b)
+================================================================================
+Phrase: 'Yes is the direction I would like to go this time'
+Success: 4/5 (80.0%)
+----------------------------------------
+Overall Success Rate: 18/25 (72.0%)
+```
 ## Chat Commands
 
 While chatting, you can use these built-in commands:
