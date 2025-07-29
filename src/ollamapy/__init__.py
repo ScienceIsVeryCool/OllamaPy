@@ -1,4 +1,4 @@
-__version__ = "0.4.4"
+__version__ = "0.5.0"
 
 from .main import hello, greet, chat
 from .ollama_client import OllamaClient
