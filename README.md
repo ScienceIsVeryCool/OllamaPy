@@ -238,7 +238,7 @@ curl http://localhost:11434/api/tags
 
 ## Project Information
 
-- **Version**: 0.5.0
+- **Version**: 0.5.1
 - **License**: GPL-3.0-or-later
 - **Author**: The Lazy Artist
 - **Python**: >=3.8
