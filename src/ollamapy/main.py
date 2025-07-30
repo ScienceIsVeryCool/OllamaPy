@@ -16,7 +16,7 @@ def greet(name):
 
 
 def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.", 
-         analysis_model: str = None, two_step: bool = False):
+         analysis_model: str = "gemma3:4b", two_step: bool = True):
     """Start a chat session with Ollama.
     
     Args:
@@ -34,7 +34,7 @@ def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.",
     chat_interface.run()
 
 
-def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = None):
+def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = "gemma3:4b"):
     """Run built-in vibe tests.
     
     Args:
@@ -49,7 +49,7 @@ def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="OllamaPy v0.6.0 - Terminal chat interface for Ollama with AI vibe tests",
+        description="OllamaPy v0.6.2 - Terminal chat interface for Ollama with AI vibe tests",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

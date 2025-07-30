@@ -9,7 +9,7 @@ from .actions import get_actions_with_vibe_tests
 class VibeTestRunner:
     """Built-in vibe test runner that ships with every installation."""
     
-    def __init__(self, model: str = "gemma3:4b", analysis_model: str = None, two_step: bool = False):
+    def __init__(self, model: str = "gemma3:4b", analysis_model: str = "gemma3:4b", two_step: bool = True):
         """Initialize the vibe test runner.
         
         Args:

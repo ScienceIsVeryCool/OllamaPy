@@ -523,7 +523,7 @@ ollama pull gemma3:4b
 
 ## Project Information
 
-- **Version**: 0.6.0
+- **Version**: 0.6.2
 - **License**: GPL-3.0-or-later
 - **Author**: The Lazy Artist
 - **Python**: >=3.8

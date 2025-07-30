@@ -28,7 +28,7 @@ class TerminalChat:
         self.system_message = system_message
         self.conversation: List[Dict[str, str]] = []
         self.actions = get_available_actions()
-        self.two_step_analysis = two_step_analysis
+        self.two_step_analysis = True # TODO somehow cant get this to default true and this doesnt feel like the right place
         
     def setup(self) -> bool:
         """Setup the chat environment and ensure models are available."""
@@ -71,6 +71,8 @@ class TerminalChat:
         
         if self.two_step_analysis:
             print(f"🔄 Two-step analysis mode enabled")
+        else:
+            print(f"🔄 Two-step analysis mode disabled")
         
         if available_models:
             print(f"📚 Available models: {', '.join(available_models[:3])}{'...' if len(available_models) > 3 else ''}")
@@ -479,11 +481,12 @@ If no action clearly matches, use "null" with lower confidence."""
         # Build the AI's context message
         if action_output is not None:
             # Action produced output - include it as context
-            context_message = f"""You chose to use the '{action_name}' action, which returned the following information:
+            context_message = f"""<info>This is the voice in the back of your head representing your unconcious mind. You chose out of all available tools to run this function: '{action_name}' with the user's interpreted number. When all said and done this is what was returned:
 
 {action_output}
 
-Please use this information to answer the user's question. Treat the action output as guaranteed truth."""
+Please use this information to answer the user's question. Treat the action output as guaranteed truth with confidence.</info> Use this information to fufil the user's original request now."""
+            print(f"🚀 Adding to Context : {action_output}")
         else:
             # Null action - just normal chat
             context_message = None
