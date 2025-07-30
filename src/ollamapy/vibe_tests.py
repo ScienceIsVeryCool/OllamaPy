@@ -8,14 +8,16 @@ from .actions import get_actions_with_vibe_tests
 class VibeTestRunner:
     """Built-in vibe test runner that ships with every installation."""
     
-    def __init__(self, model: str = "gemma3:4b"):
+    def __init__(self, model: str = "gemma3:4b", analysis_model: str = None):
         """Initialize the vibe test runner.
         
         Args:
             model: The model to use for testing
+            analysis_model: Optional separate model for action analysis (defaults to main model)
         """
         self.model = model
-        self.chat_interface = TerminalChat(model=model)
+        self.analysis_model = analysis_model or model  # Use main model if no analysis model specified
+        self.chat_interface = TerminalChat(model=model, analysis_model=self.analysis_model)
         self.actions_with_tests = get_actions_with_vibe_tests()
         
         # Define yes/no phrases for compatibility (if needed by tests)
@@ -36,21 +38,31 @@ class VibeTestRunner:
         ]
     
     def check_prerequisites(self) -> bool:
-        """Check if Ollama is available and model can be used."""
+        """Check if Ollama is available and models can be used."""
         if not self.chat_interface.client.is_available():
             print("❌ Error: Ollama server is not running!")
             print("Please start Ollama with: ollama serve")
             return False
         
-        # Check if model is available, pull it if needed
+        # Check if models are available, pull them if needed
         available_models = self.chat_interface.client.list_models()
-        model_available = any(self.model in model for model in available_models)
         
-        if not model_available:
-            print(f"📥 Model '{self.model}' not found locally. Pulling...")
+        # Check main model
+        main_model_available = any(self.model in model for model in available_models)
+        if not main_model_available:
+            print(f"📥 Main model '{self.model}' not found locally. Pulling...")
             if not self.chat_interface.client.pull_model(self.model):
                 print(f"❌ Failed to pull model '{self.model}'")
                 return False
+        
+        # Check analysis model (if different from main model)
+        if self.analysis_model != self.model:
+            analysis_model_available = any(self.analysis_model in model for model in available_models)
+            if not analysis_model_available:
+                print(f"📥 Analysis model '{self.analysis_model}' not found locally. Pulling...")
+                if not self.chat_interface.client.pull_model(self.analysis_model):
+                    print(f"❌ Failed to pull analysis model '{self.analysis_model}'")
+                    return False
         
         return True
     
@@ -70,7 +82,12 @@ class VibeTestRunner:
         total_tests = 0
         results = {}
         
-        print(f"\n🧪 {action_name} Action Test (Model: {self.model})")
+        print(f"\n🧪 {action_name} Action Test")
+        print(f"Chat Model: {self.model}")
+        if self.analysis_model != self.model:
+            print(f"Analysis Model: {self.analysis_model}")
+        else:
+            print("Using same model for analysis and chat")
         print("=" * 80)
         
         for phrase in phrases:
@@ -120,14 +137,22 @@ class VibeTestRunner:
         Returns:
             True if all tests passed, False otherwise
         """
-        print(f"🧪 Running vibe tests with model: {self.model}, iterations: {iterations}")
+        print(f"🧪 Running vibe tests")
+        print(f"Chat model: {self.model}")
+        if self.analysis_model != self.model:
+            print(f"Analysis model: {self.analysis_model}")
+        else:
+            print("Using same model for analysis and chat")
+        print(f"Iterations: {iterations}")
         print("=" * 80)
         
         # Check prerequisites
         if not self.check_prerequisites():
             return False
         
-        print(f"✅ Using model: {self.model}")
+        print(f"✅ Using chat model: {self.model}")
+        if self.analysis_model != self.model:
+            print(f"✅ Using analysis model: {self.analysis_model}")
         print(f"🧠 Testing AI's ability to interpret human intent and choose appropriate functions...")
         print(f"📋 Found {len(self.actions_with_tests)} actions with vibe test phrases\n")
         
@@ -174,6 +199,8 @@ class VibeTestRunner:
         if not all_tests_passed:
             print("\n💡 Tips for improving results:")
             print("   • Try a different model with --model")
+            print("   • Try a different analysis model with --analysis-model")
+            print("   • Use a smaller, faster model for analysis (e.g., gemma2:2b)")
             print("   • Increase iterations with -n for better statistics")
             print("   • Ensure Ollama server is running optimally")
             print("   • Check action descriptions and test phrases for clarity")
@@ -191,15 +218,16 @@ class VibeTestRunner:
         return self.run_all_tests(iterations=iterations)
 
 
-def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1) -> bool:
+def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = None) -> bool:
     """Convenience function to run vibe tests.
     
     Args:
         model: The model to use for testing
         iterations: Number of iterations per test
+        analysis_model: Optional separate model for action analysis (defaults to main model)
         
     Returns:
         True if all tests passed, False otherwise
     """
-    runner = VibeTestRunner(model=model)
+    runner = VibeTestRunner(model=model, analysis_model=analysis_model)
     return runner.run_all_tests(iterations=iterations)

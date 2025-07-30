@@ -10,21 +10,23 @@ from .actions import get_available_actions
 class TerminalChat:
     """Terminal-based chat interface with AI meta-reasoning."""
     
-    def __init__(self, model: str = "llama3.2:3b", system_message: str = "You are a helpful assistant."):
+    def __init__(self, model: str = "gemma3:4b", system_message: str = "You are a helpful assistant.", analysis_model: str = None):
         """Initialize the chat interface.
         
         Args:
-            model: The model to use for chat
+            model: The model to use for chat responses
             system_message: Optional system message to set context
+            analysis_model: Optional separate model for action analysis (defaults to main model)
         """
         self.client = OllamaClient()
         self.model = model
+        self.analysis_model = analysis_model or model  # Use main model if no analysis model specified
         self.system_message = system_message
         self.conversation: List[Dict[str, str]] = []
         self.actions = get_available_actions()
         
     def setup(self) -> bool:
-        """Setup the chat environment and ensure model is available."""
+        """Setup the chat environment and ensure models are available."""
         print("🤖 OllamaPy Meta-Reasoning Chat Interface")
         print("=" * 50)
         
@@ -36,17 +38,31 @@ class TerminalChat:
         
         print("✅ Connected to Ollama server")
         
-        # Check if model is available
+        # Check if models are available
         available_models = self.client.list_models()
-        model_available = any(self.model in model for model in available_models)
         
-        if not model_available:
-            print(f"📥 Model '{self.model}' not found locally. Pulling...")
+        # Check main model
+        main_model_available = any(self.model in model for model in available_models)
+        if not main_model_available:
+            print(f"📥 Chat model '{self.model}' not found locally. Pulling...")
             if not self.client.pull_model(self.model):
                 print(f"❌ Failed to pull model '{self.model}'")
                 return False
         
-        print(f"🎯 Using model: {self.model}")
+        # Check analysis model (if different from main model)
+        if self.analysis_model != self.model:
+            analysis_model_available = any(self.analysis_model in model for model in available_models)
+            if not analysis_model_available:
+                print(f"📥 Analysis model '{self.analysis_model}' not found locally. Pulling...")
+                if not self.client.pull_model(self.analysis_model):
+                    print(f"❌ Failed to pull analysis model '{self.analysis_model}'")
+                    return False
+        
+        print(f"🎯 Using chat model: {self.model}")
+        if self.analysis_model != self.model:
+            print(f"🔍 Using analysis model: {self.analysis_model}")
+        else:
+            print(f"🔍 Using same model for analysis and chat")
         
         if available_models:
             print(f"📚 Available models: {', '.join(available_models[:3])}{'...' if len(available_models) > 3 else ''}")
@@ -66,7 +82,7 @@ class TerminalChat:
         print("  quit, exit, bye  - End the conversation")
         print("  clear           - Clear conversation history")
         print("  help            - Show this help message")
-        print("  model           - Show current model")
+        print("  model           - Show current models")
         print("  models          - List available models")
         print("  actions         - Show available actions the AI can choose")
         print(f"\n🧠 Meta-reasoning: The AI analyzes your input and chooses from {len(self.actions)} available functions.")
@@ -90,7 +106,11 @@ class TerminalChat:
             return False
         
         elif command == 'model':
-            print(f"🎯 Current model: {self.model}")
+            print(f"🎯 Chat model: {self.model}")
+            if self.analysis_model != self.model:
+                print(f"🔍 Analysis model: {self.analysis_model}")
+            else:
+                print("🔍 Using same model for analysis and chat")
             return False
         
         elif command == 'models':
@@ -156,12 +176,17 @@ All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIM
         # Create a temporary conversation for analysis (not stored in main conversation)
         analysis_messages = [{"role": "user", "content": analysis_prompt}]
         
-        print("🧠 AI analyzing... ", end="", flush=True)
+        # Show which model is being used for analysis
+        analysis_model_display = self.analysis_model
+        if self.analysis_model != self.model:
+            print(f"🔍 Analysis model ({analysis_model_display}) analyzing... ", end="", flush=True)
+        else:
+            print("🧠 AI analyzing... ", end="", flush=True)
         
         response_content = ""
         try:
             for chunk in self.client.chat_stream(
-                model=self.model,
+                model=self.analysis_model,  # Use the analysis model here
                 messages=analysis_messages,
                 system=f"You are an assistant that must respond with exactly 5 words, each being one of these function names: {', '.join(self.actions.keys())}"
             ):
@@ -258,12 +283,17 @@ Please use this information to answer the user's question. Treat the action outp
             # Insert the context right before generating the response
             messages_for_ai.append({"role": "system", "content": context_message})
         
-        print("🤖 AI: ", end="", flush=True)
+        # Show which model is being used for chat response
+        chat_model_display = self.model
+        if self.analysis_model != self.model:
+            print(f"🤖 Chat model ({chat_model_display}): ", end="", flush=True)
+        else:
+            print("🤖 AI: ", end="", flush=True)
         
         response_content = ""
         try:
             for chunk in self.client.chat_stream(
-                model=self.model,
+                model=self.model,  # Use the main chat model here
                 messages=messages_for_ai,
                 system=self.system_message
             ):

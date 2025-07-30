@@ -15,26 +15,32 @@ def greet(name):
     return f"Hello, {name}!"
 
 
-def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant."):
+def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.", analysis_model: str = None):
     """Start a chat session with Ollama.
     
     Args:
         model: The model to use for chat (default: gemma3:4b)
         system: Optional system message to set context
+        analysis_model: Optional separate model for action analysis (defaults to main model)
     """
-    chat_interface = TerminalChat(model=model, system_message=system)
+    chat_interface = TerminalChat(
+        model=model, 
+        system_message=system, 
+        analysis_model=analysis_model
+    )
     chat_interface.run()
 
 
-def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1):
+def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = None):
     """Run built-in vibe tests.
     
     Args:
         model: The model to use for testing (default: gemma3:4b)
         iterations: Number of iterations per test (default: 1)
+        analysis_model: Optional separate model for action analysis (defaults to main model)
     """
     from .vibe_tests import run_vibe_tests as run_tests
-    return run_tests(model=model, iterations=iterations)
+    return run_tests(model=model, iterations=iterations, analysis_model=analysis_model)
 
 
 def main():
@@ -46,17 +52,24 @@ def main():
 Examples:
   ollamapy                          # Start chat with default model (gemma3:4b)
   ollamapy --model llama3.2:3b      # Use a specific model
+  ollamapy --analysis-model gemma2:2b --model llama3.2:7b  # Use small model for analysis, large for chat
   ollamapy --system "You are a helpful coding assistant"  # Set system message
   ollamapy --vibetest               # Run vibe tests with default settings
   ollamapy --vibetest -n 5          # Run vibe tests with 5 iterations each
   ollamapy --vibetest --model llama3.2:3b -n 3  # Custom model and iterations
+  ollamapy --vibetest --analysis-model gemma2:2b --model llama3.2:7b  # Separate models for testing
         """
     )
     
     parser.add_argument(
         "--model", "-m",
         default="gemma3:4b",
-        help="Model to use for chat or testing (default: gemma3:4b)"
+        help="Model to use for chat responses (default: gemma3:4b)"
+    )
+    
+    parser.add_argument(
+        "--analysis-model", "-a",
+        help="Model to use for action analysis (defaults to main model if not specified). Use a smaller, faster model for better performance."
     )
     
     parser.add_argument(
@@ -89,10 +102,18 @@ Examples:
         print(hello())
         print(greet("Python"))
     elif args.vibetest:
-        success = run_vibe_tests(model=args.model, iterations=args.iterations)
+        success = run_vibe_tests(
+            model=args.model, 
+            iterations=args.iterations, 
+            analysis_model=args.analysis_model
+        )
         sys.exit(0 if success else 1)
     else:
-        chat(model=args.model, system=args.system)
+        chat(
+            model=args.model, 
+            system=args.system, 
+            analysis_model=args.analysis_model
+        )
 
 
 if __name__ == "__main__":
