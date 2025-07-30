@@ -141,99 +141,127 @@ class TerminalChat:
             sys.exit(0)
     
     def analyze_with_ai(self, user_input: str) -> str:
-        """Use AI to analyze user input and decide which function to call.
+        """Use AI to analyze user input and decide which function to call."""
         
-        Args:
-            user_input: The user's input to analyze
-            
-        Returns:
-            The chosen function name
-        """
-        # Build the action descriptions for the prompt
-        action_list = "\n".join([
-            f"- {name}: {info['description']}"
-            for name, info in self.actions.items()
-        ])
-        action_list_name_repeated = "\n".join([
-            f"- {name} {name} {name} {name} {name}"
-            for name, info in self.actions.items()
-        ])
+        # Build a structured prompt that encourages clear, parseable output
+        action_descriptions = []
+        for name, info in self.actions.items():
+            action_descriptions.append(f'"{name}": "{info["description"]}"')
         
-        analysis_prompt = f"""Given this user input: "{user_input}"
+        analysis_prompt = f"""Analyze this user input and select the most appropriate action.
 
-You must choose which function to call from these available options with respect to the user input:
-{action_list}
+    User input: "{user_input}"
 
-Make sure to memorize those, they are important and are the only options you have to choose from.
+    Available actions:
+    {{{', '.join(action_descriptions)}}}
 
-Respond with only the name of the function you think is most relevent exactly 5 times space separated so that an algorithm can pick up the title of the function correctly without any typos.
+    Respond with ONLY a JSON object in this exact format:
+    {{"action": "action_name", "confidence": 0.95, "reasoning": "brief explanation"}}
 
-All possible responses (YOU MUST PICK 1 FUNCTION NAME ONLY AND REPEAT THAT 5 TIMES):
-{action_list_name_repeated}
+    The action MUST be one of: {', '.join(self.actions.keys())}
+    Confidence should be between 0 and 1.
+    If no action clearly matches, use "null" with lower confidence."""
 
-"""
-
-        # Create a temporary conversation for analysis (not stored in main conversation)
-        analysis_messages = [{"role": "user", "content": analysis_prompt}]
-        
-        # Show which model is being used for analysis
-        analysis_model_display = self.analysis_model
-        if self.analysis_model != self.model:
-            print(f"🔍 Analysis model ({analysis_model_display}) analyzing... ", end="", flush=True)
-        else:
-            print("🧠 AI analyzing... ", end="", flush=True)
+        print(f"🔍 Analysis model ({self.analysis_model}) analyzing... ", end="", flush=True)
         
         response_content = ""
         try:
             for chunk in self.client.chat_stream(
-                model=self.analysis_model,  # Use the analysis model here
-                messages=analysis_messages,
-                system=f"You are an assistant that must respond with exactly 5 words, each being one of these function names: {', '.join(self.actions.keys())}"
+                model=self.analysis_model,
+                messages=[{"role": "user", "content": analysis_prompt}],
+                system="You are a function selector. Respond only with valid JSON."
             ):
                 response_content += chunk
             
-            print(f"'{response_content.strip()}'")
+            print(f"✓")
             
-            # Parse the response and determine function
-            chosen_function = self.determine_function_from_response(response_content)
+            # Try to parse as JSON first (most reliable)
+            chosen_function = self.parse_json_response(response_content)
+            
+            # If JSON parsing fails, fall back to keyword matching
+            if not chosen_function:
+                chosen_function = self.fallback_keyword_matching(response_content, user_input)
+            
             print(f"🎯 Decision: {chosen_function}")
-            
             return chosen_function
             
         except Exception as e:
             print(f"\n❌ Error during analysis: {e}")
-            # Default to null action
-            print(f"🎲 Defaulting to 'null'")
             return "null"
-    
-    def determine_function_from_response(self, response: str) -> str:
-        """Use confidence-based fuzzy matching to determine which function to call.
+
+    def parse_json_response(self, response: str) -> Optional[str]:
+        """Try to parse JSON response from AI."""
+        import json
+        import re
         
-        Args:
-            response: The AI's response containing the 5 words
+        # Extract JSON from response (in case there's extra text)
+        json_match = re.search(r'\{[^{}]+\}', response)
+        if not json_match:
+            return None
+        
+        try:
+            data = json.loads(json_match.group())
+            action = data.get('action', '').lower()
+            confidence = data.get('confidence', 0)
+            reasoning = data.get('reasoning', '')
             
-        Returns:
-            The function name to call
-        """
-        # Split response into words and take first 5
-        words = response.strip().lower().split()[:5]
+            # Validate action exists
+            if action in [a.lower() for a in self.actions.keys()]:
+                # Find the correct case
+                for correct_name in self.actions.keys():
+                    if correct_name.lower() == action:
+                        print(f"📊 Confidence: {confidence:.2f} - {reasoning[:50]}...")
+                        return correct_name
+        except json.JSONDecodeError:
+            pass
         
-        # Count occurrences and calculate confidence for each action
-        action_scores = {}
-        for action_name in self.actions:
-            action_scores[action_name] = 0.0
+        return None
+
+    def fallback_keyword_matching(self, response: str, user_input: str) -> str:
+        """Fallback method using keyword and intent matching."""
+        response_lower = response.lower()
+        user_input_lower = user_input.lower()
+        
+        scores = {}
+        
+        for action_name, action_info in self.actions.items():
+            score = 0.0
+            action_lower = action_name.lower()
             
-            for word in words:
-                # Calculate similarity between word and action name
-                similarity = SequenceMatcher(None, word.lower(), action_name.lower()).ratio()
-                action_scores[action_name] += similarity
+            # Direct mention in response
+            if action_lower in response_lower:
+                score += 0.5
+            
+            # Check description keywords against user input
+            description_words = action_info['description'].lower().split()
+            important_words = [w for w in description_words if len(w) > 3]
+            
+            for word in important_words:
+                if word in user_input_lower:
+                    score += 0.2
+            
+            # Check for semantic matches (you could expand this)
+            if action_name == "getWeather":
+                weather_keywords = ['weather', 'rain', 'temperature', 'hot', 'cold', 'sunny', 'cloudy', 'forecast', 'umbrella', 'jacket']
+                score += sum(0.15 for keyword in weather_keywords if keyword in user_input_lower)
+            
+            elif action_name == "getTime":
+                time_keywords = ['time', 'clock', 'hour', 'minute', 'when', 'now', 'current time', "o'clock"]
+                score += sum(0.15 for keyword in time_keywords if keyword in user_input_lower)
+            
+            elif action_name == "null":
+                # Slight bias toward null for general conversation
+                score += 0.1
+            
+            scores[action_name] = min(score, 1.0)  # Cap at 1.0
         
-        # Show confidence scores for available actions
-        scores_display = ", ".join([f"{name}: {score:.2f}" for name, score in action_scores.items()])
-        print(f"📊 Confidence scores - {scores_display}")
+        # Show scores in debug mode
+        if scores:
+            scores_display = ", ".join([f"{name}: {score:.2f}" for name, score in scores.items()])
+            print(f"📊 Fallback scores - {scores_display}")
         
-        # Return the action with highest score
-        return max(action_scores, key=action_scores.get)
+        # Return highest scoring action
+        return max(scores, key=scores.get)
     
     def execute_action(self, function_name: str) -> Optional[str]:
         """Execute the chosen action function and return its output.
