@@ -1,4 +1,31 @@
-# OllamaPy
+## Meta-Reasoning System
+
+OllamaPy features a unique meta-reasoning system where the AI analyzes user input and dynamically selects from available actions. The AI examines the intent behind your message and chooses the most appropriate response action.
+
+### Dual Model Architecture
+
+For optimal performance, you can use two different models:
+- **Analysis Model**: A smaller, faster model (like `gemma2:2b`) for quick action selection
+- **Chat Model**: A larger, more capable model (like `llama3.2:7b`) for generating responses
+
+This architecture provides the best of both worlds - fast decision-making and high-quality responses.
+
+```bash
+# Example: Fast analysis with powerful chat
+ollamapy --analysis-model gemma2:2b --model llama3.2:7b
+```
+
+### Dual Model Architecture
+
+For optimal performance, you can use two different models:
+- **Analysis Model**: A smaller, faster model (like `gemma2:2b`) for quick action selection
+- **Chat Model**: A larger, more capable model (like `llama3.2:7b`) for generating responses
+
+This architecture provides the best of both worlds - fast decision-making and high-quality responses.
+
+```bash
+# Example: Fast analysis with powerful chat
+ollamapy --analysis-model gemma2:2b --model# OllamaPy
 
 A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency.
 
@@ -64,6 +91,15 @@ ollamapy --model gemma2:2b
 ollamapy -m codellama:7b
 ```
 
+### Dual Model Setup (Analysis + Chat)
+```bash
+# Use a small, fast model for analysis and a larger model for chat
+ollamapy --analysis-model gemma2:2b --model llama3.2:7b
+ollamapy -a gemma2:2b -m mistral:7b
+
+# This is great for performance - small model does action selection, large model handles conversation
+```
+
 ### System Message
 ```bash
 # Set context for the AI
@@ -73,8 +109,8 @@ ollamapy -s "You are a creative writing partner"
 
 ### Combined Options
 ```bash
-# Use custom model with system message
-ollamapy --model mistral:7b --system "You are a helpful coding assistant"
+# Use custom models with system message
+ollamapy --analysis-model gemma2:2b --model mistral:7b --system "You are a helpful coding assistant"
 ```
 
 ## Meta-Reasoning System
@@ -112,6 +148,9 @@ ollamapy --vibetest -n 5
 
 # Test a specific model
 ollamapy --vibetest --model gemma2:2b -n 3
+
+# Use dual models for testing (analysis + chat)
+ollamapy --vibetest --analysis-model gemma2:2b --model llama3.2:7b -n 5
 ```
 
 ### Understanding Results
@@ -150,7 +189,7 @@ While chatting, you can use these built-in commands:
 - `quit`, `exit`, `bye` - End the conversation
 - `clear` - Clear conversation history
 - `help` - Show available commands
-- `model` - Display current model
+- `model` - Display current models (both chat and analysis)
 - `models` - List all available models
 - `actions` - Show available actions the AI can choose from
 
@@ -161,8 +200,12 @@ You can also use OllamaPy programmatically:
 ```python
 from ollamapy import TerminalChat, OllamaClient
 
-# Start a chat session programmatically
-chat = TerminalChat(model="gemma3:4b", system_message="You are a helpful assistant")
+# Start a chat session programmatically with dual models
+chat = TerminalChat(
+    model="llama3.2:7b", 
+    analysis_model="gemma2:2b",
+    system_message="You are a helpful assistant"
+)
 chat.run()
 
 # Or use the client directly
@@ -172,9 +215,13 @@ messages = [{"role": "user", "content": "Hello!"}]
 for chunk in client.chat_stream("gemma3:4b", messages):
     print(chunk, end="", flush=True)
 
-# Run vibe tests programmatically
+# Run vibe tests programmatically with dual models
 from ollamapy import run_vibe_tests
-success = run_vibe_tests(model="gemma2:2b", iterations=5)
+success = run_vibe_tests(
+    model="llama3.2:7b", 
+    analysis_model="gemma2:2b", 
+    iterations=5
+)
 ```
 
 ### Available Classes and Functions
