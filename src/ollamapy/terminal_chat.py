@@ -1,22 +1,26 @@
 """Terminal-based chat interface for Ollama with meta-reasoning."""
 
 import sys
-from typing import List, Dict, Optional
+import json
+import re
+from typing import List, Dict, Optional, Tuple, Any
 from difflib import SequenceMatcher
 from .ollama_client import OllamaClient
-from .actions import get_available_actions
+from .actions import get_available_actions, execute_action
 
 
 class TerminalChat:
     """Terminal-based chat interface with AI meta-reasoning."""
     
-    def __init__(self, model: str = "gemma3:4b", system_message: str = "You are a helpful assistant.", analysis_model: str = None):
+    def __init__(self, model: str = "gemma3:4b", system_message: str = "You are a helpful assistant.", 
+                 analysis_model: str = "gemma:3:4b", two_step_analysis: bool = True):
         """Initialize the chat interface.
         
         Args:
             model: The model to use for chat responses
             system_message: Optional system message to set context
             analysis_model: Optional separate model for action analysis (defaults to main model)
+            two_step_analysis: If True, use separate steps for action and parameter selection
         """
         self.client = OllamaClient()
         self.model = model
@@ -24,6 +28,7 @@ class TerminalChat:
         self.system_message = system_message
         self.conversation: List[Dict[str, str]] = []
         self.actions = get_available_actions()
+        self.two_step_analysis = two_step_analysis
         
     def setup(self) -> bool:
         """Setup the chat environment and ensure models are available."""
@@ -64,12 +69,20 @@ class TerminalChat:
         else:
             print(f"🔍 Using same model for analysis and chat")
         
+        if self.two_step_analysis:
+            print(f"🔄 Two-step analysis mode enabled")
+        
         if available_models:
             print(f"📚 Available models: {', '.join(available_models[:3])}{'...' if len(available_models) > 3 else ''}")
         
         print(f"\n🧠 Meta-reasoning mode: AI will analyze your input and choose from {len(self.actions)} available actions:")
-        for action_name in self.actions:
-            print(f"   • {action_name}")
+        for action_name, action_info in self.actions.items():
+            params = action_info.get('parameters', {})
+            if params:
+                param_list = ', '.join([f"{p}: {info['type']}" for p, info in params.items()])
+                print(f"   • {action_name} ({param_list})")
+            else:
+                print(f"   • {action_name}")
         print("\n💬 Chat started! Type 'quit', 'exit', or 'bye' to end the conversation.")
         print("   Type 'clear' to clear conversation history.")
         print("   Type 'help' for more commands.\n")
@@ -124,7 +137,12 @@ class TerminalChat:
         elif command == 'actions':
             print(f"🔧 Available actions ({len(self.actions)}):")
             for name, info in self.actions.items():
-                print(f"   • {name}: {info['description']}")
+                params = info.get('parameters', {})
+                if params:
+                    param_list = ', '.join([f"{p}: {spec['type']}" for p, spec in params.items()])
+                    print(f"   • {name}({param_list}): {info['description']}")
+                else:
+                    print(f"   • {name}: {info['description']}")
             return False
         
         return False
@@ -140,8 +158,130 @@ class TerminalChat:
             print("\n\n👋 Goodbye! Thanks for chatting!")
             sys.exit(0)
     
+    def analyze_with_ai_single_step(self, user_input: str) -> Tuple[str, Dict[str, Any]]:
+        """Single-step analysis: AI selects both action and parameters in one go."""
+        
+        # Build action descriptions including parameters
+        action_descriptions = []
+        for name, info in self.actions.items():
+            desc = f'"{name}": "{info["description"]}"'
+            params = info.get('parameters', {})
+            if params:
+                param_desc = ", parameters: {" + ", ".join([
+                    f'"{p}": {{"type": "{spec["type"]}", "required": {str(spec.get("required", False)).lower()}}}'
+                    for p, spec in params.items()
+                ]) + "}"
+                desc += param_desc
+            action_descriptions.append(desc)
+        
+        analysis_prompt = f"""Analyze this user input and select the most appropriate action with parameters.
+
+User input: "{user_input}"
+
+Available actions:
+{{{', '.join(action_descriptions)}}}
+
+Respond with ONLY a JSON object in this exact format:
+{{"action": "action_name", "parameters": {{"param_name": value}}, "confidence": 0.95, "reasoning": "brief explanation"}}
+
+Rules:
+- The action MUST be one of: {', '.join(self.actions.keys())}
+- Include parameters ONLY if the action requires them
+- Extract parameter values from the user input when possible
+- For number parameters, extract the numeric value
+- For string parameters, extract relevant text
+- If a required parameter can't be extracted, use a reasonable default or ask for clarification
+- Confidence should be between 0 and 1"""
+
+        print(f"🔍 Analysis model ({self.analysis_model}) analyzing... ", end="", flush=True)
+        
+        response_content = ""
+        try:
+            for chunk in self.client.chat_stream(
+                model=self.analysis_model,
+                messages=[{"role": "user", "content": analysis_prompt}],
+                system="You are a function selector. Respond only with valid JSON."
+            ):
+                response_content += chunk
+            
+            print("✓")
+            
+            # Parse the response
+            result = self.parse_ai_decision(response_content, user_input)
+            
+            print(f"🎯 Decision: {result[0]}")
+            if result[1]:
+                print(f"📊 Parameters: {result[1]}")
+            
+            return result
+            
+        except Exception as e:
+            print(f"\n❌ Error during analysis: {e}")
+            return "null", {}
+    
+    def analyze_with_ai_two_step(self, user_input: str) -> Tuple[str, Dict[str, Any]]:
+        """Two-step analysis: First select action, then extract parameters."""
+        
+        # Step 1: Select action (existing logic)
+        action = self.analyze_with_ai(user_input)
+        
+        # Step 2: Extract parameters if needed
+        action_info = self.actions.get(action, {})
+        params_spec = action_info.get('parameters', {})
+        
+        if not params_spec:
+            return action, {}
+        
+        # Build parameter extraction prompt
+        param_descriptions = []
+        for param_name, spec in params_spec.items():
+            required = "required" if spec.get('required', False) else "optional"
+            param_descriptions.append(
+                f'"{param_name}": type={spec["type"]}, {required}, description="{spec["description"]}"'
+            )
+        
+        extract_prompt = f"""Extract parameter values for the '{action}' action from this user input.
+
+User input: "{user_input}"
+
+Required parameters:
+{{{', '.join(param_descriptions)}}}
+
+Respond with ONLY a JSON object containing the parameter values:
+{{"param_name": value, ...}}
+
+Rules:
+- Extract numeric values for number type parameters
+- Extract relevant text for string type parameters
+- If a value can't be found, omit it from the response
+- Be precise with number extraction"""
+
+        print(f"📊 Extracting parameters... ", end="", flush=True)
+        
+        response_content = ""
+        try:
+            for chunk in self.client.chat_stream(
+                model=self.analysis_model,
+                messages=[{"role": "user", "content": extract_prompt}],
+                system="You are a parameter extractor. Respond only with valid JSON."
+            ):
+                response_content += chunk
+            
+            print("✓")
+            
+            # Parse parameters
+            parameters = self.parse_parameters(response_content)
+            if parameters:
+                print(f"📊 Parameters: {parameters}")
+            
+            return action, parameters
+            
+        except Exception as e:
+            print(f"\n❌ Error extracting parameters: {e}")
+            return action, {}
+    
     def analyze_with_ai(self, user_input: str) -> str:
-        """Use AI to analyze user input and decide which function to call."""
+        """Original method for action selection only (used in two-step mode)."""
         
         # Build a structured prompt that encourages clear, parseable output
         action_descriptions = []
@@ -150,19 +290,19 @@ class TerminalChat:
         
         analysis_prompt = f"""Analyze this user input and select the most appropriate action.
 
-    User input: "{user_input}"
+User input: "{user_input}"
 
-    Available actions:
-    {{{', '.join(action_descriptions)}}}
+Available actions:
+{{{', '.join(action_descriptions)}}}
 
-    Respond with ONLY a JSON object in this exact format:
-    {{"action": "action_name", "confidence": 0.95, "reasoning": "brief explanation"}}
+Respond with ONLY a JSON object in this exact format:
+{{"action": "action_name", "confidence": 0.95, "reasoning": "brief explanation"}}
 
-    The action MUST be one of: {', '.join(self.actions.keys())}
-    Confidence should be between 0 and 1.
-    If no action clearly matches, use "null" with lower confidence."""
+The action MUST be one of: {', '.join(self.actions.keys())}
+Confidence should be between 0 and 1.
+If no action clearly matches, use "null" with lower confidence."""
 
-        print(f"🔍 Analysis model ({self.analysis_model}) analyzing... ", end="", flush=True)
+        print(f"🔍 Analysis model ({self.analysis_model}) selecting action... ", end="", flush=True)
         
         response_content = ""
         try:
@@ -182,19 +322,52 @@ class TerminalChat:
             if not chosen_function:
                 chosen_function = self.fallback_keyword_matching(response_content, user_input)
             
-            print(f"🎯 Decision: {chosen_function}")
+            print(f"🎯 Action selected: {chosen_function}")
             return chosen_function
             
         except Exception as e:
             print(f"\n❌ Error during analysis: {e}")
             return "null"
+    
+    def parse_ai_decision(self, response: str, user_input: str) -> Tuple[str, Dict[str, Any]]:
+        """Parse AI response to extract action and parameters."""
+        
+        # Try JSON parsing first
+        json_match = re.search(r'\{[^{}]+\}', response)
+        if json_match:
+            try:
+                data = json.loads(json_match.group())
+                action = data.get('action', '').lower()
+                parameters = data.get('parameters', {})
+                confidence = data.get('confidence', 0)
+                reasoning = data.get('reasoning', '')
+                
+                # Validate action exists
+                if action in [a.lower() for a in self.actions.keys()]:
+                    # Find the correct case
+                    for correct_name in self.actions.keys():
+                        if correct_name.lower() == action:
+                            print(f"📊 Confidence: {confidence:.2f} - {reasoning[:50]}...")
+                            return correct_name, parameters
+            except json.JSONDecodeError:
+                pass
+        
+        # Fallback to simple action detection without parameters
+        chosen_action = self.fallback_keyword_matching(response, user_input)
+        return chosen_action, {}
+    
+    def parse_parameters(self, response: str) -> Dict[str, Any]:
+        """Parse parameter extraction response."""
+        json_match = re.search(r'\{[^{}]+\}', response)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except json.JSONDecodeError:
+                pass
+        return {}
 
     def parse_json_response(self, response: str) -> Optional[str]:
         """Try to parse JSON response from AI."""
-        import json
-        import re
-        
-        # Extract JSON from response (in case there's extra text)
         json_match = re.search(r'\{[^{}]+\}', response)
         if not json_match:
             return None
@@ -240,7 +413,7 @@ class TerminalChat:
                 if word in user_input_lower:
                     score += 0.2
             
-            # Check for semantic matches (you could expand this)
+            # Check for semantic matches
             if action_name == "getWeather":
                 weather_keywords = ['weather', 'rain', 'temperature', 'hot', 'cold', 'sunny', 'cloudy', 'forecast', 'umbrella', 'jacket']
                 score += sum(0.15 for keyword in weather_keywords if keyword in user_input_lower)
@@ -248,6 +421,14 @@ class TerminalChat:
             elif action_name == "getTime":
                 time_keywords = ['time', 'clock', 'hour', 'minute', 'when', 'now', 'current time', "o'clock"]
                 score += sum(0.15 for keyword in time_keywords if keyword in user_input_lower)
+            
+            elif action_name == "square_root":
+                sqrt_keywords = ['square root', 'sqrt', '√', 'root']
+                score += sum(0.25 for keyword in sqrt_keywords if keyword in user_input_lower)
+            
+            elif action_name == "calculate":
+                calc_keywords = ['calculate', 'compute', 'add', 'subtract', 'multiply', 'divide', '+', '-', '*', '/', 'equals', 'plus', 'minus', 'times']
+                score += sum(0.15 for keyword in calc_keywords if keyword in user_input_lower)
             
             elif action_name == "null":
                 # Slight bias toward null for general conversation
@@ -263,22 +444,26 @@ class TerminalChat:
         # Return highest scoring action
         return max(scores, key=scores.get)
     
-    def execute_action(self, function_name: str) -> Optional[str]:
-        """Execute the chosen action function and return its output.
+    def execute_action_wrapper(self, function_name: str, parameters: Dict[str, Any] = None) -> Optional[str]:
+        """Wrapper for executing actions with parameters.
         
         Args:
             function_name: Name of the function to execute
+            parameters: Dictionary of parameter values
             
         Returns:
-            The output from the action, or None if action not found
+            The output from the action, or None for null action
         """
-        if function_name in self.actions:
-            print(f"🚀 Executing action: {function_name}")
-            result = self.actions[function_name]['function']()
-            return result
-        else:
-            print(f"❌ Unknown function: {function_name}")
+        if function_name == "null":
             return None
+        
+        print(f"🚀 Executing action: {function_name}")
+        if parameters:
+            print(f"   with parameters: {parameters}")
+        
+        result = execute_action(function_name, parameters)
+        print(f"🚀 {function_name} results: {result} ")
+        return result
     
     def generate_ai_response_with_context(self, user_input: str, action_name: str, action_output: Optional[str]):
         """Generate AI response with action context.
@@ -348,11 +533,14 @@ Please use this information to answer the user's question. Treat the action outp
             if self.handle_command(user_input):
                 break
             
-            # Meta-reasoning: AI analyzes input and chooses function
-            chosen_function = self.analyze_with_ai(user_input)
+            # Meta-reasoning: AI analyzes input and chooses function with parameters
+            if self.two_step_analysis:
+                chosen_function, parameters = self.analyze_with_ai_two_step(user_input)
+            else:
+                chosen_function, parameters = self.analyze_with_ai_single_step(user_input)
             
-            # Execute the chosen function and get its output
-            action_output = self.execute_action(chosen_function)
+            # Execute the chosen function with parameters and get its output
+            action_output = self.execute_action_wrapper(chosen_function, parameters)
             
             # Generate AI response with action context
             self.generate_ai_response_with_context(user_input, chosen_function, action_output)

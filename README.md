@@ -1,31 +1,4 @@
-## Meta-Reasoning System
-
-OllamaPy features a unique meta-reasoning system where the AI analyzes user input and dynamically selects from available actions. The AI examines the intent behind your message and chooses the most appropriate response action.
-
-### Dual Model Architecture
-
-For optimal performance, you can use two different models:
-- **Analysis Model**: A smaller, faster model (like `gemma2:2b`) for quick action selection
-- **Chat Model**: A larger, more capable model (like `llama3.2:7b`) for generating responses
-
-This architecture provides the best of both worlds - fast decision-making and high-quality responses.
-
-```bash
-# Example: Fast analysis with powerful chat
-ollamapy --analysis-model gemma2:2b --model llama3.2:7b
-```
-
-### Dual Model Architecture
-
-For optimal performance, you can use two different models:
-- **Analysis Model**: A smaller, faster model (like `gemma2:2b`) for quick action selection
-- **Chat Model**: A larger, more capable model (like `llama3.2:7b`) for generating responses
-
-This architecture provides the best of both worlds - fast decision-making and high-quality responses.
-
-```bash
-# Example: Fast analysis with powerful chat
-ollamapy --analysis-model gemma2:2b --model# OllamaPy
+# OllamaPy
 
 A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency.
 
@@ -35,8 +8,9 @@ A powerful terminal-based chat interface for Ollama with AI meta-reasoning capab
 - 🔄 **Streaming Responses** - Real-time streaming for natural conversation flow
 - 📚 **Model Management** - Automatic model pulling and listing of available models
 - 🧠 **Meta-Reasoning** - AI analyzes user input and selects appropriate actions
-- 🛠️ **Extensible Actions** - Easy-to-extend action system for AI decision-making
+- 🛠️ **Extensible Actions** - Easy-to-extend action system with parameter support
 - 🧪 **AI Vibe Tests** - Built-in tests to evaluate AI consistency and reliability
+- 🔢 **Parameter Extraction** - AI intelligently extracts parameters from natural language
 
 ## Prerequisites
 
@@ -100,6 +74,14 @@ ollamapy -a gemma2:2b -m mistral:7b
 # This is great for performance - small model does action selection, large model handles conversation
 ```
 
+### Two-Step Analysis Mode
+```bash
+# Enable two-step analysis (better for smaller models)
+ollamapy --two-step --analysis-model gemma2:2b
+
+# Two-step mode separates action selection from parameter extraction
+```
+
 ### System Message
 ```bash
 # Set context for the AI
@@ -109,29 +91,277 @@ ollamapy -s "You are a creative writing partner"
 
 ### Combined Options
 ```bash
-# Use custom models with system message
-ollamapy --analysis-model gemma2:2b --model mistral:7b --system "You are a helpful coding assistant"
+# Use custom models with system message and two-step mode
+ollamapy --two-step --analysis-model gemma2:2b --model mistral:7b --system "You are a helpful assistant"
 ```
 
 ## Meta-Reasoning System
 
 OllamaPy features a unique meta-reasoning system where the AI analyzes user input and dynamically selects from available actions. The AI examines the intent behind your message and chooses the most appropriate response action.
 
+### Dual Model Architecture
+
+For optimal performance, you can use two different models:
+- **Analysis Model**: A smaller, faster model (like `gemma2:2b`) for quick action selection
+- **Chat Model**: A larger, more capable model (like `llama3.2:7b`) for generating responses
+
+This architecture provides the best of both worlds - fast decision-making and high-quality responses.
+
+```bash
+# Example: Fast analysis with powerful chat
+ollamapy --analysis-model gemma2:2b --model llama3.2:7b
+```
+
+### Analysis Modes
+
+OllamaPy supports two analysis modes:
+
+1. **Single-Step Mode** (default): The AI selects the action and extracts parameters in one analysis
+2. **Two-Step Mode**: The AI first selects the action, then extracts parameters in a separate step
+
+Two-step mode is particularly useful with smaller models that might struggle with complex multi-task analysis.
+
+```bash
+# Enable two-step mode
+ollamapy --two-step
+```
+
 ### Currently Available Actions
 
-- **null** - Default conversation mode. Used for normal chat when no special action is needed. This is the safe fallback option for general conversation.
-- **getWeather** - Provides weather information including temperature, humidity, UV index, and wind conditions. Triggered by weather-related queries.
-- **getTime** - Returns the current date and time. Activated when users ask about the current time.
+- **null** - Default conversation mode. Used for normal chat when no special action is needed
+- **getWeather** - Provides weather information (accepts optional location parameter)
+- **getTime** - Returns the current date and time (accepts optional timezone parameter)
+- **square_root** - Calculates the square root of a number (requires number parameter)
+- **calculate** - Evaluates basic mathematical expressions (requires expression parameter)
 
 ### How Meta-Reasoning Works
 
 When you send a message, the AI:
 1. **Analyzes** your input to understand intent
-2. **Evaluates** which action is most appropriate
-3. **Executes** the chosen action (if not null)
-4. **Responds** using the action's output as context
+2. **Selects** the most appropriate action
+3. **Extracts** any required parameters from your input
+4. **Executes** the chosen action with parameters
+5. **Responds** using the action's output as context
 
-The system is designed to be easily extensible - new actions can be added by registering functions with descriptions and optional vibe test phrases.
+## Creating Custom Actions
+
+The action system is designed to be easily extensible. Here's a comprehensive guide on creating your own actions:
+
+### Basic Action Structure
+
+```python
+from ollamapy.actions import register_action
+
+@register_action(
+    name="action_name",
+    description="When to use this action",
+    vibe_test_phrases=["test phrase 1", "test phrase 2"],  # Optional
+    parameters={  # Optional
+        "param_name": {
+            "type": "string|number",
+            "description": "What this parameter is for",
+            "required": True|False
+        }
+    }
+)
+def action_name(param_name=None):
+    """Your action implementation."""
+    # Do something useful
+    return "Result string that will be given to the AI as context"
+```
+
+### Example 1: Simple Action (No Parameters)
+
+```python
+@register_action(
+    name="joke",
+    description="Use when the user wants to hear a joke or needs cheering up",
+    vibe_test_phrases=[
+        "tell me a joke",
+        "I need a laugh",
+        "cheer me up",
+        "make me smile"
+    ]
+)
+def joke():
+    """Tell a random joke."""
+    import random
+    jokes = [
+        "Why don't scientists trust atoms? Because they make up everything!",
+        "Why did the scarecrow win an award? He was outstanding in his field!",
+        "Why don't eggs tell jokes? They'd crack each other up!"
+    ]
+    return random.choice(jokes)
+```
+
+### Example 2: Action with Required Parameter
+
+```python
+@register_action(
+    name="convert_temp",
+    description="Convert temperature between Celsius and Fahrenheit",
+    vibe_test_phrases=[
+        "convert 32 fahrenheit to celsius",
+        "what's 100C in fahrenheit?",
+        "20 degrees celsius in F"
+    ],
+    parameters={
+        "value": {
+            "type": "number",
+            "description": "The temperature value to convert",
+            "required": True
+        },
+        "unit": {
+            "type": "string",
+            "description": "The unit to convert from (C or F)",
+            "required": True
+        }
+    }
+)
+def convert_temp(value, unit):
+    """Convert temperature between units."""
+    unit = unit.upper()
+    if unit == 'C':
+        # Celsius to Fahrenheit
+        result = (value * 9/5) + 32
+        return f"{value}°C is equal to {result:.1f}°F"
+    elif unit == 'F':
+        # Fahrenheit to Celsius
+        result = (value - 32) * 5/9
+        return f"{value}°F is equal to {result:.1f}°C"
+    else:
+        return f"Unknown unit '{unit}'. Please use 'C' for Celsius or 'F' for Fahrenheit."
+```
+
+### Example 3: Action with Optional Parameters
+
+```python
+@register_action(
+    name="roll_dice",
+    description="Roll dice for games or random number generation",
+    vibe_test_phrases=[
+        "roll a die",
+        "roll 2d6",
+        "roll three dice",
+        "give me a random number between 1 and 6"
+    ],
+    parameters={
+        "count": {
+            "type": "number",
+            "description": "Number of dice to roll",
+            "required": False  # Defaults to 1 if not specified
+        },
+        "sides": {
+            "type": "number",
+            "description": "Number of sides on each die",
+            "required": False  # Defaults to 6 if not specified
+        }
+    }
+)
+def roll_dice(count=1, sides=6):
+    """Roll dice and return results."""
+    import random
+    
+    # Ensure positive integers
+    count = max(1, int(count))
+    sides = max(2, int(sides))
+    
+    if count == 1:
+        result = random.randint(1, sides)
+        return f"Rolled a d{sides}: {result}"
+    else:
+        results = [random.randint(1, sides) for _ in range(count)]
+        total = sum(results)
+        return f"Rolled {count}d{sides}: {results} (Total: {total})"
+```
+
+### Best Practices for Creating Actions
+
+1. **Clear Naming**: Use descriptive names that clearly indicate what the action does
+   ```python
+   # Good: specific and clear
+   name="calculate_compound_interest"
+   
+   # Avoid: too generic
+   name="calculate"
+   ```
+
+2. **Detailed Descriptions**: Help the AI understand when to use your action
+   ```python
+   # Good: specific keywords and use cases
+   description="Calculate compound interest for investments. Keywords: compound interest, investment return, APY"
+   
+   # Avoid: too vague
+   description="Do math stuff"
+   ```
+
+3. **Comprehensive Test Phrases**: Include varied ways users might request the action
+   ```python
+   vibe_test_phrases=[
+       "calculate compound interest on $1000",
+       "what's my investment worth after 5 years?",
+       "compound interest calculator",
+       "how much will I earn with 5% APY?"
+   ]
+   ```
+
+4. **Parameter Validation**: Always validate and handle edge cases
+   ```python
+   def safe_divide(numerator, denominator):
+       """Safely divide two numbers."""
+       if denominator == 0:
+           return "Error: Cannot divide by zero!"
+       
+       result = numerator / denominator
+       return f"{numerator} ÷ {denominator} = {result}"
+   ```
+
+5. **Meaningful Return Values**: Return informative strings that help the AI respond
+   ```python
+   # Good: provides context and formatting
+   return f"The calculation result is {result:.2f} ({increase:.1f}% increase)"
+   
+   # Avoid: just the raw number
+   return str(result)
+   ```
+
+6. **Error Handling**: Always handle potential errors gracefully
+   ```python
+   try:
+       result = complex_calculation(param)
+       return f"Success: {result}"
+   except ValueError as e:
+       return f"Error: Invalid input - {str(e)}"
+   except Exception as e:
+       return f"Unexpected error: {str(e)}"
+   ```
+
+### Adding Your Actions to OllamaPy
+
+1. Create a new Python file for your actions (e.g., `my_actions.py`)
+2. Import and implement your actions using the patterns above
+3. Import your actions module before starting OllamaPy
+
+```python
+# my_script.py
+from ollamapy import chat
+import my_actions  # This registers your actions
+
+# Now start chat with your custom actions available
+chat()
+```
+
+### Testing Your Actions
+
+Always test your actions with vibe tests to ensure the AI can reliably select them:
+
+```bash
+# Run vibe tests including your custom actions
+ollamapy --vibetest
+
+# Test with different models
+ollamapy --vibetest --model llama3.2:3b -n 5
+```
 
 ## Vibe Tests
 
@@ -151,36 +381,19 @@ ollamapy --vibetest --model gemma2:2b -n 3
 
 # Use dual models for testing (analysis + chat)
 ollamapy --vibetest --analysis-model gemma2:2b --model llama3.2:7b -n 5
+
+# Test with two-step analysis
+ollamapy --vibetest --two-step --model gemma2:2b
 ```
 
 ### Understanding Results
 
-Vibe tests evaluate the AI's ability to consistently choose appropriate actions based on clearly-intentioned phrases. The tests measure:
+Vibe tests evaluate:
+- **Action Selection**: How reliably the AI chooses the correct action
+- **Parameter Extraction**: How accurately the AI extracts required parameters
+- **Consistency**: How stable the AI's decisions are across multiple runs
 
-- **Consistency**: How reliably the AI interprets similar sentiments
-- **Accuracy**: How well the AI matches expected human intent
-- **Statistical Confidence**: Reliability across multiple test runs
-
-Tests pass with a 60% or higher success rate, ensuring the AI demonstrates reasonable consistency in decision-making.
-
-### Example Vibe Test Phrases
-
-The system includes built-in test phrases for each action:
-
-**getWeather action**:
-- "Is it raining right now?"
-- "Do I need a Jacket when I go outside due to weather?"
-- "Is it going to be hot today?"
-
-**getTime action**:
-- "what is the current time?"
-- "what time is it?"
-- "Is it 4 o'clock?"
-
-**null action**:
-- "Just talk to me without using any tools"
-- "chat only please"
-- "null null null null null"
+Tests pass with a 60% or higher success rate, ensuring reasonable consistency in decision-making.
 
 ## Chat Commands
 
@@ -198,13 +411,14 @@ While chatting, you can use these built-in commands:
 You can also use OllamaPy programmatically:
 
 ```python
-from ollamapy import TerminalChat, OllamaClient
+from ollamapy import TerminalChat, OllamaClient, execute_action
 
 # Start a chat session programmatically with dual models
 chat = TerminalChat(
     model="llama3.2:7b", 
     analysis_model="gemma2:2b",
-    system_message="You are a helpful assistant"
+    system_message="You are a helpful assistant",
+    two_step_analysis=True
 )
 chat.run()
 
@@ -214,6 +428,10 @@ messages = [{"role": "user", "content": "Hello!"}]
 
 for chunk in client.chat_stream("gemma3:4b", messages):
     print(chunk, end="", flush=True)
+
+# Execute actions programmatically
+result = execute_action("square_root", {"number": 16})
+print(result)  # "The square root of 16 is 4"
 
 # Run vibe tests programmatically with dual models
 from ollamapy import run_vibe_tests
@@ -229,7 +447,9 @@ success = run_vibe_tests(
 - **`TerminalChat`** - High-level terminal chat interface with meta-reasoning
 - **`OllamaClient`** - Low-level API client for Ollama
 - **`run_vibe_tests()`** - Execute vibe tests programmatically
-- **`get_available_actions()`** - Get registered actions from the action system
+- **`get_available_actions()`** - Get all registered actions
+- **`execute_action()`** - Execute an action with parameters programmatically
+- **`register_action()`** - Decorator for creating new actions
 
 ## Configuration
 
@@ -243,38 +463,16 @@ client = OllamaClient(base_url="http://your-ollama-server:11434")
 
 ## Supported Models
 
-OllamaPy works with any model available in Ollama. The default model is `gemma3:4b`. Popular options include:
+OllamaPy works with any model available in Ollama. Popular options include:
 
 - `gemma3:4b` (default) - Fast and capable general-purpose model
 - `llama3.2:3b` - Efficient and responsive for most tasks
-- `gemma2:2b` - Lightweight model for quick responses
+- `gemma2:2b` - Lightweight model, great for analysis tasks
 - `gemma2:9b` - Larger Gemma model for complex tasks
 - `codellama:7b` - Specialized for coding tasks
 - `mistral:7b` - Strong general-purpose model
 
 To see available models on your system: `ollama list`
-
-## Extending Actions
-
-The action system is designed to be extensible. Actions are registered with decorators in the `actions.py` file:
-
-```python
-from ollamapy.actions import register_action
-
-@register_action(
-    name="greet", 
-    description="Use when the user wants a greeting or says hello",
-    vibe_test_phrases=["hello", "hi there", "good morning"]
-)
-def greet():
-    return "👋 Hello there! How can I help you today?"
-```
-
-Each action needs:
-- A unique name (what the AI will say when choosing it)
-- A description (helps the AI understand when to use it)
-- A function that executes the action
-- Optional vibe test phrases for automated testing
 
 ## Development
 
@@ -312,20 +510,20 @@ OllamaPy will automatically pull models, but you can also pull manually:
 ollama pull gemma3:4b
 ```
 
-### Connection issues
-Verify Ollama is accessible:
-```bash
-curl http://localhost:11434/api/tags
-```
+### Parameter extraction issues
+- Try two-step mode: `ollamapy --two-step`
+- Use a more capable analysis model: `ollamapy --analysis-model llama3.2:3b`
+- Ensure your action descriptions clearly indicate what parameters are needed
 
-### Vibe test issues
-- Ensure Ollama is running: `ollama serve`
-- Try a different model: `ollamapy --vibetest --model gemma2:2b`
-- Run with single iteration for quick feedback: `ollamapy --vibetest -n 1`
+### Vibe test failures
+- Try different models: `ollamapy --vibetest --model gemma2:9b`
+- Use two-step analysis: `ollamapy --vibetest --two-step`
+- Increase iterations for better statistics: `ollamapy --vibetest -n 10`
+- Check that your test phrases clearly indicate the intended action
 
 ## Project Information
 
-- **Version**: 0.5.1
+- **Version**: 0.6.0
 - **License**: GPL-3.0-or-later
 - **Author**: The Lazy Artist
 - **Python**: >=3.8

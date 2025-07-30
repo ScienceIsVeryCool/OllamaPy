@@ -1,6 +1,7 @@
 """Built-in vibe tests for evaluating AI decision-making consistency."""
 
-from typing import List, Dict, Tuple
+import re
+from typing import List, Dict, Tuple, Any
 from .terminal_chat import TerminalChat
 from .actions import get_actions_with_vibe_tests
 
@@ -8,16 +9,22 @@ from .actions import get_actions_with_vibe_tests
 class VibeTestRunner:
     """Built-in vibe test runner that ships with every installation."""
     
-    def __init__(self, model: str = "gemma3:4b", analysis_model: str = None):
+    def __init__(self, model: str = "gemma3:4b", analysis_model: str = None, two_step: bool = False):
         """Initialize the vibe test runner.
         
         Args:
             model: The model to use for testing
             analysis_model: Optional separate model for action analysis (defaults to main model)
+            two_step: If True, use two-step analysis for testing
         """
         self.model = model
         self.analysis_model = analysis_model or model  # Use main model if no analysis model specified
-        self.chat_interface = TerminalChat(model=model, analysis_model=self.analysis_model)
+        self.two_step = two_step
+        self.chat_interface = TerminalChat(
+            model=model, 
+            analysis_model=self.analysis_model,
+            two_step_analysis=two_step
+        )
         self.actions_with_tests = get_actions_with_vibe_tests()
         
         # Define yes/no phrases for compatibility (if needed by tests)
@@ -66,6 +73,52 @@ class VibeTestRunner:
         
         return True
     
+    def extract_expected_parameters(self, phrase: str, action_name: str) -> Dict[str, Any]:
+        """Extract expected parameter values from test phrases.
+        
+        Args:
+            phrase: The test phrase
+            action_name: The action being tested
+            
+        Returns:
+            Dictionary of expected parameter values
+        """
+        expected_params = {}
+        
+        # Extract numbers for square_root
+        if action_name == "square_root":
+            # Look for numbers in the phrase
+            numbers = re.findall(r'\d+(?:\.\d+)?', phrase)
+            if numbers:
+                expected_params['number'] = float(numbers[0])
+        
+        # Extract expressions for calculate
+        elif action_name == "calculate":
+            # Look for mathematical expressions
+            # Simple pattern for basic arithmetic
+            expr_match = re.search(r'(\d+\s*[+\-*/]\s*\d+)', phrase)
+            if expr_match:
+                expected_params['expression'] = expr_match.group(1).replace(' ', '')
+        
+        # Extract location for weather (if mentioned)
+        elif action_name == "getWeather":
+            # Look for common city names or location indicators
+            # This is a simplified example - in production, you'd want more sophisticated NER
+            location_keywords = ['in', 'at', 'for']
+            for keyword in location_keywords:
+                if keyword in phrase.lower():
+                    parts = phrase.lower().split(keyword)
+                    # Add a check to ensure parts has at least two elements
+                    if len(parts) > 1:
+                        potential_location_parts = parts[1].strip().split()
+                        if potential_location_parts: # Ensure there's something after stripping and splitting
+                            potential_location = potential_location_parts[0]
+                            if len(potential_location) > 2: # Still keep this check
+                                expected_params['location'] = potential_location
+                            break # Break after finding the first keyword and processing
+        
+        return expected_params
+    
     def run_action_test(self, action_name: str, phrases: List[str], 
                        iterations: int) -> Tuple[bool, Dict]:
         """Run a test on a specific action with its phrases.
@@ -88,33 +141,78 @@ class VibeTestRunner:
             print(f"Analysis Model: {self.analysis_model}")
         else:
             print("Using same model for analysis and chat")
+        if self.two_step:
+            print("Mode: Two-step analysis")
+        else:
+            print("Mode: Single-step analysis")
         print("=" * 80)
         
         for phrase in phrases:
             phrase_correct = 0
+            parameter_correct = 0
+            expected_params = self.extract_expected_parameters(phrase, action_name)
             
             for i in range(iterations):
                 try:
-                    chosen_function = self.chat_interface.analyze_with_ai(phrase)
-                    if chosen_function == action_name:
+                    # Run the analysis
+                    if self.two_step:
+                        chosen_function, parameters = self.chat_interface.analyze_with_ai_two_step(phrase)
+                    else:
+                        chosen_function, parameters = self.chat_interface.analyze_with_ai_single_step(phrase)
+                    
+                    # Check if action is correct
+                    action_correct = chosen_function == action_name
+                    if action_correct:
                         phrase_correct += 1
+                    
+                    # Check parameters if action needs them
+                    param_match = True
+                    if expected_params and action_correct:
+                        for param_name, expected_value in expected_params.items():
+                            if param_name in parameters:
+                                actual_value = parameters[param_name]
+                                # For numbers, check if they're close enough
+                                if isinstance(expected_value, (int, float)):
+                                    try:
+                                        actual_float = float(actual_value)
+                                        if abs(actual_float - expected_value) < 0.001:
+                                            parameter_correct += 1
+                                        else:
+                                            param_match = False
+                                    except:
+                                        param_match = False
+                                # For strings, check exact match
+                                elif str(actual_value) == str(expected_value):
+                                    parameter_correct += 1
+                                else:
+                                    param_match = False
+                            else:
+                                param_match = False
+                    
                     total_tests += 1
                 except Exception as e:
                     print(f"❌ Error testing phrase iteration {i+1}: {e}")
                     continue
             
             success_rate = (phrase_correct / iterations) * 100 if iterations > 0 else 0
+            param_success_rate = (parameter_correct / iterations) * 100 if iterations > 0 and expected_params else 100
+            
             results[phrase] = {
                 'correct': phrase_correct,
                 'total': iterations,
-                'success_rate': success_rate
+                'success_rate': success_rate,
+                'parameter_success_rate': param_success_rate,
+                'expected_params': expected_params
             }
             total_correct += phrase_correct
             
             # Print individual results
             phrase_display = phrase[:50] + '...' if len(phrase) > 50 else phrase
             print(f"Phrase: '{phrase_display}'")
-            print(f"Success: {phrase_correct}/{iterations} ({success_rate:.1f}%)")
+            print(f"Action Success: {phrase_correct}/{iterations} ({success_rate:.1f}%)")
+            if expected_params:
+                print(f"Parameter Success: {parameter_correct}/{iterations} ({param_success_rate:.1f}%)")
+                print(f"Expected params: {expected_params}")
             print("-" * 40)
         
         overall_success_rate = (total_correct / total_tests) * 100 if total_tests > 0 else 0
@@ -143,6 +241,7 @@ class VibeTestRunner:
             print(f"Analysis model: {self.analysis_model}")
         else:
             print("Using same model for analysis and chat")
+        print(f"Analysis mode: {'Two-step' if self.two_step else 'Single-step'}")
         print(f"Iterations: {iterations}")
         print("=" * 80)
         
@@ -201,6 +300,7 @@ class VibeTestRunner:
             print("   • Try a different model with --model")
             print("   • Try a different analysis model with --analysis-model")
             print("   • Use a smaller, faster model for analysis (e.g., gemma2:2b)")
+            print("   • Try two-step analysis with --two-step for better parameter extraction")
             print("   • Increase iterations with -n for better statistics")
             print("   • Ensure Ollama server is running optimally")
             print("   • Check action descriptions and test phrases for clarity")

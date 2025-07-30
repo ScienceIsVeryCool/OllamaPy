@@ -15,18 +15,21 @@ def greet(name):
     return f"Hello, {name}!"
 
 
-def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.", analysis_model: str = None):
+def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.", 
+         analysis_model: str = None, two_step: bool = False):
     """Start a chat session with Ollama.
     
     Args:
         model: The model to use for chat (default: gemma3:4b)
         system: Optional system message to set context
         analysis_model: Optional separate model for action analysis (defaults to main model)
+        two_step: If True, use two-step analysis (action selection, then parameter extraction)
     """
     chat_interface = TerminalChat(
         model=model, 
         system_message=system, 
-        analysis_model=analysis_model
+        analysis_model=analysis_model,
+        two_step_analysis=two_step
     )
     chat_interface.run()
 
@@ -46,13 +49,14 @@ def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="OllamaPy - Terminal chat interface for Ollama with AI vibe tests",
+        description="OllamaPy v0.6.0 - Terminal chat interface for Ollama with AI vibe tests",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   ollamapy                          # Start chat with default model (gemma3:4b)
   ollamapy --model llama3.2:3b      # Use a specific model
   ollamapy --analysis-model gemma2:2b --model llama3.2:7b  # Use small model for analysis, large for chat
+  ollamapy --two-step               # Use two-step analysis (action, then parameters)
   ollamapy --system "You are a helpful coding assistant"  # Set system message
   ollamapy --vibetest               # Run vibe tests with default settings
   ollamapy --vibetest -n 5          # Run vibe tests with 5 iterations each
@@ -75,6 +79,12 @@ Examples:
     parser.add_argument(
         "--system", "-s",
         help="System message to set context for the AI"
+    )
+    
+    parser.add_argument(
+        "--two-step",
+        action="store_true",
+        help="Use two-step analysis: first select action, then extract parameters. Good for very small models."
     )
     
     parser.add_argument(
@@ -112,7 +122,8 @@ Examples:
         chat(
             model=args.model, 
             system=args.system, 
-            analysis_model=args.analysis_model
+            analysis_model=args.analysis_model,
+            two_step=args.two_step
         )
 
 
