@@ -3,7 +3,15 @@ __version__ = "0.6.2"
 from .main import hello, greet, chat
 from .ollama_client import OllamaClient
 from .terminal_chat import TerminalChat
-from .actions import get_available_actions, get_actions_with_vibe_tests, execute_action
+from .actions import (
+    get_available_actions, 
+    get_actions_with_vibe_tests, 
+    execute_action,
+    register_action,
+    log,
+    clear_action_logs,
+    get_action_logs
+)
 from .vibe_tests import VibeTestRunner, run_vibe_tests
 
 __all__ = [
@@ -15,6 +23,10 @@ __all__ = [
     "get_available_actions",
     "get_actions_with_vibe_tests",
     "execute_action",
+    "register_action",
+    "log",
+    "clear_action_logs",
+    "get_action_logs",
     "VibeTestRunner", 
     "run_vibe_tests"
 ]

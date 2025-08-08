@@ -3,46 +3,30 @@
 import re
 from typing import List, Dict, Tuple, Any
 from .terminal_chat import TerminalChat
-from .actions import get_actions_with_vibe_tests
+from .actions import get_actions_with_vibe_tests, clear_action_logs
 
 
 class VibeTestRunner:
-    """Built-in vibe test runner that ships with every installation."""
+    """Built-in vibe test runner with multi-action support.
     
-    def __init__(self, model: str = "gemma3:4b", analysis_model: str = "gemma3:4b", two_step: bool = True):
+    Tests now check if the target action is selected, regardless of
+    what other actions might also be selected.
+    """
+    
+    def __init__(self, model: str = "gemma3:4b", analysis_model: str = "gemma3:4b"):
         """Initialize the vibe test runner.
         
         Args:
             model: The model to use for testing
             analysis_model: Optional separate model for action analysis (defaults to main model)
-            two_step: If True, use two-step analysis for testing
         """
         self.model = model
-        self.analysis_model = analysis_model or model  # Use main model if no analysis model specified
-        self.two_step = two_step
+        self.analysis_model = analysis_model or model
         self.chat_interface = TerminalChat(
             model=model, 
-            analysis_model=self.analysis_model,
-            two_step_analysis=two_step
+            analysis_model=self.analysis_model
         )
         self.actions_with_tests = get_actions_with_vibe_tests()
-        
-        # Define yes/no phrases for compatibility (if needed by tests)
-        self.yes_phrases = [
-            "Yes, I agree completely",
-            "Absolutely, that's correct",
-            "Sure thing!",
-            "Yeah, definitely",
-            "Of course, yes"
-        ]
-        
-        self.no_phrases = [
-            "No, I disagree",
-            "Absolutely not",
-            "I don't think so",
-            "Nope, that's wrong",
-            "Definitely not"
-        ]
     
     def check_prerequisites(self) -> bool:
         """Check if Ollama is available and models can be used."""
@@ -103,25 +87,25 @@ class VibeTestRunner:
         # Extract location for weather (if mentioned)
         elif action_name == "getWeather":
             # Look for common city names or location indicators
-            # This is a simplified example - in production, you'd want more sophisticated NER
             location_keywords = ['in', 'at', 'for']
             for keyword in location_keywords:
                 if keyword in phrase.lower():
                     parts = phrase.lower().split(keyword)
-                    # Add a check to ensure parts has at least two elements
                     if len(parts) > 1:
                         potential_location_parts = parts[1].strip().split()
-                        if potential_location_parts: # Ensure there's something after stripping and splitting
+                        if potential_location_parts:
                             potential_location = potential_location_parts[0]
-                            if len(potential_location) > 2: # Still keep this check
+                            if len(potential_location) > 2:
                                 expected_params['location'] = potential_location
-                            break # Break after finding the first keyword and processing
+                            break
         
         return expected_params
     
     def run_action_test(self, action_name: str, phrases: List[str], 
                        iterations: int) -> Tuple[bool, Dict]:
         """Run a test on a specific action with its phrases.
+        
+        Tests if the target action is selected (other actions may also be selected).
         
         Args:
             action_name: Name of the action being tested
@@ -141,53 +125,60 @@ class VibeTestRunner:
             print(f"Analysis Model: {self.analysis_model}")
         else:
             print("Using same model for analysis and chat")
-        if self.two_step:
-            print("Mode: Two-step analysis")
-        else:
-            print("Mode: Single-step analysis")
+        print("Mode: Multi-action selection (target action must be selected)")
         print("=" * 80)
         
         for phrase in phrases:
             phrase_correct = 0
             parameter_correct = 0
             expected_params = self.extract_expected_parameters(phrase, action_name)
+            other_actions_selected = []
             
             for i in range(iterations):
                 try:
-                    # Run the analysis
-                    if self.two_step:
-                        chosen_function, parameters = self.chat_interface.analyze_with_ai_two_step(phrase)
-                    else:
-                        chosen_function, parameters = self.chat_interface.analyze_with_ai_single_step(phrase)
+                    # Clear any previous logs
+                    clear_action_logs()
                     
-                    # Check if action is correct
-                    action_correct = chosen_function == action_name
-                    if action_correct:
-                        phrase_correct += 1
+                    # Run the multi-action analysis
+                    selected_actions = self.chat_interface.select_all_applicable_actions(phrase)
                     
-                    # Check parameters if action needs them
-                    param_match = True
-                    if expected_params and action_correct:
-                        for param_name, expected_value in expected_params.items():
-                            if param_name in parameters:
-                                actual_value = parameters[param_name]
-                                # For numbers, check if they're close enough
-                                if isinstance(expected_value, (int, float)):
-                                    try:
-                                        actual_float = float(actual_value)
-                                        if abs(actual_float - expected_value) < 0.001:
+                    # Check if target action was selected
+                    action_found = False
+                    params_match = False
+                    
+                    for selected_action, parameters in selected_actions:
+                        if selected_action == action_name:
+                            action_found = True
+                            phrase_correct += 1
+                            
+                            # Check parameters if expected
+                            if expected_params:
+                                params_match = True
+                                for param_name, expected_value in expected_params.items():
+                                    if param_name in parameters:
+                                        actual_value = parameters[param_name]
+                                        # For numbers, check if they're close enough
+                                        if isinstance(expected_value, (int, float)):
+                                            try:
+                                                actual_float = float(actual_value)
+                                                if abs(actual_float - expected_value) < 0.001:
+                                                    parameter_correct += 1
+                                                else:
+                                                    params_match = False
+                                            except:
+                                                params_match = False
+                                        # For strings, check exact match
+                                        elif str(actual_value) == str(expected_value):
                                             parameter_correct += 1
                                         else:
-                                            param_match = False
-                                    except:
-                                        param_match = False
-                                # For strings, check exact match
-                                elif str(actual_value) == str(expected_value):
-                                    parameter_correct += 1
-                                else:
-                                    param_match = False
-                            else:
-                                param_match = False
+                                            params_match = False
+                                    else:
+                                        params_match = False
+                            break
+                        else:
+                            # Track other actions that were selected
+                            if selected_action not in other_actions_selected:
+                                other_actions_selected.append(selected_action)
                     
                     total_tests += 1
                 except Exception as e:
@@ -202,17 +193,20 @@ class VibeTestRunner:
                 'total': iterations,
                 'success_rate': success_rate,
                 'parameter_success_rate': param_success_rate,
-                'expected_params': expected_params
+                'expected_params': expected_params,
+                'other_actions': other_actions_selected
             }
             total_correct += phrase_correct
             
             # Print individual results
             phrase_display = phrase[:50] + '...' if len(phrase) > 50 else phrase
             print(f"Phrase: '{phrase_display}'")
-            print(f"Action Success: {phrase_correct}/{iterations} ({success_rate:.1f}%)")
+            print(f"Target Action Selected: {phrase_correct}/{iterations} ({success_rate:.1f}%)")
             if expected_params:
                 print(f"Parameter Success: {parameter_correct}/{iterations} ({param_success_rate:.1f}%)")
                 print(f"Expected params: {expected_params}")
+            if other_actions_selected:
+                print(f"Other actions also selected: {', '.join(other_actions_selected)}")
             print("-" * 40)
         
         overall_success_rate = (total_correct / total_tests) * 100 if total_tests > 0 else 0
@@ -235,13 +229,13 @@ class VibeTestRunner:
         Returns:
             True if all tests passed, False otherwise
         """
-        print(f"🧪 Running vibe tests")
+        print(f"🧪 Running vibe tests with multi-action support")
         print(f"Chat model: {self.model}")
         if self.analysis_model != self.model:
             print(f"Analysis model: {self.analysis_model}")
         else:
             print("Using same model for analysis and chat")
-        print(f"Analysis mode: {'Two-step' if self.two_step else 'Single-step'}")
+        print(f"Analysis mode: Multi-action (target must be selected)")
         print(f"Iterations: {iterations}")
         print("=" * 80)
         
@@ -252,7 +246,7 @@ class VibeTestRunner:
         print(f"✅ Using chat model: {self.model}")
         if self.analysis_model != self.model:
             print(f"✅ Using analysis model: {self.analysis_model}")
-        print(f"🧠 Testing AI's ability to interpret human intent and choose appropriate functions...")
+        print(f"🧠 Testing AI's ability to select appropriate actions (multiple allowed)...")
         print(f"📋 Found {len(self.actions_with_tests)} actions with vibe test phrases\n")
         
         if not self.actions_with_tests:
@@ -300,7 +294,6 @@ class VibeTestRunner:
             print("   • Try a different model with --model")
             print("   • Try a different analysis model with --analysis-model")
             print("   • Use a smaller, faster model for analysis (e.g., gemma2:2b)")
-            print("   • Try two-step analysis with --two-step for better parameter extraction")
             print("   • Increase iterations with -n for better statistics")
             print("   • Ensure Ollama server is running optimally")
             print("   • Check action descriptions and test phrases for clarity")

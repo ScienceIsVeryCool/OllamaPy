@@ -1,4 +1,4 @@
-"""Action functions that the AI can choose to execute."""
+"""Action functions with logging system for multi-action execution."""
 
 from typing import Dict, Callable, List, Any, Optional, Union
 from datetime import datetime
@@ -6,6 +6,37 @@ import math
 
 # Function registry to store available actions
 ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+# Global log storage for action outputs
+ACTION_LOGS: List[str] = []
+
+
+def log(message: str):
+    """Add a message to the action log.
+    
+    This is the primary way actions communicate their results.
+    Actions should log important information that helps the AI understand
+    what happened during execution.
+    
+    Args:
+        message: The message to log
+    """
+    ACTION_LOGS.append(message)
+
+
+def clear_action_logs():
+    """Clear all action logs. Called before executing a new set of actions."""
+    global ACTION_LOGS
+    ACTION_LOGS = []
+
+
+def get_action_logs() -> List[str]:
+    """Get all action logs generated during execution.
+    
+    Returns:
+        List of log messages from all executed actions
+    """
+    return ACTION_LOGS.copy()
 
 
 def register_action(
@@ -35,30 +66,16 @@ def register_action(
 
 
 @register_action(
-    name="null", 
-    description="null. This is your null/default option. Use when the user wants normal conversation, and compared to other actions seems more efficient and/or helpful. This is a safe option if not obvious. This is just normal chat mode. the keyword here is null",
-    vibe_test_phrases=[
-        "Just talk to me without using any tools",
-        "null option",
-        "chat only with no functions please",
-        "chat only please",
-        "null null null null null"
-    ]
-)
-def null() -> Optional[str]:
-    """Signal that normal chat response is needed."""
-    return None  # Return None to indicate normal chat
-
-
-@register_action(
     name="getWeather", 
-    description="Use when the user asks about weather conditions or climate. Like probably anything close to weather conditions. UV, Humidity, temperature, etc. The keyword is getWeather",
+    description="Use when the user asks about weather conditions or climate. Like probably anything close to weather conditions. UV, Humidity, temperature, etc.",
     vibe_test_phrases=[
         "Is it raining right now?",
         "Do I need a Jacket when I go outside due to weather?",
         "Is it going to be hot today?",
         "Do I need an umbrella due to rain today?",
-        "Do I need sunscreen today due to UV?"
+        "Do I need sunscreen today due to UV?",
+        "What's the weather like?",
+        "Tell me about today's weather"
     ],
     parameters={
         "location": {
@@ -68,24 +85,40 @@ def null() -> Optional[str]:
         }
     }
 )
-def getWeather(location: str = "current location") -> str:
-    """Get weather information.
+def getWeather(location: str = "current location"):
+    """Get weather information and log the results.
     
     Args:
         location: The location to get weather for
     """
+    # Log the action being performed
+    log(f"[Weather Check] Retrieving weather information for {location}")
+    
     # In a real implementation, this would fetch actual weather data
-    return f"Current weather in {location}: Sunny, 72°F (22°C), Humidity: 45%, UV Index: 6 (High), Wind: 5 mph NW"
+    # For now, we'll simulate with detailed logs
+    log(f"[Weather] Location: {location}")
+    log(f"[Weather] Current conditions: Partly cloudy")
+    log(f"[Weather] Temperature: 72°F (22°C)")
+    log(f"[Weather] Feels like: 70°F (21°C)")
+    log(f"[Weather] Humidity: 45%")
+    log(f"[Weather] UV Index: 6 (High) - Sun protection recommended")
+    log(f"[Weather] Wind: 5 mph from the Northwest")
+    log(f"[Weather] Visibility: 10 miles")
+    log(f"[Weather] Today's forecast: Partly cloudy with a high of 78°F and low of 62°F")
+    log(f"[Weather] Rain chance: 10%")
+    log(f"[Weather] Recommendation: Light jacket might be needed for evening, sunscreen recommended for extended outdoor activity")
 
 
 @register_action(
     name="getTime", 
-    description="Use when the user asks about the current time. If they ask about what time it is stuff like that.",
+    description="Use when the user asks about the current time, date, or temporal information.",
     vibe_test_phrases=[
         "what is the current time?",
         "is it noon yet?",
         "what time is it?",
-        "Is it 4 o'clock?"
+        "Is it 4 o'clock?",
+        "What day is it?",
+        "What's the date today?"
     ],
     parameters={
         "timezone": {
@@ -95,15 +128,34 @@ def getWeather(location: str = "current location") -> str:
         }
     }
 )
-def getTime(timezone: str = None) -> str:
-    """Get current time.
+def getTime(timezone: str = None):
+    """Get current time and log the results.
     
     Args:
         timezone: Optional timezone specification
     """
     current_time = datetime.now()
-    tz_info = f" ({timezone})" if timezone else ""
-    return f"Current time{tz_info}: {current_time.strftime('%I:%M %p on %A, %B %d, %Y')}"
+    
+    # Log time information
+    log(f"[Time Check] Retrieving current time{f' for {timezone}' if timezone else ''}")
+    log(f"[Time] Current time: {current_time.strftime('%I:%M:%S %p')}")
+    log(f"[Time] Date: {current_time.strftime('%A, %B %d, %Y')}")
+    log(f"[Time] Day of week: {current_time.strftime('%A')}")
+    log(f"[Time] Week number: {current_time.strftime('%W')} of the year")
+    
+    if timezone:
+        log(f"[Time] Note: Timezone conversion for '{timezone}' would be applied in production")
+    
+    # Add contextual information
+    hour = current_time.hour
+    if 5 <= hour < 12:
+        log("[Time] Period: Morning")
+    elif 12 <= hour < 17:
+        log("[Time] Period: Afternoon")
+    elif 17 <= hour < 21:
+        log("[Time] Period: Evening")
+    else:
+        log("[Time] Period: Night")
 
 
 @register_action(
@@ -114,7 +166,8 @@ def getTime(timezone: str = None) -> str:
         "calculate sqrt(25)",
         "find the square root of 144",
         "√81 = ?",
-        "I need the square root of 2"
+        "I need the square root of 2",
+        "square root of 100"
     ],
     parameters={
         "number": {
@@ -124,43 +177,52 @@ def getTime(timezone: str = None) -> str:
         }
     }
 )
-def square_root(number: Union[float, int]) -> str:
-    """Calculate the square root of a number.
+def square_root(number: Union[float, int] = None):
+    """Calculate the square root of a number and log the results.
     
     Args:
         number: The number to calculate the square root of
-        
-    Returns:
-        A string describing the result
     """
+    if number is None:
+        log("[Square Root] Error: No number provided for square root calculation")
+        return
+    
+    log(f"[Square Root] Calculating square root of {number}")
+    
     try:
         if number < 0:
-            # Handle complex numbers elegantly
+            # Handle complex numbers
             result = math.sqrt(abs(number))
-            return f"The square root of {number} is {result:.6f}i (imaginary number)"
-        
-        result = math.sqrt(number)
-        
-        # Format nicely - show exact values for perfect squares
-        if result.is_integer():
-            return f"The square root of {number} is {int(result)}"
+            log(f"[Square Root] Input is negative ({number})")
+            log(f"[Square Root] Result: {result:.6f}i (imaginary number)")
+            log(f"[Square Root] Note: The square root of a negative number is an imaginary number")
         else:
-            # Show more precision for irrational numbers
-            return f"The square root of {number} is approximately {result:.6f}"
+            result = math.sqrt(number)
             
+            # Check if it's a perfect square
+            if result.is_integer():
+                log(f"[Square Root] {number} is a perfect square")
+                log(f"[Square Root] Result: {int(result)}")
+                log(f"[Square Root] Verification: {int(result)} × {int(result)} = {number}")
+            else:
+                log(f"[Square Root] Result: {result:.6f}")
+                log(f"[Square Root] Rounded to 2 decimal places: {result:.2f}")
+                log(f"[Square Root] Verification: {result:.6f} × {result:.6f} ≈ {result * result:.6f}")
+                
     except (ValueError, TypeError) as e:
-        return f"Error calculating square root: {str(e)}"
+        log(f"[Square Root] Error calculating square root: {str(e)}")
 
 
 @register_action(
     name="calculate",
-    description="Use when the user wants to perform basic arithmetic calculations. Keywords: calculate, compute, add, subtract, multiply, divide, +, -, *, /",
+    description="Use when the user wants to perform arithmetic calculations. Keywords: calculate, compute, add, subtract, multiply, divide, +, -, *, /",
     vibe_test_phrases=[
         "calculate 5 + 3",
         "what's 10 * 7?",
         "compute 100 / 4",
         "15 - 8 equals what?",
-        "multiply 12 by 9"
+        "multiply 12 by 9",
+        "what is 2 plus 2?"
     ],
     parameters={
         "expression": {
@@ -170,23 +232,29 @@ def square_root(number: Union[float, int]) -> str:
         }
     }
 )
-def calculate(expression: str) -> str:
-    """Evaluate a basic mathematical expression.
+def calculate(expression: str = None):
+    """Evaluate a mathematical expression and log the results.
     
     Args:
         expression: The mathematical expression to evaluate
-        
-    Returns:
-        A string with the result
     """
+    if not expression:
+        log("[Calculator] Error: No expression provided for calculation")
+        return
+    
+    log(f"[Calculator] Evaluating expression: {expression}")
+    
     try:
         # Clean up the expression
         expression = expression.strip()
+        log(f"[Calculator] Cleaned expression: {expression}")
         
         # Basic safety check - only allow numbers and basic operators
         allowed_chars = "0123456789+-*/.()"
         if not all(c in allowed_chars or c.isspace() for c in expression):
-            return f"Error: Expression contains invalid characters. Only numbers and +, -, *, /, (), . are allowed."
+            log(f"[Calculator] Error: Expression contains invalid characters")
+            log(f"[Calculator] Only numbers and operators (+, -, *, /, parentheses) are allowed")
+            return
         
         # Evaluate the expression
         result = eval(expression)
@@ -194,13 +262,36 @@ def calculate(expression: str) -> str:
         # Format the result nicely
         if isinstance(result, float) and result.is_integer():
             result = int(result)
-            
-        return f"{expression} = {result}"
+        
+        log(f"[Calculator] Result: {expression} = {result}")
+        
+        # Add some context about the operation
+        if '+' in expression:
+            log("[Calculator] Operation type: Addition")
+        if '-' in expression:
+            log("[Calculator] Operation type: Subtraction")
+        if '*' in expression:
+            log("[Calculator] Operation type: Multiplication")
+        if '/' in expression:
+            log("[Calculator] Operation type: Division")
+            if result != 0 and '/' in expression:
+                # Check if there's a remainder
+                parts = expression.split('/')
+                if len(parts) == 2:
+                    try:
+                        dividend = float(eval(parts[0]))
+                        divisor = float(eval(parts[1]))
+                        if dividend % divisor != 0:
+                            log(f"[Calculator] Note: Result includes decimal portion")
+                    except:
+                        pass
         
     except ZeroDivisionError:
-        return "Error: Division by zero! That's undefined in mathematics."
+        log("[Calculator] Error: Division by zero!")
+        log("[Calculator] Mathematical note: Division by zero is undefined")
     except Exception as e:
-        return f"Error evaluating expression '{expression}': {str(e)}"
+        log(f"[Calculator] Error evaluating expression: {str(e)}")
+        log("[Calculator] Please check your expression format")
 
 
 def get_available_actions() -> Dict[str, Dict[str, Any]]:
@@ -225,18 +316,18 @@ def get_actions_with_vibe_tests() -> Dict[str, Dict[str, Any]]:
     }
 
 
-def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> Optional[str]:
+def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> None:
     """Execute an action with the given parameters.
+    
+    Actions now log their outputs instead of returning strings.
     
     Args:
         action_name: Name of the action to execute
         parameters: Dictionary of parameter values
-        
-    Returns:
-        The result of the action execution, or None if action not found
     """
     if action_name not in ACTION_REGISTRY:
-        return f"Error: Unknown action '{action_name}'"
+        log(f"[System] Error: Unknown action '{action_name}'")
+        return
     
     action_info = ACTION_REGISTRY[action_name]
     func = action_info['function']
@@ -244,7 +335,8 @@ def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> Optio
     
     # If no parameters expected, just call the function
     if not expected_params:
-        return func()
+        func()
+        return
     
     # Prepare parameters for function call
     if parameters is None:
@@ -269,14 +361,16 @@ def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> Optio
                         if value.is_integer():
                             value = int(value)
                 except (ValueError, AttributeError):
-                    return f"Error: Parameter '{param_name}' must be a number, got '{value}'"
+                    log(f"[System] Error: Parameter '{param_name}' must be a number, got '{value}'")
+                    return
             
             call_params[param_name] = value
         elif param_spec.get('required', False):
-            return f"Error: Required parameter '{param_name}' not provided for action '{action_name}'"
+            log(f"[System] Error: Required parameter '{param_name}' not provided for action '{action_name}'")
+            return
     
     # Call the function with parameters
     try:
-        return func(**call_params)
+        func(**call_params)
     except Exception as e:
-        return f"Error executing action '{action_name}': {str(e)}"
+        log(f"[System] Error executing action '{action_name}': {str(e)}")
