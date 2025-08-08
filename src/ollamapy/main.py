@@ -54,7 +54,7 @@ def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="OllamaPy v0.6.2 - Terminal chat interface for Ollama with AI vibe tests",
+        description="OllamaPy v0.7.0 - Terminal chat interface for Ollama with AI vibe tests",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
