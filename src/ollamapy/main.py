@@ -2,7 +2,11 @@
 
 import argparse
 import sys
-from .terminal_chat import TerminalChat
+from .ollama_client import OllamaClient
+from .model_manager import ModelManager
+from .analysis_engine import AnalysisEngine
+from .chat_session import ChatSession
+from .terminal_interface import TerminalInterface
 
 
 def hello():
@@ -24,12 +28,15 @@ def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.",
         system: Optional system message to set context
         analysis_model: Optional separate model for action analysis (defaults to main model)
     """
-    chat_interface = TerminalChat(
-        model=model, 
-        system_message=system, 
-        analysis_model=analysis_model
-    )
-    chat_interface.run()
+    # Create the components
+    client = OllamaClient()
+    model_manager = ModelManager(client)
+    analysis_engine = AnalysisEngine(analysis_model, client)
+    chat_session = ChatSession(model, client, system)
+    
+    # Create and run the terminal interface
+    terminal_interface = TerminalInterface(model_manager, analysis_engine, chat_session)
+    terminal_interface.run()
 
 
 def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = "gemma3:4b"):
@@ -113,7 +120,7 @@ Examples:
         chat(
             model=args.model, 
             system=args.system, 
-            analysis_model=args.analysis_model
+            analysis_model= args.analysis_model if args.analysis_model else "gemma3:4b"
         )
 
 

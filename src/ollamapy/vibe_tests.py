@@ -2,7 +2,9 @@
 
 import re
 from typing import List, Dict, Tuple, Any
-from .terminal_chat import TerminalChat
+from .ollama_client import OllamaClient
+from .model_manager import ModelManager
+from .analysis_engine import AnalysisEngine
 from .actions import get_actions_with_vibe_tests, clear_action_logs
 
 
@@ -22,38 +24,21 @@ class VibeTestRunner:
         """
         self.model = model
         self.analysis_model = analysis_model or model
-        self.chat_interface = TerminalChat(
-            model=model, 
-            analysis_model=self.analysis_model
-        )
+        self.client = OllamaClient()
+        self.model_manager = ModelManager(self.client)
+        self.analysis_engine = AnalysisEngine(self.analysis_model, self.client)
         self.actions_with_tests = get_actions_with_vibe_tests()
     
     def check_prerequisites(self) -> bool:
         """Check if Ollama is available and models can be used."""
-        if not self.chat_interface.client.is_available():
+        success, main_status, analysis_status = self.model_manager.ensure_models_available(
+            self.model, self.analysis_model
+        )
+        
+        if not success:
             print("❌ Error: Ollama server is not running!")
             print("Please start Ollama with: ollama serve")
             return False
-        
-        # Check if models are available, pull them if needed
-        available_models = self.chat_interface.client.list_models()
-        
-        # Check main model
-        main_model_available = any(self.model in model for model in available_models)
-        if not main_model_available:
-            print(f"📥 Main model '{self.model}' not found locally. Pulling...")
-            if not self.chat_interface.client.pull_model(self.model):
-                print(f"❌ Failed to pull model '{self.model}'")
-                return False
-        
-        # Check analysis model (if different from main model)
-        if self.analysis_model != self.model:
-            analysis_model_available = any(self.analysis_model in model for model in available_models)
-            if not analysis_model_available:
-                print(f"📥 Analysis model '{self.analysis_model}' not found locally. Pulling...")
-                if not self.chat_interface.client.pull_model(self.analysis_model):
-                    print(f"❌ Failed to pull analysis model '{self.analysis_model}'")
-                    return False
         
         return True
     
@@ -140,7 +125,7 @@ class VibeTestRunner:
                     clear_action_logs()
                     
                     # Run the multi-action analysis
-                    selected_actions = self.chat_interface.select_all_applicable_actions(phrase)
+                    selected_actions = self.analysis_engine.select_all_applicable_actions(phrase)
                     
                     # Check if target action was selected
                     action_found = False

@@ -3,6 +3,7 @@
 from typing import Dict, Callable, List, Any, Optional, Union
 from datetime import datetime
 import math
+from .parameter_utils import prepare_function_parameters
 
 # Function registry to store available actions
 ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -338,39 +339,15 @@ def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> None:
         func()
         return
     
-    # Prepare parameters for function call
+    # Prepare parameters for function call using utility
     if parameters is None:
         parameters = {}
     
-    # Validate and convert parameters
-    call_params = {}
-    for param_name, param_spec in expected_params.items():
-        if param_name in parameters:
-            value = parameters[param_name]
-            
-            # Type conversion
-            if param_spec['type'] == 'number' and value is not None:
-                try:
-                    # Try to convert to number
-                    if isinstance(value, str):
-                        # Remove any whitespace
-                        value = value.strip()
-                        # Handle both int and float
-                        value = float(value)
-                        # Convert to int if it's a whole number
-                        if value.is_integer():
-                            value = int(value)
-                except (ValueError, AttributeError):
-                    log(f"[System] Error: Parameter '{param_name}' must be a number, got '{value}'")
-                    return
-            
-            call_params[param_name] = value
-        elif param_spec.get('required', False):
-            log(f"[System] Error: Required parameter '{param_name}' not provided for action '{action_name}'")
-            return
-    
-    # Call the function with parameters
     try:
+        call_params = prepare_function_parameters(parameters, expected_params)
+        # Call the function with parameters
         func(**call_params)
+    except ValueError as e:
+        log(f"[System] Error: {str(e)}")
     except Exception as e:
         log(f"[System] Error executing action '{action_name}': {str(e)}")
