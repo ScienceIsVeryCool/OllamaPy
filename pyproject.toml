@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ollamapy"
-version = "0.6.2"
+version = "0.7.0"
 description = "A simple Python package for Ollama utilities with built-in AI vibe tests"
 authors = [{name = "The Lazy Artist", email = "TheRealLazyArtist@iCloud.com"}]
 requires-python = ">=3.8"
