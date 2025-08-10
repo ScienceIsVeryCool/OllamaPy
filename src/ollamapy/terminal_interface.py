@@ -143,7 +143,7 @@ class TerminalInterface:
             return ""
         
         # Clear any previous logs
-        clear_action_logs()
+        # clear_action_logs()
         
         print(f"🚀 Executing {len(actions_with_params)} action(s)...")
         

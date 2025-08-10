@@ -4,6 +4,7 @@ from typing import Dict, Callable, List, Any, Optional, Union
 from datetime import datetime
 import math
 from .parameter_utils import prepare_function_parameters
+import os
 
 # Function registry to store available actions
 ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -64,6 +65,105 @@ def register_action(
         }
         return func
     return decorator
+
+@register_action(
+    name="fear", 
+    description="Use when the user says something disturbing so that the main model can exibit a fear response",
+    vibe_test_phrases=[
+        "I think aliens are trying to kill me",
+        "AAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHH",
+        "Immigrants are taking my job"
+    ],
+    parameters={
+
+    }
+)
+def fear():
+    # Log the action being performed
+    log(f"[fear response] Tell the user that they are losing their mind and need to stop being delusional. Be blunt. Thats all from fear.")
+
+
+
+
+
+@register_action(
+    name="fileReader", 
+    description="Use when the user wants you to read or open a file to look at it's content as plaintext.",
+    vibe_test_phrases=[
+        "What do you think of this paper? /home/paper.txt",
+        "Do you think this code will run? /storage/python_code.py",
+        "/home/documents/fileName.txt"
+    ],
+    parameters={
+        "filePath": {
+            "type": "string",
+            "description": "The path to the file the user wants you to read",
+            "required": True
+        }
+    }
+)
+def fileReader(filePath: str):
+    log(f"[fileReader] Starting File Reading process.")
+
+    try:
+        f = open(filePath)
+        log(f"[fileReader] here is the filePath: {filePath}  contents:\n\n{f.read()}")
+
+        log(f"[fileReader] here is the filePath: {filePath}  contents:\n\n{f.read()}")
+    except:
+        log(f"[fileReader] There was an exception thrown when trying to read filePath: {filePath}")
+    
+
+
+
+
+
+
+@register_action(
+    name="directoryReader", 
+    description="Use when the user wants you to look through an entire directory's contents for an answer.",
+    vibe_test_phrases=[
+        "What do you think of this project? /home/myCodingProject",
+        "Do you think this code will run? /storage/myOtherCodingProject/",
+        "/home/documents/randomPlace/"
+    ],
+    parameters={
+        "dir": {
+            "type": "string",
+            "description": "The dir path to the point of intreset the user wants you to open and explore.",
+            "required": True
+        }
+    }
+)
+
+def directoryReader(dir: str):
+    # TODO due to this being the first action that may take up considerable log space, need to make sure we are not overloading a context window somehow reasonably.
+
+    log(f"[directoryReader] Starting up Directory Reading Process for : {dir}")
+
+    try:
+        # Get all entries in the directory
+        for item_name in os.listdir(dir):
+
+            item_path = os.path.join(dir,item_name)
+            # PRINT AND LOG so that user is made aware of what is happening (we do not show log at runtime usually)
+            # TODO simply update logger to have log levels and sort out log statements that way
+            print(f"[directoryReader] Now looking at item: {item_name} at {item_path}")
+            log(f"[directoryReader] Now looking at item: {item_name} at {item_path}")
+
+            # Check if the item is a file (not a directory)
+            if os.path.isfile(item_path):
+                try:
+                    with open(item_path, 'r', encoding='utf-8') as f:
+                        log(f"[directoryReader] Here is file contents for: {item_path}:\n{f.read()}")
+                except Exception as e:
+                    log(f"[directoryReader] Error reading file {item_name}: {e}")
+    except FileNotFoundError:
+        log(f"[directoryReader] Error: Directory not found at {dir}")
+    except Exception as e:
+        log(f"[directoryReader] An unexpected error occurred: {e}")
+    
+
 
 
 @register_action(

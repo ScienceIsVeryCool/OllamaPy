@@ -7,7 +7,7 @@ from .ollama_client import OllamaClient
 class ChatSession:
     """Manages conversation state and AI response generation."""
     
-    def __init__(self, model: str, client: OllamaClient, system_message: str = "You are a helpful assistant."):
+    def __init__(self, model: str, client: OllamaClient, system_message: str):
         """Initialize the chat session.
         
         Args:
@@ -17,7 +17,7 @@ class ChatSession:
         """
         self.model = model
         self.client = client
-        self.system_message = system_message
+        self.system_message = system_message if system_message else "You are a straight forward and powerful assistant. You are basically a Janet from the Good Place but just a tad sassy to stay engaging. Make sure the user"
         self.conversation: List[Dict[str, str]] = []
     
     def add_user_message(self, message: str):
@@ -38,7 +38,7 @@ class ChatSession:
     
     def clear_conversation(self):
         """Clear the conversation history."""
-        self.conversation.clear()
+        self.conversation.clear_conversation()
     
     def get_conversation_history(self) -> List[Dict[str, str]]:
         """Get the current conversation history.
@@ -118,11 +118,11 @@ Use this information to provide a comprehensive and accurate response to the use
         if action_logs:
             # Actions produced logs - include them as context
             context_message = f"""<context>
-The following information was gathered from various tools and actions:
-
+Snap judgements made by a reasoning model has led to multiple responses to get triggered automatically. The logs to all of the actions that were executed are below. Please keep in mind the user's intent and understand that some of these responses that get triggered may in fact not be helpful to crafting the response to the user. Here are the complete logs of the last snap judgement's response logs:
+\n
 {action_logs}
-
-Use this information to provide a comprehensive and accurate response to the user.
+\n
+If this information is useful to the user's request then use this information to help you. If there is information that is not helpful to the user's request then ignore it completely and do not remark on it. This is only possibly helpful context.\nThis is likely the last thing before responding to the user you will get. Respond to the user now, and apologies for repeat instructions. Do not respond to this context, respond to the oringinal user input: {user_input}.
 </context>"""
         else:
             # No actions executed - just normal chat
