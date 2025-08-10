@@ -2,6 +2,10 @@
 
 A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency.
 
+## Demo
+
+![Demo showing terminal app usage](demo.gif)
+
 ## Features
 
 - 🤖 **Terminal Chat Interface** - Clean, user-friendly chat experience in your terminal
