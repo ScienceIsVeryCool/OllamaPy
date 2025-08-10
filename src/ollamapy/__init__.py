@@ -24,6 +24,7 @@ from .parameter_utils import (
     extract_parameter_from_response
 )
 from .vibe_tests import VibeTestRunner, run_vibe_tests
+from .vibe_report import VibeTestReportGenerator
 
 __all__ = [
     "hello", 
@@ -48,5 +49,6 @@ __all__ = [
     "prepare_function_parameters",
     "extract_parameter_from_response",
     "VibeTestRunner", 
-    "run_vibe_tests"
+    "run_vibe_tests",
+    "VibeTestReportGenerator"
 ]
