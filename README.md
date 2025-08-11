@@ -1,6 +1,6 @@
 # OllamaPy
 
-A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency.
+A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities and comprehensive performance analysis. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency and timing performance.
 
 ## Demo
 
@@ -14,6 +14,8 @@ A powerful terminal-based chat interface for Ollama with AI meta-reasoning capab
 - 🧠 **Meta-Reasoning** - AI analyzes user input and selects appropriate actions
 - 🛠️ **Extensible Actions** - Easy-to-extend action system with parameter support
 - 🧪 **AI Vibe Tests** - Built-in tests to evaluate AI consistency and reliability
+- ⏱️ **Performance Analysis** - Comprehensive timing analysis with consistency scoring
+- 📊 **Interactive Reports** - Rich HTML reports with timing visualizations
 - 🔢 **Parameter Extraction** - AI intelligently extracts parameters from natural language
 - 🏗️ **Modular Architecture** - Clean separation of concerns for easy testing and extension
 
@@ -112,6 +114,9 @@ ollamapy --analysis-model gemma2:2b --model llama3.2:7b
 ### Currently Available Actions
 
 - **null** - Default conversation mode. Used for normal chat when no special action is needed
+- **fear** - Responds to disturbing or delusional content with direct feedback
+- **fileReader** - Reads and displays file contents when user provides a file path
+- **directoryReader** - Explores entire directory contents for project analysis
 - **getWeather** - Provides weather information (accepts optional location parameter)
 - **getTime** - Returns the current date and time (accepts optional timezone parameter)
 - **square_root** - Calculates the square root of a number (requires number parameter)
@@ -237,9 +242,9 @@ import my_actions  # This registers your actions
 chat()
 ```
 
-## Vibe Tests
+## Vibe Tests with Performance Analysis
 
-Vibe tests are a built-in feature that evaluates how consistently AI models interpret human intent and choose appropriate actions. These tests help you understand model behavior and compare performance across different models.
+Vibe tests are a built-in feature that evaluates how consistently AI models interpret human intent and choose appropriate actions. These tests now include comprehensive timing analysis to help you understand both accuracy and performance characteristics.
 
 ### Running Vibe Tests
 
@@ -255,14 +260,48 @@ ollamapy --vibetest --model gemma2:2b -n 3
 
 # Use dual models for testing (analysis + chat)
 ollamapy --vibetest --analysis-model gemma2:2b --model llama3.2:7b -n 5
+
+# Extended statistical analysis
+ollamapy --vibetest --analysis-model gemma2:2b --model llama3.2:7b -n 10
 ```
 
 ### Understanding Results
 
-Vibe tests evaluate:
+Vibe tests evaluate multiple dimensions:
+
+#### **Accuracy Metrics**:
 - **Action Selection**: How reliably the AI chooses the correct action
 - **Parameter Extraction**: How accurately the AI extracts required parameters
 - **Consistency**: How stable the AI's decisions are across multiple runs
+
+#### **Performance Metrics**:
+- **Response Time**: Average, median, min/max execution times
+- **Consistency Score**: 0-100 score based on timing variability
+- **Performance Categories**: "Very Fast", "Fast", "Moderate", "Slow", "Very Slow"
+- **Percentile Analysis**: 25th, 75th, 95th percentiles for timing distribution
+
+#### **Visual Analytics**:
+- **Interactive HTML Reports**: Rich visualizations with timing charts
+- **Performance Comparison**: Speed vs consistency scatter plots
+- **Per-phrase Analysis**: Detailed breakdown for each test phrase
+- **Quadrant Analysis**: Identifies optimal performance zones
+
+### Performance Insights
+
+The timing analysis helps you:
+- **Optimize Model Selection**: Choose the best speed/accuracy trade-offs
+- **Identify Bottlenecks**: Find slow or inconsistent actions
+- **Validate Stability**: Ensure consistent performance across runs
+- **Compare Configurations**: Evaluate different model combinations
+
+Example timing output:
+```
+Timing Analysis:
+  Average: 1.23s | Median: 1.15s
+  Range: 0.89s - 2.11s
+  Performance: Fast
+  Consistency: 87.3/100
+```
 
 Tests pass with a 60% or higher success rate, ensuring reasonable consistency in decision-making.
 
@@ -303,7 +342,7 @@ for chunk in client.chat_stream("gemma3:4b", messages):
 from ollamapy import execute_action
 execute_action("square_root", {"number": 16})
 
-# Run vibe tests programmatically
+# Run vibe tests programmatically with timing analysis
 from ollamapy import run_vibe_tests
 success = run_vibe_tests(
     model="llama3.2:7b", 
@@ -327,9 +366,11 @@ success = run_vibe_tests(
 - **`get_available_actions()`** - Get all registered actions
 - **`log()`** - Log messages from within actions
 
-#### Testing:
-- **`VibeTestRunner`** - Advanced vibe test runner with configuration
+#### Testing & Analysis:
+- **`VibeTestRunner`** - Advanced vibe test runner with timing analysis
 - **`run_vibe_tests()`** - Simple function to run vibe tests
+- **`VibeTestReportGenerator`** - Generate rich HTML reports with visualizations
+- **`TimingStats`** - Sophisticated timing analysis with consistency scoring
 
 #### Utilities:
 - **`convert_parameter_value()`** - Convert parameter types
@@ -350,12 +391,29 @@ client = OllamaClient(base_url="http://your-ollama-server:11434")
 
 OllamaPy works with any model available in Ollama. Popular options include:
 
-- `gemma3:4b` (default) - Fast and capable general-purpose model
-- `llama3.2:3b` - Efficient and responsive for most tasks
-- `gemma2:2b` - Lightweight model, great for analysis tasks
-- `gemma2:9b` - Larger Gemma model for complex tasks
-- `codellama:7b` - Specialized for coding tasks
+### **Recommended for Analysis (Fast)**:
+- `gemma2:2b` - Lightweight, excellent for action selection
+- `gemma3:4b` - Balanced speed and capability
+- `llama3.2:3b` - Fast and efficient
+
+### **Recommended for Chat (Quality)**:
+- `gemma3:4b` (default) - Great all-around performance
+- `gemma2:9b` - Larger model for complex conversations
+- `llama3.2:7b` - High-quality responses
 - `mistral:7b` - Strong general-purpose model
+- `codellama:7b` - Specialized for coding tasks
+
+### **Performance Optimization Examples**:
+```bash
+# Speed-optimized: Fast analysis + moderate chat
+ollamapy --analysis-model gemma2:2b --model gemma3:4b
+
+# Quality-optimized: Moderate analysis + high-quality chat  
+ollamapy --analysis-model gemma3:4b --model llama3.2:7b
+
+# Balanced: Same capable model for both
+ollamapy --model gemma3:4b
+```
 
 To see available models on your system: `ollama list`
 
@@ -375,7 +433,7 @@ Run tests:
 pytest
 ```
 
-Run vibe tests:
+Run vibe tests with timing analysis:
 
 ```bash
 pytest -m vibetest
@@ -383,7 +441,7 @@ pytest -m vibetest
 
 ### Architecture Overview
 
-OllamaPy uses a clean, modular architecture:
+OllamaPy uses a clean, modular architecture with performance monitoring:
 
 ```
 ┌───────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
@@ -392,20 +450,29 @@ OllamaPy uses a clean, modular architecture:
 │ • User input      │    │ • Action select │    │ • Conversation  │
 │ • Commands        │    │ • Parameter     │    │ • Response gen  │
 │ • Display         │    │   extraction    │    │ • History       │
+│ • Timing display  │    │ • ⏱️ Timing      │    │                 │
 └───────────────────────┘    └─────────────────────┘    └─────────────────────┘
          │                       │                       │
          └─────────────────────────────┼───────────────────────────┘
                                  │
-                    ┌───────────────────┐    ┌─────────────────┐
-                    │  ModelManager  │    │ OllamaClient │
-                    │                │    │              │
-                    │ • Model pull   │    │ • HTTP API   │
-                    │ • Availability │    │ • Streaming  │
-                    │ • Validation   │    │ • Low-level  │
-                    └───────────────────┘    └─────────────────┘
+        ┌─────────────────────────────────────────┐    ┌─────────────────────┐
+        │             Testing & Analytics  │    │ OllamaClient    │
+        │                                  │    │                 │
+        │ • VibeTestRunner  • TimingStats  │    │ • HTTP API      │
+        │ • ReportGenerator • Consistency  │    │ • Streaming     │
+        │ • Performance Analysis           |    │ • Low-level     │
+        └─────────────────────────────────────────┘    └─────────────────────┘
+                                 │
+                    ┌───────────────────┐
+                    │  ModelManager  │
+                    │                │
+                    │ • Model pull   │
+                    │ • Availability │
+                    │ • Validation   │
+                    └───────────────────┘
 ```
 
-Each component has a single responsibility and can be tested independently.
+Each component has a single responsibility and can be tested independently. The timing system is integrated throughout without affecting core functionality.
 
 ## Troubleshooting
 
@@ -434,16 +501,24 @@ ollama pull gemma3:4b
 
 ### Performance issues
 - Use a smaller model for analysis: `--analysis-model gemma2:2b`
+- Check timing reports to identify slow actions
 - Ensure sufficient system resources for your chosen models
 - Check Ollama server performance with `ollama ps`
+- Review consistency scores in vibe test reports
+
+### Slow or inconsistent timing
+- Monitor consistency scores in vibe test reports
+- Try different model combinations for optimal speed/accuracy
+- Check system resources and Ollama server health
+- Use timing analysis to identify performance bottlenecks
 
 ## Project Information
 
-- **Version**: 0.7.0
+- **Version**: 0.8.0
 - **License**: GPL-3.0-or-later
 - **Author**: The Lazy Artist
 - **Python**: >=3.8
-- **Dependencies**: requests>=2.25.0
+- **Dependencies**: requests>=2.25.0, plotly (for reports)
 
 ## Links
 
