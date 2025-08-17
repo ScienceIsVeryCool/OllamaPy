@@ -26,20 +26,19 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "note": "This file defines the settings for the production AI model.  Changes should be carefully considered to avoid performance impacts or unexpected behavior. Regularly review these settings to ensure optimal performance."
+    "note": "This setting allows the AI to recognize and stop generating text at the end of specific sequences.  Adjust this list to fine-tune the model's output."
   },
   "api_settings": {
     "api_url": "https://api.example.com/ai",
     "api_key": "YOUR_API_KEY",
     "timeout_seconds": 30,
-    "retries": 3,
-    "description": "Configuration settings for interacting with the AI API.  The API key is crucial for authentication.  Adjust the timeout and retry settings as needed for your environment."
+    "request_retries": 3,
+    "description": "Configuration for interacting with the AI API. This includes the API endpoint URL, API key, timeout settings, and retry configuration."
   },
-  "monitoring": {
-    "enabled": true,
-    "interval_seconds": 60,
-    "metrics": ["response_time", "error_rate"],
-    "description": "Enables monitoring of the AI model's performance.  The interval determines how often metrics are collected.  Metrics include response time and error rate. This allows proactive identification of issues."
+  "optimization": {
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "description": "Configuration settings for optimizing AI model performance.  These values should be adjusted based on experimentation and hardware capabilities."
   }
 }
 ```
