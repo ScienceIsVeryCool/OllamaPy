@@ -19,19 +19,12 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Consider the impact of `temperature` - lower values promote more deterministic responses, while higher values introduce more creativity. `max_tokens` limits the length of generated text."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Specifically:\n- `temperature`: Controls the randomness of the generated text. Lower values (e.g., 0.2) result in more deterministic outputs. Higher values (e.g., 1.0) introduce more randomness.\n- `top_p`: Controls the cumulative probability of the tokens considered.  Values closer to 1.0 consider a wider range of tokens.\n- `max_tokens`: Limits the maximum length of generated text.  Adjust based on the complexity of the task and desired output length.\n- `prompt_prefix`:  A consistent prefix added to user prompts. This can improve model performance by providing context."
   },
-  "api_settings": {
-    "api_key": "YOUR_API_KEY",
-    "api_endpoint": "https://api.example.com/ai",
-    "timeout_seconds": 30,
-    "description": "API settings for interacting with external AI services. Ensure the API key is securely managed."
-  },
-  "monitoring": {
-    "enabled": true,
-    "interval_seconds": 60,
-    "metrics": ["response_time", "error_rate"],
-    "description": "Enables monitoring of AI system performance.  Metrics collect data on response time and error rate. Adjust the `interval_seconds` to control the frequency of data collection."
+  "metadata": {
+    "last_modified": "2024-10-28T14:30:00Z",
+    "author": "AI Operations Team",
+    "version_notes": "Updated to include detailed parameter explanations and metadata for tracking configuration changes."
   }
 }
 ```

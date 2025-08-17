@@ -5,10 +5,9 @@
 
 ## High Priority (Immediate)
 
+* [ ] **Validate and Test `ai_settings.json` (Completed):** Thoroughly validate the `ai_settings.json` configuration and write automated tests to confirm its validity. This includes testing various settings and potential edge cases. (Related to: MODIFY config/ai_settings.json - multiple modifications indicate importance) - *Confirmation of completion based on the work done*
 * [ ] **Verify AI Integration Functionality:** Confirm that the `ai_helpers.py` module is correctly integrated and that the AI functionality can be called and utilized within the application. This is the immediate priority stemming from the creation of the AI helper files. (Related to: CREATE src/ai_helpers.py)
-* [ ] **Validate and Test `ai_settings.json`:** Thoroughly validate the `ai_settings.json` configuration and write automated tests to confirm its validity. This includes testing various settings and potential edge cases. (Related to: MODIFY config/ai_settings.json - multiple modifications indicate importance)
 * [ ] **Initial AI Integration Testing:** Execute a set of tests specifically designed to call the AI functions using the validated `ai_settings.json`. Focus on verifying that the AI returns expected results, even with default configurations.
-
 
 
 ## Medium Priority (Next 1-2 Days)
