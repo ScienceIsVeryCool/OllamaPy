@@ -19,22 +19,12 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Consider monitoring model performance and adjusting `temperature` and `top_p` to balance creativity and accuracy."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  \n\n**Key Parameters:**\n* `temperature`: Controls the randomness of the model's output. Higher values (e.g., 1.0) result in more random and creative responses, while lower values (e.g., 0.2) produce more deterministic and predictable outputs.\n* `top_p`:  Nucleus sampling.  Filters the potential tokens based on cumulative probability. Adjust to control the diversity of responses.\n* `max_tokens`: Limits the length of the generated text.  Increase this value if you need longer responses, but be aware of potential performance impacts. "
   },
-  "evaluation": {
-    "evaluation_frequency": "daily",
-    "metrics": [
-      "accuracy",
-      "precision",
-      "recall",
-      "f1_score"
-    ],
-    "description": "Settings related to model evaluation.  This section allows you to schedule regular performance checks.  Adjust the `evaluation_frequency` and `metrics` based on the application's needs."
-  },
-  "monitoring": {
-    "enabled": true,
-    "interval": 60,  // Interval in seconds
-    "description": "Enable or disable monitoring of system metrics.  The `interval` determines how often resource usage is checked."
+  "metadata": {
+    "last_modified": "2024-10-27T10:00:00Z",
+    "author": "AI Configuration Team",
+    "version_control": "Git (Branch: main)"
   }
 }
 ```
