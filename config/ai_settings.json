@@ -26,24 +26,20 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Experimentation with `temperature` and `top_p` can significantly impact the model's output. Consider increasing `max_tokens` for longer responses.",
-    "model_version": "1.2.3"
+    "note": "This file defines the settings for the production AI model.  Changes should be carefully considered to avoid performance impacts or unexpected behavior. Regularly review these settings to ensure optimal performance."
   },
   "api_settings": {
+    "api_url": "https://api.example.com/ai",
     "api_key": "YOUR_API_KEY",
-    "timeout_seconds": 60,
+    "timeout_seconds": 30,
     "retries": 3,
-    "description": "Configuration for API interactions.  Ensure the API key is properly configured and that timeouts and retries are appropriate for the target API."
+    "description": "Configuration settings for interacting with the AI API.  The API key is crucial for authentication.  Adjust the timeout and retry settings as needed for your environment."
   },
   "monitoring": {
     "enabled": true,
     "interval_seconds": 60,
-    "metrics": [
-      "response_time",
-      "error_rate",
-      "token_usage"
-    ],
-    "description": "Enables monitoring of key AI service metrics.  Adjust the monitoring interval and chosen metrics as needed."
+    "metrics": ["response_time", "error_rate"],
+    "description": "Enables monitoring of the AI model's performance.  The interval determines how often metrics are collected.  Metrics include response time and error rate. This allows proactive identification of issues."
   }
 }
 ```
