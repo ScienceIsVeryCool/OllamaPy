@@ -19,20 +19,19 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Consider increasing `max_tokens` if generating longer responses, and experiment with `temperature` to control the randomness of the generated text."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Consider the impact of `temperature` - lower values promote more deterministic responses, while higher values introduce more creativity. `max_tokens` limits the length of generated text."
   },
   "api_settings": {
-    "api_endpoint": "https://api.example.com/ai",
     "api_key": "YOUR_API_KEY",
-    "timeout_seconds": 60,
-    "rate_limit": 100,
-    "description": "Settings for communication with the AI API.  Ensure `api_key` is securely managed.  Adjust `rate_limit` as needed based on API provider limits."
+    "api_endpoint": "https://api.example.com/ai",
+    "timeout_seconds": 30,
+    "description": "API settings for interacting with external AI services. Ensure the API key is securely managed."
   },
   "monitoring": {
     "enabled": true,
     "interval_seconds": 60,
-    "metrics": ["response_time", "error_rate", "tokens_used"],
-    "description": "Enables monitoring of key AI system metrics.  The `metrics` list defines which values are tracked. Adjust the `interval_seconds` to determine how frequently metrics are collected."
+    "metrics": ["response_time", "error_rate"],
+    "description": "Enables monitoring of AI system performance.  Metrics collect data on response time and error rate. Adjust the `interval_seconds` to control the frequency of data collection."
   }
 }
 ```
