@@ -19,18 +19,20 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Experimenting with `temperature` can significantly impact the creativity and randomness of the generated text.  Lower values result in more predictable outputs, while higher values lead to more diverse but potentially less coherent responses. Carefully consider `max_tokens` to control the length of generated responses and manage computational costs."
-  },
-  "data_processing": {
-    "enable_data_validation": true,
-    "validation_threshold": 0.9,
-    "description": "Configuration related to data preprocessing and validation.  'enable_data_validation' determines if data inputs are validated before processing. The 'validation_threshold' defines the minimum score required for data to be considered valid."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Consider increasing `max_tokens` if generating longer responses, and experiment with `temperature` to control the randomness of the generated text."
   },
   "api_settings": {
-    "api_url": "https://api.example.com/ai",
-    "api_key": "YOUR_API_KEY",  // Replace with your actual API key
-    "timeout_seconds": 30,
-    "description": "Settings related to API calls.  'api_url' specifies the endpoint to call. 'api_key' is the authentication key for accessing the API. 'timeout_seconds' controls the maximum time allowed for API requests."
+    "api_endpoint": "https://api.example.com/ai",
+    "api_key": "YOUR_API_KEY",
+    "timeout_seconds": 60,
+    "rate_limit": 100,
+    "description": "Settings for communication with the AI API.  Ensure `api_key` is securely managed.  Adjust `rate_limit` as needed based on API provider limits."
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval_seconds": 60,
+    "metrics": ["response_time", "error_rate", "tokens_used"],
+    "description": "Enables monitoring of key AI system metrics.  The `metrics` list defines which values are tracked. Adjust the `interval_seconds` to determine how frequently metrics are collected."
   }
 }
 ```
