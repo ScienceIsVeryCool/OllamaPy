@@ -19,12 +19,28 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Specifically:\n- `temperature`: Controls the randomness of the generated text. Lower values (e.g., 0.2) result in more deterministic outputs. Higher values (e.g., 1.0) introduce more randomness.\n- `top_p`: Controls the cumulative probability of the tokens considered.  Values closer to 1.0 consider a wider range of tokens.\n- `max_tokens`: Limits the maximum length of generated text.  Adjust based on the complexity of the task and desired output length.\n- `prompt_prefix`:  A consistent prefix added to user prompts. This can improve model performance by providing context."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  \n\n**Key Parameters:**\n* `temperature`: Controls randomness. Higher values (e.g., 1.0) result in more random output, while lower values (e.g., 0.2) produce more deterministic output.\n* `top_p`:  Nucleus sampling.  Filters the possible tokens based on cumulative probability.  Values closer to 1 include a wider range of tokens.\n* `max_tokens`:  The maximum number of tokens generated in a single response.  Setting this too low can truncate responses.  Consider increasing this for more conversational interactions.\n* `prompt_prefix`:  A prefix added to each user prompt.  Useful for clearly defining the context for the model."
   },
   "metadata": {
-    "last_modified": "2024-10-28T14:30:00Z",
-    "author": "AI Operations Team",
-    "version_notes": "Updated to include detailed parameter explanations and metadata for tracking configuration changes."
+    "last_modified": "2024-10-27T10:00:00Z",
+    "created_by": "AI Configuration Service",
+    "version_history": [
+      {
+        "version": "1.0",
+        "date": "2024-10-27T10:00:00Z",
+        "description": "Initial configuration file."
+      },
+      {
+        "version": "1.2",
+        "date": "2024-10-26T14:30:00Z",
+        "description": "Added metadata section for tracking changes."
+      },
+      {
+        "version": "1.3",
+        "date": "2024-10-27T10:00:00Z",
+        "description": "Updated documentation and added key parameter descriptions."
+      }
+    ]
   }
 }
 ```
