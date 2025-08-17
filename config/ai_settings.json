@@ -8,7 +8,14 @@
     "level": "INFO",
     "log_file": "ai_settings.log",
     "log_format": "[%({timestamp})s] %({level})s - %({message})s",
-    "description": "Configuration for logging AI activity. Setting to 'true' enables logging. Other options control the log level, file location, and the format of log messages. Consider adjusting the `level` to `DEBUG` for detailed troubleshooting, but be mindful of log file size."
+    "description": "Configuration for logging AI activity. Setting to 'true' enables logging. Other options control the log level, file location, and the format of log messages. Consider adjusting the `level` to `DEBUG` for detailed troubleshooting, but be mindful of log file size.",
+    "log_level_options": [
+      "DEBUG",
+      "INFO",
+      "WARNING",
+      "ERROR",
+      "CRITICAL"
+    ]
   },
   "model_settings": {
     "model_name": "production_model",
@@ -19,28 +26,24 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  \n\n**Key Parameters:**\n* `temperature`: Controls randomness. Higher values (e.g., 1.0) result in more random output, while lower values (e.g., 0.2) produce more deterministic output.\n* `top_p`:  Nucleus sampling.  Filters the possible tokens based on cumulative probability.  Values closer to 1 include a wider range of tokens.\n* `max_tokens`:  The maximum number of tokens generated in a single response.  Setting this too low can truncate responses.  Consider increasing this for more conversational interactions.\n* `prompt_prefix`:  A prefix added to each user prompt.  Useful for clearly defining the context for the model."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Experimentation with `temperature` and `top_p` can significantly impact the model's output. Consider increasing `max_tokens` for longer responses.",
+    "model_version": "1.2.3"
   },
-  "metadata": {
-    "last_modified": "2024-10-27T10:00:00Z",
-    "created_by": "AI Configuration Service",
-    "version_history": [
-      {
-        "version": "1.0",
-        "date": "2024-10-27T10:00:00Z",
-        "description": "Initial configuration file."
-      },
-      {
-        "version": "1.2",
-        "date": "2024-10-26T14:30:00Z",
-        "description": "Added metadata section for tracking changes."
-      },
-      {
-        "version": "1.3",
-        "date": "2024-10-27T10:00:00Z",
-        "description": "Updated documentation and added key parameter descriptions."
-      }
-    ]
+  "api_settings": {
+    "api_key": "YOUR_API_KEY",
+    "timeout_seconds": 60,
+    "retries": 3,
+    "description": "Configuration for API interactions.  Ensure the API key is properly configured and that timeouts and retries are appropriate for the target API."
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval_seconds": 60,
+    "metrics": [
+      "response_time",
+      "error_rate",
+      "token_usage"
+    ],
+    "description": "Enables monitoring of key AI service metrics.  Adjust the monitoring interval and chosen metrics as needed."
   }
 }
 ```
