@@ -2,12 +2,13 @@
 {
   "version": "1.2",
   "description": "AI Configuration Settings - Default Settings",
-  "timestamp": "2024-10-27T10:00:00Z", // Added timestamp for tracking configuration updates.
+  "timestamp": "2024-10-27T10:00:00Z",
   "logging": {
     "enabled": true,
     "level": "INFO",
     "log_file": "ai_settings.log",
-    "log_format": "[%({timestamp})s] %({level})s - %({message})s" // Defines log message format for readability.
+    "log_format": "[%({timestamp})s] %({level})s - %({message})s",
+    "description": "Configuration for logging AI activity.  Setting to 'true' enables logging.  Other options control the log level, file location, and the format of log messages."
   },
   "model_settings": {
     "model_name": "default_model",
@@ -16,36 +17,23 @@
     "temperature": 0.7,
     "top_p": 0.9,
     "max_tokens": 256,
-    "prompt_prefix": "User:", // Optional prefix for prompts.
+    "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior. Experiment with `temperature` and `top_p` to control randomness and diversity of responses."
   },
   "api_settings": {
-    "api_key": null, // Replace with actual API key if applicable.  Ensure proper security practices are followed when handling API keys.
-    "api_endpoint": "https://example.com/api/v1", // Replace with your API endpoint
-    "timeout_seconds": 30,
-    "notes": "Configure API settings for external services.  Update this endpoint with the correct URL for your specific API."
+    "api_key": null,
+    "api_service": null,
+    "description": "API settings for connecting to external AI services.  Replace `null` with your API key and service details.  Ensure proper security measures are in place when handling API keys."
   },
-  "data_processing": {
-    "use_embeddings": false,
-    "notes": "Controls whether embeddings are used for data processing.  Consider enabling embeddings for enhanced semantic understanding."
+  "data_preprocessing": {
+    "use_embeddings": true,
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "description": "Settings for data preprocessing steps.  'use_embeddings' enables the use of pre-trained embeddings. The `embedding_model` specifies the model to use for generating embeddings."
   },
-  "monitoring": {
+  "metrics": {
     "enabled": false,
-    "interval_seconds": 60,
-    "metrics": ["model_latency", "api_request_count"]
-  },
-  "notes": "This file contains the default configuration settings for the AI system.  Review and modify these settings to adapt to your specific use case.  Remember to restart the application after making changes to this file."
+    "description": "Configuration for tracking and reporting AI performance metrics.  Setting to 'true' will enable tracking and reporting."
+  }
 }
 ```
-
-**Key Changes and Explanations:**
-
-* **Added `monitoring` section:** This allows for tracking key performance indicators (KPIs) related to the AI system, which is crucial for understanding its performance. The `interval_seconds` determines how often the monitoring happens, and `metrics` specifies what's being tracked.
-* **Added `notes` fields throughout:**  These provide valuable context and instructions for users on what each setting does and how to adjust it. The notes are key for maintainability.
-* **More descriptive notes:** Expanded the notes to be more helpful and informative.
-* **Security Notes:**  Added a security note about handling API keys - crucial to remind users about best practices.
-* **Clearer Documentation:** Improved the overall structure and descriptions to enhance readability and understandability.
-* **Formatting:**  Maintained a well-formatted and professional JSON structure.
-
-This revised content is more robust, well-documented, and aligns with best practices for configuration files.  The addition of the `monitoring` section and more detailed notes are significant improvements.  Remember to adapt the settings to your specific project's requirements.
