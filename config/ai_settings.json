@@ -19,12 +19,18 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  \n\n**Key Parameters:**\n* `temperature`: Controls the randomness of the model's output. Higher values (e.g., 1.0) result in more random and creative responses, while lower values (e.g., 0.2) produce more deterministic and predictable outputs.\n* `top_p`:  Nucleus sampling.  Filters the potential tokens based on cumulative probability. Adjust to control the diversity of responses.\n* `max_tokens`: Limits the length of the generated text.  Increase this value if you need longer responses, but be aware of potential performance impacts. "
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Experimenting with `temperature` can significantly impact the creativity and randomness of the generated text.  Lower values result in more predictable outputs, while higher values lead to more diverse but potentially less coherent responses. Carefully consider `max_tokens` to control the length of generated responses and manage computational costs."
   },
-  "metadata": {
-    "last_modified": "2024-10-27T10:00:00Z",
-    "author": "AI Configuration Team",
-    "version_control": "Git (Branch: main)"
+  "data_processing": {
+    "enable_data_validation": true,
+    "validation_threshold": 0.9,
+    "description": "Configuration related to data preprocessing and validation.  'enable_data_validation' determines if data inputs are validated before processing. The 'validation_threshold' defines the minimum score required for data to be considered valid."
+  },
+  "api_settings": {
+    "api_url": "https://api.example.com/ai",
+    "api_key": "YOUR_API_KEY",  // Replace with your actual API key
+    "timeout_seconds": 30,
+    "description": "Settings related to API calls.  'api_url' specifies the endpoint to call. 'api_key' is the authentication key for accessing the API. 'timeout_seconds' controls the maximum time allowed for API requests."
   }
 }
 ```
