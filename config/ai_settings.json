@@ -19,35 +19,22 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior."
+    "notes": "This section configures the model used for AI tasks. Adjust parameters to fine-tune the model's behavior.  Consider monitoring model performance and adjusting `temperature` and `top_p` to balance creativity and accuracy."
   },
-  "api_settings": {
-    "api_key": "YOUR_API_KEY",  // Replace with your actual API key
-    "api_endpoint": "https://your-api.example.com/ai",
-    "timeout_seconds": 60,
-    "retries": 3,
-    "description": "Settings related to API calls to external AI services.  Ensure your API key is securely managed."
+  "evaluation": {
+    "evaluation_frequency": "daily",
+    "metrics": [
+      "accuracy",
+      "precision",
+      "recall",
+      "f1_score"
+    ],
+    "description": "Settings related to model evaluation.  This section allows you to schedule regular performance checks.  Adjust the `evaluation_frequency` and `metrics` based on the application's needs."
   },
-  "data_preprocessing": {
-    "use_embeddings": true,
-    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2", // Example - adjust based on your chosen model
-    "description": "Configuration options for data preprocessing steps.  Specifying an embedding model can significantly impact performance."
+  "monitoring": {
+    "enabled": true,
+    "interval": 60,  // Interval in seconds
+    "description": "Enable or disable monitoring of system metrics.  The `interval` determines how often resource usage is checked."
   }
 }
 ```
-
-**Key Changes and Rationale:**
-
-* **Added `api_settings` Section:** This is a crucial addition for a production AI system. It includes placeholders for an API key, endpoint URL, timeout, and retry settings. *Important: Always handle API keys securely.*
-* **Added `data_preprocessing` Section:**  Many AI pipelines involve preprocessing data before feeding it to the model.  This section introduces configurable options related to that process.
-* **Comments/Documentation:** Added clear descriptions within each section to explain the purpose and configuration options.  This makes the file easier to understand and maintain.
-* **Placeholder Values:**  Used placeholder values (e.g., `"YOUR_API_KEY"`) to emphasize that these should be replaced with actual, properly configured values.
-* **Example Embedding Model:** Included an example embedding model name for the `data_preprocessing` section.  This suggests a readily available model that can be used for demonstration or initial testing.
-
-**Important Considerations (Beyond the JSON File):**
-
-* **Security:**  Never commit actual API keys directly to version control. Use environment variables or a secrets management system.
-* **Error Handling:**  This configuration file doesn't cover error handling or retry logic.  You'll need to implement this in your application code.
-* **Monitoring:**  Consider adding sections to the configuration file to define metrics you want to monitor (e.g., API response times, log file size).
-* **Validation:** Implement validation checks to ensure the configuration values are within acceptable ranges or conform to expected formats.  This will help prevent runtime errors.
-* **Version Control:** Maintain a clear versioning scheme for this configuration file to track changes over time.
