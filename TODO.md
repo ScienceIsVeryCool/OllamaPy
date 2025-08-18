@@ -10,7 +10,7 @@
 
 ## Medium Priority (Next 1-2 Days)
 
-* [ ] **Test AI Integration with Invalid `ai_settings.json`:** Specifically test the AI's behavior when using an invalid or incomplete `ai_settings.json`. This is critical for identifying robustness and handling unexpected inputs. (Related to: Validate and Test `ai_settings.json`)
+* [x] **Test AI Integration with Invalid `ai_settings.json`:** Specifically test the AI's behavior when using an invalid or incomplete `ai_settings.json`. This is critical for identifying robustness and handling unexpected inputs. (Related to: Validate and Test `ai_settings.json`)
 * [ ] **Unit Testing – AI Helpers - Focus on Error Handling Paths:** Prioritize unit tests for the `ai_helpers.py` module specifically designed to trigger error handling paths and ensure proper exception handling and logging. (Related to: CREATE src/ai_helpers.py)
 * [ ] **Implement Robust Input Validation for `ai_settings.json`:** Add validation logic *within* the `ai_helpers.py` module to ensure that the `ai_settings.json` file contains the expected data types and values. This will catch invalid configurations early. (Related to: Test AI Integration with Invalid `ai_settings.json`)
 
@@ -20,5 +20,8 @@
 * [ ] **Test Coverage - AI Settings:** Increase test coverage for the `ai_settings.json` file. Add tests that cover the impact of invalid/missing values, boundary conditions, and different setting combinations. This is crucial now that the file has been modified. (Related to: Validate and Test `ai_settings.json`)
 * [ ] **Implement Basic Error Handling – AI:** Implement basic error handling around the AI interactions, including logging errors, and considering retry mechanisms for transient failures. Capture specific error types. (Related to: Implement Basic Error Handling – AI)
 * [ ] **Performance Monitoring - AI:** Implement basic performance monitoring for the AI interactions (e.g., response times, resource usage). Consider using profiling tools.
-* [ ] **Detailed Documentation – AI Helpers:** Create comprehensive documentation for the `ai_helpers.py` module, outlining its purpose, functionality, API usage, and any dependencies.
-* [ ] **Refine AI Settings:** Based on initial testing results, explore opportunities to refine the `ai_settings.json` configuration for optimal performance and accuracy.
+
+## Very Low Priority (Next 2-3 Days - Dependent on Medium Priority)
+
+* [ ] **Review Unit Tests - AI Helpers:** Conduct a thorough review of the unit tests implemented for `ai_helpers.py`, focusing on coverage, quality, and adherence to best practices.  (Related to: Unit Testing – AI Helpers - Focus on Error Handling Paths)
+* [ ] **Document Test Cases for `ai_settings.json`:** Create a document outlining the test cases used for validating `ai_settings.json`, including input examples and expected results.  This will facilitate future maintenance.
