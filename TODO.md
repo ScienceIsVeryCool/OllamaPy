@@ -1,6 +1,6 @@
 # TODO
 
-**Last Updated:** October 26, 2023
+**Last Updated:** October 27, 2023
 
 ## High Priority (Immediate)
 
@@ -25,3 +25,9 @@
 
 * [ ] **Review Unit Tests - AI Helpers:** Conduct a thorough review of the unit tests implemented for `ai_helpers.py`, focusing on coverage, quality, and adherence to best practices.  (Related to: Unit Testing – AI Helpers - Focus on Error Handling Paths)
 * [ ] **Document Test Cases for `ai_settings.json`:** Create a document outlining the test cases used for validating `ai_settings.json`, including input examples and expected results.  This will facilitate future maintenance.
+
+## Next Steps (Immediately Following Validation)
+
+* [ ] **Expand Validation Tests:** Add tests to cover more edge cases and combinations of settings within `ai_settings.json`.  Focus on scenarios that could lead to unexpected behavior.
+* [ ] **Investigate Test Failures (if any):** If any validation tests fail, immediately investigate and correct the underlying issue. Prioritize fixing the root cause rather than just masking the symptoms.
+* [ ] **Refactor Input Validation:**  Consider refactoring the input validation logic in `ai_helpers.py` for improved readability and maintainability.
