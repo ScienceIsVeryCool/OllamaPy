@@ -25,15 +25,17 @@
     "max_tokens": 512,
     "prompt_prefix": "User:",
     "stop_sequences": [".", "!", "?", "###"],
-    "note": "Adjust these settings to fine-tune the AI model's behavior.  Temperature controls randomness; lower values (e.g., 0.2) produce more predictable outputs. Top_p controls the probability distribution used for token selection. Max_tokens limits the length of generated responses."
+    "note": "Adjust temperature to control the randomness of generated text. Lower values (e.g., 0.2) result in more deterministic outputs, while higher values (e.g., 1.0) introduce more creativity.  The `top_p` parameter controls the cumulative probability mass of tokens considered for generation. Setting this to 1.0 means all tokens are considered. `max_tokens` limits the length of generated output.  `prompt_prefix` helps define the expected start of user prompts. `stop_sequences` prevent the model from continuing generation beyond specified tokens."
   },
   "api_settings": {
     "api_key": "YOUR_API_KEY",
-    "api_url": "https://api.example.com/ai",
-    "timeout_seconds": 60
+    "api_endpoint": "https://api.example.com/ai",
+    "timeout": 30,
+    "retries": 3
   },
-  "monitoring": {
-    "enabled": false,
-    "interval_seconds": 300
+  "data_settings": {
+    "data_source": "internal_database",
+    "data_cache_enabled": true,
+    "cache_expiry_seconds": 3600
   }
 }
