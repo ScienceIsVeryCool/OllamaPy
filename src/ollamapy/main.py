@@ -7,6 +7,7 @@ from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
 from .chat_session import ChatSession
 from .terminal_interface import TerminalInterface
+from .ai_query import AIQuery
 
 
 def hello():
@@ -33,9 +34,10 @@ def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.",
     model_manager = ModelManager(client)
     analysis_engine = AnalysisEngine(analysis_model, client)
     chat_session = ChatSession(model, client, system)
+    ai_query = AIQuery(client, model=analysis_model)
     
     # Create and run the terminal interface
-    terminal_interface = TerminalInterface(model_manager, analysis_engine, chat_session)
+    terminal_interface = TerminalInterface(model_manager, analysis_engine, chat_session, ai_query)
     terminal_interface.run()
 
 

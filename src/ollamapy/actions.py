@@ -5,6 +5,7 @@ from datetime import datetime
 import math
 from .parameter_utils import prepare_function_parameters
 import os
+from .ai_query import AIQuery
 
 # Function registry to store available actions
 ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -33,7 +34,7 @@ def clear_action_logs():
 
 
 def get_action_logs() -> List[str]:
-    """Get all action logs generated during execution.
+    """Get all action logs generated during execution. 
     
     Returns:
         List of log messages from all executed actions
@@ -47,7 +48,7 @@ def register_action(
     vibe_test_phrases: List[str] = None,
     parameters: Dict[str, Dict[str, Any]] = None
 ):
-    """Decorator to register functions as available actions.
+    """Decorator to register functions as available actions. 
     
     Args:
         name: The name of the action (what the AI will say)
@@ -113,7 +114,6 @@ def fileReader(filePath: str):
     except:
         log(f"[fileReader] There was an exception thrown when trying to read filePath: {filePath}")
     
-
 
 
 
@@ -187,7 +187,7 @@ def directoryReader(dir: str):
     }
 )
 def getWeather(location: str = "current location"):
-    """Get weather information and log the results.
+    """Get weather information and log the results. 
     
     Args:
         location: The location to get weather for
@@ -230,7 +230,7 @@ def getWeather(location: str = "current location"):
     }
 )
 def getTime(timezone: str = None):
-    """Get current time and log the results.
+    """Get current time and log the results. 
     
     Args:
         timezone: Optional timezone specification
@@ -279,7 +279,7 @@ def getTime(timezone: str = None):
     }
 )
 def square_root(number: Union[float, int] = None):
-    """Calculate the square root of a number and log the results.
+    """Calculate the square root of a number and log the results. 
     
     Args:
         number: The number to calculate the square root of
@@ -334,7 +334,7 @@ def square_root(number: Union[float, int] = None):
     }
 )
 def calculate(expression: str = None):
-    """Evaluate a mathematical expression and log the results.
+    """Evaluate a mathematical expression and log the results. 
     
     Args:
         expression: The mathematical expression to evaluate
@@ -396,7 +396,7 @@ def calculate(expression: str = None):
 
 
 def get_available_actions() -> Dict[str, Dict[str, Any]]:
-    """Get all registered actions.
+    """Get all registered actions. 
     
     Returns:
         Dictionary of action names to their function, description, parameters, and vibe test phrases
@@ -405,7 +405,7 @@ def get_available_actions() -> Dict[str, Dict[str, Any]]:
 
 
 def get_actions_with_vibe_tests() -> Dict[str, Dict[str, Any]]:
-    """Get all actions that have vibe test phrases defined.
+    """Get all actions that have vibe test phrases defined. 
     
     Returns:
         Dictionary of action names to their info, filtered to only include actions with vibe test phrases
@@ -418,9 +418,9 @@ def get_actions_with_vibe_tests() -> Dict[str, Dict[str, Any]]:
 
 
 def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> None:
-    """Execute an action with the given parameters.
+    """Execute an action with the given parameters. 
     
-    Actions now log their outputs instead of returning strings.
+    Actions now log their outputs instead of returning strings. 
     
     Args:
         action_name: Name of the action to execute
@@ -451,3 +451,47 @@ def execute_action(action_name: str, parameters: Dict[str, Any] = None) -> None:
         log(f"[System] Error: {str(e)}")
     except Exception as e:
         log(f"[System] Error executing action '{action_name}': {str(e)}")
+
+def select_and_execute_action(ai_query: AIQuery, conversation_context: str):
+    """Selects an action using AI and executes it."""
+    clear_action_logs()
+    actions = get_available_actions()
+    action_names = list(actions.keys())
+
+    result = ai_query.multiple_choice(
+        question="Based on the recent conversation, which action should be taken?",
+        options=action_names,
+        context=conversation_context
+    )
+
+    print(f"AI chose action: {result.value} (Confidence: {result.confidence:.0%})")
+
+    if result.confidence < 0.5:
+        print("AI is not confident. Please select an action manually.")
+        for i, action_name in enumerate(action_names):
+            print(f"{i+1}. {action_name}")
+        
+        try:
+            choice = int(input("Choose an action: ")) - 1
+            chosen_action_name = action_names[choice]
+        except (ValueError, IndexError):
+            print("Invalid choice.")
+            return
+    else:
+        chosen_action_name = result.value
+
+    action_info = actions.get(chosen_action_name)
+
+    if not action_info:
+        print(f"Invalid action: {chosen_action_name}")
+        return
+
+    params = {}
+    if action_info.get('parameters'):
+        print(f"Action '{chosen_action_name}' requires parameters.")
+        for param_name, param_info in action_info['parameters'].items():
+            if param_info.get('required', False):
+                user_val = input(f"Enter value for '{param_name}' ({param_info['description']}): ")
+                params[param_name] = user_val
+    
+    execute_action(chosen_action_name, params)

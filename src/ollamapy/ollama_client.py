@@ -1,21 +1,26 @@
-"""Ollama API client for terminal chat interface."""
+"""Enhanced Ollama API client with model context size support"""
 
 import json
+import logging
+import re
 import requests
 from typing import Dict, List, Optional, Generator
 
+logger = logging.getLogger(__name__)
+
 
 class OllamaClient:
-    """Client for interacting with local Ollama API."""
+    """Enhanced Ollama API client with model context size support"""
     
     def __init__(self, base_url: str = "http://localhost:11434"):
-        """Initialize the Ollama client.
+        """Initialize the Ollama client. 
         
         Args:
             base_url: The base URL for the Ollama API server
         """
         self.base_url = base_url.rstrip('/')
         self.session = requests.Session()
+        self._model_cache = {}
     
     def is_available(self) -> bool:
         """Check if Ollama server is running and accessible."""
@@ -35,6 +40,50 @@ class OllamaClient:
         except requests.exceptions.RequestException:
             return []
     
+    def get_model_context_size(self, model: str) -> int:
+        """Get the context window size for a model"""
+        if model in self._model_cache:
+            return self._model_cache[model]
+        
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/show",
+                json={"name": model}
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Try to extract context size from model info
+            context_size = 4096  # Default
+            if 'modelfile' in data:
+                # Look for context size in modelfile
+                match = re.search(r'num_ctx["\s]+(\d+)', data['modelfile'])
+                if match:
+                    context_size = int(match.group(1))
+            
+            self._model_cache[model] = context_size
+            return context_size
+        except:
+            return 4096  # Default context size
+    
+    def generate(self, model: str, prompt: str, system: Optional[str] = None) -> str:
+        """Generate a response from the model"""
+        try:
+            payload = {"model": model, "prompt": prompt, "stream": False}
+            if system:
+                payload["system"] = system
+            
+            response = self.session.post(
+                f"{self.base_url}/api/generate",
+                json=payload,
+                timeout=60
+            )
+            response.raise_for_status()
+            return response.json()['response']
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Generation failed: {e}")
+            return ""
+
     def pull_model(self, model: str) -> bool:
         """Pull a model if it's not available locally."""
         try:

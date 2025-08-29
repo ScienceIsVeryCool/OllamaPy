@@ -5,24 +5,27 @@ from typing import List, Tuple, Dict, Any
 from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
 from .chat_session import ChatSession
-from .actions import get_available_actions, execute_action, get_action_logs, clear_action_logs
+from .actions import get_available_actions, execute_action, get_action_logs, select_and_execute_action
+from .ai_query import AIQuery
 
 
 class TerminalInterface:
     """Terminal-based chat interface with AI meta-reasoning."""
     
     def __init__(self, model_manager: ModelManager, analysis_engine: AnalysisEngine, 
-                 chat_session: ChatSession):
-        """Initialize the terminal interface.
+                 chat_session: ChatSession, ai_query: AIQuery):
+        """Initialize the terminal interface. 
         
         Args:
             model_manager: The ModelManager instance
             analysis_engine: The AnalysisEngine instance
             chat_session: The ChatSession instance
+            ai_query: The AIQuery instance for structured queries
         """
         self.model_manager = model_manager
         self.analysis_engine = analysis_engine
         self.chat_session = chat_session
+        self.ai_query = ai_query
         self.actions = get_available_actions()
         
     def setup(self) -> bool:
@@ -70,6 +73,7 @@ class TerminalInterface:
         print("  model           - Show current models")
         print("  models          - List available models")
         print("  actions         - Show available actions the AI can choose")
+        print("  action          - Manually trigger AI action selection based on context")
         print(f"\n🧠 Multi-action: The AI evaluates ALL actions and can run multiple per query.")
         print()
     
@@ -116,6 +120,20 @@ class TerminalInterface:
                 else:
                     print(f"   • {name}: {info['description']}")
             return False
+
+        elif command == 'action':
+            print("🤖 Selecting an action based on conversation context...")
+            context = "\n".join([f"{m['role']}: {m['content']}" for m in self.chat_session.messages[-5:]])
+            select_and_execute_action(self.ai_query, context)
+            logs = get_action_logs()
+            if logs:
+                print("📝 Action Logs:")
+                for log_entry in logs:
+                    print(f"  - {log_entry}")
+            else:
+                print("No actions were executed or no logs were produced.")
+            print()
+            return False
         
         return False
     
@@ -131,7 +149,7 @@ class TerminalInterface:
             sys.exit(0)
     
     def execute_multiple_actions(self, actions_with_params: List[Tuple[str, Dict[str, Any]]]) -> str:
-        """Execute multiple actions and collect their log outputs.
+        """Execute multiple actions and collect their log outputs. 
         
         Args:
             actions_with_params: List of (action_name, parameters) tuples
@@ -165,7 +183,7 @@ class TerminalInterface:
         return "\n".join(combined_logs)
     
     def generate_ai_response_with_context(self, user_input: str, action_logs: str):
-        """Generate AI response with action context from logs.
+        """Generate AI response with action context from logs. 
         
         Args:
             user_input: The original user input
