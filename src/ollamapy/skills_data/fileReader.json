@@ -1,0 +1,26 @@
+{
+  "name": "fileReader",
+  "description": "Use when the user wants you to read or open a file to look at its content as plaintext.",
+  "vibe_test_phrases": [
+    "What do you think of this paper? /home/paper.txt",
+    "Do you think this code will run? /storage/python_code.py",
+    "/home/documents/fileName.txt"
+  ],
+  "parameters": {
+    "filePath": {
+      "type": "string",
+      "description": "The path to the file the user wants you to read",
+      "required": true
+    }
+  },
+  "function_code": "\ndef execute(filePath: str):\n    log(f\"[fileReader] Starting File Reading process.\")\n    try:\n        with open(filePath, 'r') as f:\n            content = f.read()\n            log(f\"[fileReader] here is the filePath: {filePath} contents:\\n\\n{content}\")\n    except Exception as e:\n        log(f\"[fileReader] There was an exception thrown when trying to read filePath: {filePath}. Error: {e}\")\n",
+  "verified": true,
+  "scope": "local",
+  "role": "file_operations",
+  "created_at": "2025-08-30T10:28:14.100830",
+  "last_modified": "2025-08-30T10:28:14.100833",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}

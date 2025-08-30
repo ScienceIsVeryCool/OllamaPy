@@ -1,0 +1,26 @@
+{
+  "name": "directoryReader",
+  "description": "Use when the user wants you to look through an entire directory's contents for an answer.",
+  "vibe_test_phrases": [
+    "What do you think of this project? /home/myCodingProject",
+    "Do you think this code will run? /storage/myOtherCodingProject/",
+    "/home/documents/randomPlace/"
+  ],
+  "parameters": {
+    "dir": {
+      "type": "string",
+      "description": "The dir path to the point of interest the user wants you to open and explore.",
+      "required": true
+    }
+  },
+  "function_code": "\ndef execute(dir: str):\n    log(f\"[directoryReader] Starting up Directory Reading Process for : {dir}\")\n    try:\n        for item_name in os.listdir(dir):\n            item_path = os.path.join(dir, item_name)\n            print(f\"[directoryReader] Now looking at item: {item_name} at {item_path}\")\n            log(f\"[directoryReader] Now looking at item: {item_name} at {item_path}\")\n            \n            if os.path.isfile(item_path):\n                try:\n                    with open(item_path, 'r', encoding='utf-8') as f:\n                        log(f\"[directoryReader] Here is file contents for: {item_path}:\\n{f.read()}\")\n                except Exception as e:\n                    log(f\"[directoryReader] Error reading file {item_name}: {e}\")\n    except FileNotFoundError:\n        log(f\"[directoryReader] Error: Directory not found at {dir}\")\n    except Exception as e:\n        log(f\"[directoryReader] An unexpected error occurred: {e}\")\n",
+  "verified": true,
+  "scope": "local",
+  "role": "file_operations",
+  "created_at": "2025-08-30T10:28:14.101013",
+  "last_modified": "2025-08-30T10:28:14.101016",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}

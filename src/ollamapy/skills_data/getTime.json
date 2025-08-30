@@ -1,0 +1,29 @@
+{
+  "name": "getTime",
+  "description": "Use when the user asks about the current time, date, or temporal information.",
+  "vibe_test_phrases": [
+    "what is the current time?",
+    "is it noon yet?",
+    "what time is it?",
+    "Is it 4 o'clock?",
+    "What day is it?",
+    "What's the date today?"
+  ],
+  "parameters": {
+    "timezone": {
+      "type": "string",
+      "description": "The timezone to get time for (e.g., 'EST', 'PST', 'UTC')",
+      "required": false
+    }
+  },
+  "function_code": "\ndef execute(timezone: str = None):\n    current_time = datetime.now()\n    \n    log(f\"[Time Check] Retrieving current time{f' for {timezone}' if timezone else ''}\")\n    log(f\"[Time] Current time: {current_time.strftime('%I:%M:%S %p')}\")\n    log(f\"[Time] Date: {current_time.strftime('%A, %B %d, %Y')}\")\n    log(f\"[Time] Day of week: {current_time.strftime('%A')}\")\n    log(f\"[Time] Week number: {current_time.strftime('%W')} of the year\")\n    \n    if timezone:\n        log(f\"[Time] Note: Timezone conversion for '{timezone}' would be applied in production\")\n    \n    hour = current_time.hour\n    if 5 <= hour < 12:\n        log(\"[Time] Period: Morning\")\n    elif 12 <= hour < 17:\n        log(\"[Time] Period: Afternoon\")\n    elif 17 <= hour < 21:\n        log(\"[Time] Period: Evening\")\n    else:\n        log(\"[Time] Period: Night\")\n",
+  "verified": true,
+  "scope": "global",
+  "role": "information",
+  "created_at": "2025-08-30T10:28:14.101428",
+  "last_modified": "2025-08-30T10:28:14.101431",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}

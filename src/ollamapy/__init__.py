@@ -6,14 +6,15 @@ from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
 from .chat_session import ChatSession
 from .terminal_interface import TerminalInterface
-from .actions import (
+from .skills import (
     get_available_actions, 
     get_actions_with_vibe_tests, 
     execute_action,
-    register_action,
-    log,
+    SKILL_REGISTRY,
     clear_action_logs,
-    get_action_logs
+    get_action_logs,
+    Skill,
+    SkillRegistry
 )
 from .parameter_utils import (
     convert_parameter_value,
@@ -38,8 +39,9 @@ __all__ = [
     "get_available_actions",
     "get_actions_with_vibe_tests",
     "execute_action",
-    "register_action",
-    "log",
+    "SKILL_REGISTRY",
+    "Skill",
+    "SkillRegistry",
     "clear_action_logs",
     "get_action_logs",
     "convert_parameter_value",

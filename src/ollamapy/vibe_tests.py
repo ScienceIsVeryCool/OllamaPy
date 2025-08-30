@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple, Any
 from .ollama_client import OllamaClient
 from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
-from .actions import get_actions_with_vibe_tests, clear_action_logs
+from .skills import get_actions_with_vibe_tests, clear_action_logs
 from .vibe_report import VibeTestReportGenerator
 
 

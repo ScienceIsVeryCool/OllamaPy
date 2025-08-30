@@ -1,0 +1,29 @@
+{
+  "name": "square_root",
+  "description": "Use when the user wants to calculate the square root of a number. Keywords include: square root, sqrt, \u221a",
+  "vibe_test_phrases": [
+    "what's the square root of 16?",
+    "calculate sqrt(25)",
+    "find the square root of 144",
+    "\u221a81 = ?",
+    "I need the square root of 2",
+    "square root of 100"
+  ],
+  "parameters": {
+    "number": {
+      "type": "number",
+      "description": "The number to calculate the square root of",
+      "required": true
+    }
+  },
+  "function_code": "\ndef execute(number: float = None):\n    if number is None:\n        log(\"[Square Root] Error: No number provided for square root calculation\")\n        return\n    \n    log(f\"[Square Root] Calculating square root of {number}\")\n    \n    try:\n        if number < 0:\n            result = math.sqrt(abs(number))\n            log(f\"[Square Root] Input is negative ({number})\")\n            log(f\"[Square Root] Result: {result:.6f}i (imaginary number)\")\n            log(f\"[Square Root] Note: The square root of a negative number is an imaginary number\")\n        else:\n            result = math.sqrt(number)\n            \n            if result.is_integer():\n                log(f\"[Square Root] {number} is a perfect square\")\n                log(f\"[Square Root] Result: {int(result)}\")\n                log(f\"[Square Root] Verification: {int(result)} \u00d7 {int(result)} = {number}\")\n            else:\n                log(f\"[Square Root] Result: {result:.6f}\")\n                log(f\"[Square Root] Rounded to 2 decimal places: {result:.2f}\")\n                log(f\"[Square Root] Verification: {result:.6f} \u00d7 {result:.6f} \u2248 {result * result:.6f}\")\n                \n    except (ValueError, TypeError) as e:\n        log(f\"[Square Root] Error calculating square root: {str(e)}\")\n",
+  "verified": true,
+  "scope": "global",
+  "role": "mathematics",
+  "created_at": "2025-08-30T10:28:14.101642",
+  "last_modified": "2025-08-30T10:28:14.101644",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}

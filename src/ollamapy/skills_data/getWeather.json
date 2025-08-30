@@ -1,0 +1,30 @@
+{
+  "name": "getWeather",
+  "description": "Use when the user asks about weather conditions or climate. Like probably anything close to weather conditions. UV, Humidity, temperature, etc.",
+  "vibe_test_phrases": [
+    "Is it raining right now?",
+    "Do I need a Jacket when I go outside due to weather?",
+    "Is it going to be hot today?",
+    "Do I need an umbrella due to rain today?",
+    "Do I need sunscreen today due to UV?",
+    "What's the weather like?",
+    "Tell me about today's weather"
+  ],
+  "parameters": {
+    "location": {
+      "type": "string",
+      "description": "The location to get weather for (city name or coordinates)",
+      "required": false
+    }
+  },
+  "function_code": "\ndef execute(location: str = \"current location\"):\n    log(f\"[Weather Check] Retrieving weather information for {location}\")\n    log(f\"[Weather] Location: {location}\")\n    log(f\"[Weather] Current conditions: Partly cloudy\")\n    log(f\"[Weather] Temperature: 72\u00b0F (22\u00b0C)\")\n    log(f\"[Weather] Feels like: 70\u00b0F (21\u00b0C)\")\n    log(f\"[Weather] Humidity: 45%\")\n    log(f\"[Weather] UV Index: 6 (High) - Sun protection recommended\")\n    log(f\"[Weather] Wind: 5 mph from the Northwest\")\n    log(f\"[Weather] Visibility: 10 miles\")\n    log(f\"[Weather] Today's forecast: Partly cloudy with a high of 78\u00b0F and low of 62\u00b0F\")\n    log(f\"[Weather] Rain chance: 10%\")\n    log(f\"[Weather] Recommendation: Light jacket might be needed for evening, sunscreen recommended for extended outdoor activity\")\n",
+  "verified": true,
+  "scope": "global",
+  "role": "information",
+  "created_at": "2025-08-30T10:28:14.101259",
+  "last_modified": "2025-08-30T10:28:14.101262",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}

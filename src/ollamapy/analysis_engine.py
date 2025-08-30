@@ -3,7 +3,7 @@
 import re
 from typing import List, Dict, Tuple, Any
 from .ollama_client import OllamaClient
-from .actions import get_available_actions
+from .skills import get_available_actions, SKILL_REGISTRY
 from .parameter_utils import extract_parameter_from_response
 
 
@@ -209,3 +209,34 @@ Answer only 'yes' if this action should be used for the user's input, or 'no' if
             print("🎯 No specific actions needed for this query")
         
         return selected_actions
+    
+    def generate_custom_python_script(self, user_input: str) -> str:
+        """Generate a custom Python script based on user input.
+        
+        Args:
+            user_input: The user's request
+            
+        Returns:
+            Generated Python script
+        """
+        prompt = f"""Generate a Python script to help with this request: {user_input}
+
+Requirements:
+- Create a standalone Python script that solves the user's request
+- Use print() statements for all output
+- Include error handling where appropriate
+- Do not use any external libraries unless absolutely necessary
+- Make the script clear and well-commented
+
+Output ONLY the Python code, no explanations or markdown:"""
+        
+        system_message = "You are a Python code generator. Output only valid Python code."
+        script = self.get_cleaned_response(prompt, system_message)
+        
+        # Clean up any markdown formatting if present
+        if '```python' in script:
+            script = script.split('```python')[1].split('```')[0]
+        elif '```' in script:
+            script = script.split('```')[1].split('```')[0]
+        
+        return script.strip()

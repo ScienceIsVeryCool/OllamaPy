@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict, Any
 from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
 from .chat_session import ChatSession
-from .actions import get_available_actions, execute_action, get_action_logs, select_and_execute_action
+from .skills import get_available_actions, execute_action, get_action_logs, select_and_execute_action, SKILL_REGISTRY
 from .ai_query import AIQuery
 
 
@@ -148,7 +148,7 @@ class TerminalInterface:
             print("\n\n👋 Goodbye! Thanks for chatting!")
             sys.exit(0)
     
-    def execute_multiple_actions(self, actions_with_params: List[Tuple[str, Dict[str, Any]]]) -> str:
+    def execute_multiple_actions(self, actions_with_params: List[Tuple[str, Dict[str, Any]]], user_input: str = "") -> str:
         """Execute multiple actions and collect their log outputs. 
         
         Args:
@@ -166,13 +166,25 @@ class TerminalInterface:
         print(f"🚀 Executing {len(actions_with_params)} action(s)...")
         
         for action_name, parameters in actions_with_params:
-            print(f"   Running {action_name}", end="")
-            if parameters:
-                print(f" with {parameters}", end="")
-            print("...")
-            
-            # Execute the action (it will log internally)
-            execute_action(action_name, parameters)
+            # Special handling for custom Python shell
+            if action_name == "customPythonShell":
+                print(f"   Running {action_name} - generating custom script...")
+                # Generate a custom Python script using AI
+                script = self.analysis_engine.generate_custom_python_script(user_input)
+                print("   Executing generated script...")
+                # Execute the generated script
+                print(f"   Script to be executed {script}")
+                result = SKILL_REGISTRY.execute_custom_python_script(script)
+                print(f"   Script output: {result}")
+
+            else:
+                print(f"   Running {action_name}", end="")
+                if parameters:
+                    print(f" with {parameters}", end="")
+                print("...")
+                
+                # Execute the action (it will log internally)
+                execute_action(action_name, parameters)
         
         # Get all the logs that were generated
         combined_logs = get_action_logs()
@@ -221,7 +233,7 @@ class TerminalInterface:
             selected_actions = self.analysis_engine.select_all_applicable_actions(user_input)
             
             # Execute all selected actions and collect logs
-            action_logs = self.execute_multiple_actions(selected_actions)
+            action_logs = self.execute_multiple_actions(selected_actions, user_input)
             
             # Generate AI response with action context from logs
             self.generate_ai_response_with_context(user_input, action_logs)

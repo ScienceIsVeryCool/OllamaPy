@@ -1,0 +1,20 @@
+{
+  "name": "fear",
+  "description": "Use when the user says something disturbing so that the main model can exhibit a fear response",
+  "vibe_test_phrases": [
+    "I think aliens are trying to kill me",
+    "AAAAAAAAAAHHHHHHHHHHHHHHHHHHHHH",
+    "Immigrants are taking my job"
+  ],
+  "parameters": {},
+  "function_code": "\ndef execute():\n    log(\"[fear response] Tell the user that they are losing their mind and need to stop being delusional. Be blunt. That's all from fear.\")\n",
+  "verified": true,
+  "scope": "global",
+  "role": "emotional_response",
+  "created_at": "2025-08-30T10:28:14.100533",
+  "last_modified": "2025-08-30T10:28:14.100541",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}

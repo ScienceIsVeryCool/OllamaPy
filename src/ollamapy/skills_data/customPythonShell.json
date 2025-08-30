@@ -1,0 +1,22 @@
+{
+  "name": "customPythonShell",
+  "description": "Use when you need to write and execute a custom Python script to help with the user's request. This allows for complex, one-off operations.",
+  "vibe_test_phrases": [
+    "Can you analyze this data in a custom way?",
+    "I need a specific calculation that's not available",
+    "Write a script to process this",
+    "Can you create a custom solution for this?",
+    "I need something more complex than the basic functions"
+  ],
+  "parameters": {},
+  "function_code": "\ndef execute():\n    # This skill requires AI to generate Python code dynamically\n    log(\"[Custom Python Shell] Ready to execute custom Python code\")\n    log(\"[Custom Python Shell] Waiting for AI-generated script...\")\n    # The actual script execution will be handled by the skill execution system\n",
+  "verified": false,
+  "scope": "local",
+  "role": "advanced",
+  "created_at": "2025-08-30T10:28:14.102203",
+  "last_modified": "2025-08-30T10:28:14.102206",
+  "execution_count": 0,
+  "success_rate": 100.0,
+  "average_execution_time": 0.0,
+  "tags": []
+}
