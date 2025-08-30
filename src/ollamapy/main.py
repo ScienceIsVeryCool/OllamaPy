@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from typing import Optional
 from .ollama_client import OllamaClient
 from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
@@ -53,7 +54,7 @@ def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model
     return run_tests(model=model, iterations=iterations, analysis_model=analysis_model)
 
 
-def run_skill_gen(model: str = "gemma3:4b", analysis_model: str = None, count: int = 1, ideas: list = None):
+def run_skill_gen(model: str = "gemma3:4b", analysis_model: Optional[str] = None, count: int = 1, ideas: Optional[list] = None):
     """Run automated skill generation.
     
     Args:

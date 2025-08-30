@@ -26,7 +26,7 @@ from .parameter_utils import (
 )
 from .vibe_tests import VibeTestRunner, run_vibe_tests
 from .vibe_report import VibeTestReportGenerator
-from .skill_generator import SkillGenerator, SkillValidator, SkillGenerationResult, run_skill_generation
+from .skill_generator import IncrementalSkillGenerator, SafeCodeExecutor, SkillGenerationResult, SkillPlan, run_skill_generation
 
 __all__ = [
     "hello", 
@@ -54,8 +54,9 @@ __all__ = [
     "VibeTestRunner", 
     "run_vibe_tests",
     "VibeTestReportGenerator",
-    "SkillGenerator",
-    "SkillValidator",
+    "IncrementalSkillGenerator",
+    "SafeCodeExecutor",
     "SkillGenerationResult",
+    "SkillPlan",
     "run_skill_generation"
 ]

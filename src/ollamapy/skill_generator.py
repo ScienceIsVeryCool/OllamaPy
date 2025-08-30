@@ -1,19 +1,35 @@
-"""Automated skill generation system using AI."""
+"""Automated skill generation system using AI with multi-step prompts and safe execution."""
 
 import json
-import ast
-import sys
-import traceback
+import subprocess
+import tempfile
+import os
 from dataclasses import dataclass
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, Union
 from datetime import datetime
-from pathlib import Path
 
-from .ai_query import AIQuery, FileWriteResult, OpenResult
+from .ai_query import AIQuery
 from .ollama_client import OllamaClient
 from .skills import Skill, SkillRegistry
-from .vibe_tests import VibeTestRunner
 from .analysis_engine import AnalysisEngine
+
+
+@dataclass
+class SkillPlan:
+    """A plan for generating a skill, created step by step."""
+    idea: str = ""
+    name: str = ""
+    description: str = ""
+    role: str = ""
+    vibe_test_phrases: Optional[List[str]] = None
+    parameters: Optional[Dict[str, Dict[str, Any]]] = None
+    function_code: str = ""
+    
+    def __post_init__(self):
+        if self.vibe_test_phrases is None:
+            self.vibe_test_phrases = []
+        if self.parameters is None:
+            self.parameters = {}
 
 
 @dataclass
@@ -21,540 +37,618 @@ class SkillGenerationResult:
     """Result of a skill generation attempt."""
     success: bool
     skill: Optional[Skill]
-    validation_errors: List[str]
-    compilation_success: bool
-    vibe_test_passed: bool
-    vibe_test_results: Optional[Dict[str, Any]]
+    plan: Optional[SkillPlan]
+    step_results: Dict[str, bool]
+    errors: List[str]
     generation_time: float
-    iterations_needed: int
+    attempts: int
+    vibe_test_passed: bool = False
+    vibe_test_results: Optional[Dict[str, Any]] = None
 
 
-class SkillValidator:
-    """Validates generated skills for correctness and safety."""
+class SafeCodeExecutor:
+    """Safely executes generated code in isolation."""
     
     def __init__(self):
-        self.required_fields = ['name', 'description', 'vibe_test_phrases', 'parameters', 'function_code']
-        self.forbidden_imports = ['subprocess', '__import__', 'compile']
-        self.forbidden_functions = ['eval(', 'exec(']
-        self.required_function_name = 'execute'
-    
-    def validate_skill_structure(self, skill_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
-        """Validate the structure of generated skill data.
+        self.timeout_seconds = 10
+        self.allowed_imports = ['math', 'json', 'datetime', 'os', 're', 'random']
+        
+    def test_code_safely(self, function_code: str, test_params: Optional[Dict[str, Any]] = None) -> Tuple[bool, str]:
+        """Test generated code safely without crashing the main process.
         
         Args:
-            skill_data: The generated skill data dictionary
+            function_code: The Python function code to test
+            test_params: Optional parameters to test with
             
         Returns:
-            Tuple of (is_valid, error_messages)
+            Tuple of (success, output_or_error)
         """
-        errors = []
+        # Create a test script
+        # Properly indent the function code
+        indented_code = '\n'.join('    ' + line if line.strip() else line for line in function_code.split('\n'))
         
-        # Check required fields
-        for field in self.required_fields:
-            if field not in skill_data:
-                errors.append(f"Missing required field: {field}")
-        
-        # Validate name
-        if 'name' in skill_data:
-            name = skill_data['name']
-            if not isinstance(name, str) or not name:
-                errors.append("Skill name must be a non-empty string")
-            elif not name.replace('_', '').isalnum():
-                errors.append("Skill name must be alphanumeric (underscores allowed)")
-        
-        # Validate description
-        if 'description' in skill_data:
-            if not isinstance(skill_data['description'], str) or len(skill_data['description']) < 10:
-                errors.append("Description must be at least 10 characters long")
-        
-        # Validate vibe test phrases
-        if 'vibe_test_phrases' in skill_data:
-            phrases = skill_data['vibe_test_phrases']
-            if not isinstance(phrases, list) or len(phrases) < 3:
-                errors.append("Must have at least 3 vibe test phrases")
-            elif not all(isinstance(p, str) and p for p in phrases):
-                errors.append("All vibe test phrases must be non-empty strings")
-        
-        # Validate parameters
-        if 'parameters' in skill_data:
-            if not isinstance(skill_data['parameters'], dict):
-                errors.append("Parameters must be a dictionary")
-            else:
-                for param_name, param_spec in skill_data['parameters'].items():
-                    if not isinstance(param_spec, dict):
-                        errors.append(f"Parameter '{param_name}' specification must be a dictionary")
-                    elif 'type' not in param_spec or 'description' not in param_spec:
-                        errors.append(f"Parameter '{param_name}' must have 'type' and 'description'")
-        
-        # Validate function code
-        if 'function_code' in skill_data:
-            code = skill_data['function_code']
-            if not isinstance(code, str) or len(code) < 20:
-                errors.append("Function code must be at least 20 characters")
-            elif self.required_function_name not in code:
-                errors.append(f"Function code must define a function named '{self.required_function_name}'")
-        
-        return len(errors) == 0, errors
+        test_script = f"""
+import json
+import sys
+import traceback
+
+# Mock the log function
+logged_messages = []
+def log(message):
+    logged_messages.append(str(message))
+
+# Allow basic imports only
+allowed_imports = {self.allowed_imports}
+
+try:
+    # The generated function code
+{indented_code}
     
-    def validate_code_safety(self, function_code: str) -> Tuple[bool, List[str]]:
-        """Validate that the generated code is safe to execute.
-        
-        Args:
-            function_code: The Python function code to validate
-            
-        Returns:
-            Tuple of (is_safe, security_issues)
-        """
-        issues = []
-        
-        # Check for forbidden imports/functions
-        for forbidden in self.forbidden_imports:
-            if forbidden in function_code:
-                issues.append(f"Forbidden import '{forbidden}' detected in code")
-        
-        # Check for forbidden function calls
-        for forbidden in self.forbidden_functions:
-            if forbidden in function_code:
-                issues.append(f"Forbidden function call '{forbidden}' detected in code")
-        
-        # Check for file system operations outside safe methods
-        dangerous_ops = ['rmdir', 'unlink', 'remove', 'rmtree']
-        for op in dangerous_ops:
-            if op in function_code:
-                issues.append(f"Potentially dangerous operation '{op}' detected")
-        
-        return len(issues) == 0, issues
+    # Test if execute function exists and is callable
+    if 'execute' not in locals():
+        print("ERROR: No 'execute' function found")
+        sys.exit(1)
     
-    def validate_code_compilation(self, function_code: str) -> Tuple[bool, Optional[str]]:
-        """Validate that the code compiles without syntax errors.
+    if not callable(execute):
+        print("ERROR: 'execute' is not callable")
+        sys.exit(1)
+    
+    # Try calling the function with test parameters
+    test_params = {test_params or {}}
+    if test_params:
+        result = execute(**test_params)
+    else:
+        result = execute()
+    
+    # Output the logged messages
+    print("SUCCESS")
+    for msg in logged_messages:
+        print(f"LOG: {{msg}}")
         
-        Args:
-            function_code: The Python function code to compile
-            
-        Returns:
-            Tuple of (compiles_successfully, error_message)
-        """
+except Exception as e:
+    print(f"ERROR: {{str(e)}}")
+    traceback.print_exc()
+    sys.exit(1)
+"""
+        
+        # Write to a temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write(test_script)
+            temp_file = f.name
+        
         try:
-            # Parse the code to check for syntax errors
-            ast.parse(function_code)
+            # Run the test script in isolation
+            result = subprocess.run(
+                ['python', temp_file],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds
+            )
             
-            # Try to compile it
-            compile(function_code, '<generated>', 'exec')
+            output = result.stdout.strip()
             
-            # Check that it defines the required function
-            namespace: Dict[str, Any] = {}
-            exec(function_code, namespace)
-            
-            if self.required_function_name not in namespace:
-                return False, f"Code does not define required function '{self.required_function_name}'"
-            
-            if not callable(namespace[self.required_function_name]):
-                return False, f"'{self.required_function_name}' is not callable"
-            
-            return True, None
-            
-        except SyntaxError as e:
-            return False, f"Syntax error: {str(e)}"
+            if result.returncode == 0 and output.startswith("SUCCESS"):
+                return True, output
+            else:
+                error_output = result.stderr if result.stderr else result.stdout
+                return False, f"Code execution failed: {error_output}"
+                
+        except subprocess.TimeoutExpired:
+            return False, f"Code execution timed out after {self.timeout_seconds} seconds"
         except Exception as e:
-            return False, f"Compilation error: {str(e)}"
+            return False, f"Failed to test code: {str(e)}"
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
 
 
-class SkillGenerator:
-    """Generates new skills automatically using AI."""
+class IncrementalSkillGenerator:
+    """Generates skills using multiple focused AI prompts."""
     
     def __init__(self, model: str = "gemma3:4b", analysis_model: Optional[str] = None):
-        """Initialize the skill generator.
-        
-        Args:
-            model: The model to use for skill generation
-            analysis_model: Optional model for vibe testing (defaults to main model)
-        """
+        """Initialize the incremental skill generator."""
         self.model = model
         self.analysis_model = analysis_model or model
         self.client = OllamaClient()
         self.ai_query = AIQuery(self.client, model)
-        self.validator = SkillValidator()
         self.skill_registry = SkillRegistry()
+        self.code_executor = SafeCodeExecutor()
         
-        # Template for skill generation
-        self.skill_template = self._create_skill_template()
-    
-    def _create_skill_template(self) -> str:
-        """Create a comprehensive template for skill generation."""
-        return """You are tasked with creating a new Python skill for an AI assistant system.
-
-A skill is a discrete capability that the AI can execute. Here's the complete structure:
-
-SKILL DATA MODEL:
-- name: str (alphanumeric with underscores, e.g., "calculate_statistics")
-- description: str (when the skill should be used, 10+ characters)
-- vibe_test_phrases: List[str] (at least 3 example user inputs that should trigger this skill)
-- parameters: Dict[str, Dict[str, Any]] (input parameters the skill needs)
-  Format: {"param_name": {"type": "string|number", "description": "...", "required": bool}}
-- function_code: str (Python code defining an 'execute' function)
-- scope: str (always "local" for generated skills)
-- role: str (category like "mathematics", "text_processing", "data_analysis", etc.)
-
-FUNCTION CODE REQUIREMENTS:
-1. Must define a function named 'execute' with appropriate parameters
-2. Use 'log(message)' to output results (this is pre-defined)
-3. Can import: math, json, datetime, os, Path
-4. Cannot use: subprocess, eval, exec, or dangerous operations
-5. Include error handling with try/except blocks
-6. Add descriptive log messages for what the skill is doing
-
-EXAMPLE SKILL:
-```json
-{
-    "name": "word_counter",
-    "description": "Count words, characters, and lines in provided text",
-    "vibe_test_phrases": [
-        "How many words are in this text?",
-        "Count the words in this paragraph",
-        "Tell me the word count of this document",
-        "Analyze the length of this text"
-    ],
-    "parameters": {
-        "text": {
-            "type": "string",
-            "description": "The text to analyze",
-            "required": true
-        }
-    },
-    "function_code": "def execute(text: str):\\n    log('[Word Counter] Starting text analysis...')\\n    try:\\n        word_count = len(text.split())\\n        char_count = len(text)\\n        line_count = len(text.splitlines())\\n        \\n        log(f'[Word Counter] Word count: {word_count}')\\n        log(f'[Word Counter] Character count: {char_count}')\\n        log(f'[Word Counter] Line count: {line_count}')\\n        \\n        avg_word_length = char_count / word_count if word_count > 0 else 0\\n        log(f'[Word Counter] Average word length: {avg_word_length:.2f} characters')\\n    except Exception as e:\\n        log(f'[Word Counter] Error analyzing text: {str(e)}')",
-    "scope": "local",
-    "role": "text_processing"
-}
-```
-
-GENERATION TASK: {task}
-
-IMPORTANT RULES:
-1. The skill must be useful and well-defined
-2. Vibe test phrases must be realistic user inputs
-3. Parameters should cover necessary inputs
-4. Function code must be complete and handle errors
-5. Use clear, descriptive names
-6. Output ONLY valid JSON, no additional text
-"""
-    
     def generate_skill_idea(self) -> str:
-        """Generate a random skill idea using AI.
-        
-        Returns:
-            Description of a skill to generate
-        """
-        prompt = """Generate a creative and useful skill idea for an AI assistant.
+        """Step 1: Generate a focused skill idea."""
+        prompt = """Generate ONE specific, useful skill idea for an AI assistant.
 
-Think of common tasks users might need help with that aren't already covered by basic functions.
-Consider areas like:
-- Text analysis and processing
-- Data manipulation and formatting
-- Mathematical calculations beyond basics
-- Pattern recognition
-- Code generation helpers
-- File content analysis
-- Time and date calculations
-- Unit conversions
-- Statistical analysis
-- String manipulations
+Think of a practical task that users commonly need help with. Be specific and focused.
 
-Describe the skill in one sentence, focusing on what it does and when it would be useful.
-Be specific and practical.
+Examples of good ideas:
+- "Convert text between different cases (uppercase, lowercase, title case)"
+- "Calculate compound interest with various compounding periods"
+- "Extract email addresses from text"
+- "Generate random passwords with specific criteria"
 
-Your response:"""
-        
+Respond with just the skill idea in one clear sentence. Be specific about what it does."""
+
         result = self.ai_query.open(prompt)
         return result.content.strip()
     
-    def generate_skill(self, skill_idea: Optional[str] = None, max_attempts: int = 3) -> SkillGenerationResult:
-        """Generate a complete skill using AI.
+    def generate_skill_name(self, idea: str) -> str:
+        """Step 2: Generate a skill name from the idea."""
+        prompt = f"""Based on this skill idea: "{idea}"
+
+Generate a good function name for this skill.
+
+Rules:
+- Use only lowercase letters, numbers, and underscores
+- Be descriptive but concise
+- Follow Python naming conventions
+- Should be 2-4 words joined by underscores
+
+Examples:
+- "convert_text_case"
+- "calculate_compound_interest"
+- "extract_emails"
+- "generate_password"
+
+Respond with ONLY the function name, nothing else."""
+
+        result = self.ai_query.single_word(
+            question=f"What should the function name be for this skill: {idea}?"
+        )
+        return result.word
+    
+    def generate_skill_description(self, idea: str) -> str:
+        """Step 3: Generate a clear skill description."""
+        prompt = f"""Based on this skill idea: "{idea}"
+
+Write a clear, concise description of when this skill should be used.
+
+The description should:
+- Be 10-50 words
+- Explain WHEN to use this skill
+- Be specific about what it does
+- Use simple, clear language
+
+Example: "Use when the user wants to convert text between different cases like uppercase, lowercase, or title case"
+
+Respond with ONLY the description, nothing else."""
+
+        result = self.ai_query.open(prompt)
+        return result.content.strip().strip('"').strip("'")
+    
+    def generate_skill_role(self, idea: str) -> str:
+        """Step 4: Determine the skill's role category."""
+        prompt = f"""Based on this skill idea: "{idea}"
+
+What category does this skill belong to?
+
+Choose from these options:
+A. text_processing
+B. mathematics
+C. data_analysis
+D. file_operations
+E. web_utilities
+F. time_date
+G. formatting
+H. validation
+I. general
+
+Respond with ONLY the letter (A, B, C, etc.)"""
+
+        result = self.ai_query.multiple_choice(
+            question="What category does this skill belong to?",
+            options=[
+                "text_processing", "mathematics", "data_analysis", "file_operations",
+                "web_utilities", "time_date", "formatting", "validation", "general"
+            ]
+        )
+        return result.value
+    
+    def generate_vibe_test_phrases(self, idea: str, name: str) -> List[str]:
+        """Step 5: Generate vibe test phrases."""
+        prompt = f"""Based on this skill: "{idea}" (function name: {name})
+
+Generate 5 realistic things a user might say that should trigger this skill.
+
+Make them natural, varied user requests. Think about different ways people might ask for the same thing.
+
+Format as a simple numbered list:
+1. First example
+2. Second example  
+3. Third example
+4. Fourth example
+5. Fifth example
+
+Include the full list, nothing else."""
+
+        result = self.ai_query.open(prompt)
         
-        Args:
-            skill_idea: Optional specific skill to generate. If None, generates random idea.
-            max_attempts: Maximum attempts to generate valid skill
+        # Parse the numbered list
+        phrases = []
+        lines = result.content.strip().split('\n')
+        for line in lines:
+            line = line.strip()
+            if line and (line[0].isdigit() or line.startswith('-')):
+                # Remove number and clean up
+                phrase = line.split('.', 1)[-1].strip()
+                phrase = phrase.strip('-').strip()
+                if phrase:
+                    phrases.append(phrase)
+        
+        return phrases[:5]  # Ensure max 5 phrases
+    
+    def generate_parameters(self, idea: str, name: str) -> Dict[str, Dict[str, Any]]:
+        """Step 6: Generate function parameters."""
+        prompt = f"""Based on this skill: "{idea}" (function name: {name})
+
+What input parameters does this function need?
+
+If it needs parameters, respond in this EXACT JSON format:
+{{"param_name": {{"type": "string", "description": "what this parameter is for", "required": true}}}}
+
+If it needs NO parameters, respond with:
+{{}}
+
+Parameter types can only be: "string", "number", "boolean"
+
+Examples:
+- For text processing: {{"text": {{"type": "string", "description": "The text to process", "required": true}}}}
+- For calculations: {{"amount": {{"type": "number", "description": "The amount to calculate", "required": true}}, "rate": {{"type": "number", "description": "The interest rate", "required": true}}}}
+- For no parameters: {{}}
+
+Respond with ONLY the JSON, nothing else."""
+
+        result = self.ai_query.open(prompt)
+        
+        try:
+            # Clean the response and parse JSON
+            content = result.content.strip()
+            if content.startswith('```json'):
+                content = content.split('```json')[1].split('```')[0]
+            elif content.startswith('```'):
+                content = content.split('```')[1].split('```')[0]
             
-        Returns:
-            SkillGenerationResult with generation details
-        """
+            return json.loads(content)
+        except:
+            return {}  # Default to no parameters if parsing fails
+    
+    def generate_function_code(self, plan: SkillPlan) -> str:
+        """Step 7: Generate the function code."""
+        params_desc = ""
+        if plan.parameters:
+            param_list = []
+            for name, spec in plan.parameters.items():
+                param_type = spec.get('type', 'str')
+                python_type = {'string': 'str', 'number': 'float', 'boolean': 'bool'}.get(param_type, 'str')
+                required = spec.get('required', True)
+                if required:
+                    param_list.append(f"{name}: {python_type}")
+                else:
+                    param_list.append(f"{name}: {python_type} = None")
+            params_desc = f"Parameters: {', '.join(param_list)}"
+        else:
+            params_desc = "No parameters required"
+
+        prompt = f"""Write a Python function for this skill:
+
+Idea: {plan.idea}
+Function name: execute
+Description: {plan.description}
+{params_desc}
+
+Requirements:
+1. Function MUST be named 'execute'
+2. Use log("message") to output results (log function is available)
+3. Include error handling with try/except
+4. Add descriptive log messages
+5. Keep it simple and focused
+6. No dangerous operations (no subprocess, eval, exec)
+7. Only import: math, json, datetime, os, re, random
+
+Write ONLY the function code, no explanations:"""
+
+        result = self.ai_query.open(prompt)
+        
+        # Clean the response
+        content = result.content.strip()
+        if content.startswith('```python'):
+            content = content.split('```python')[1].split('```')[0]
+        elif content.startswith('```'):
+            content = content.split('```')[1].split('```')[0]
+        
+        return content.strip()
+    
+    def build_skill_plan(self, idea: Optional[str] = None) -> SkillPlan:
+        """Build a complete skill plan step by step."""
+        plan = SkillPlan()
+        
+        try:
+            # Step 1: Generate or use provided idea
+            if idea:
+                plan.idea = idea
+                print(f"📝 Using provided idea: {idea}")
+            else:
+                print("🎯 Generating skill idea...")
+                plan.idea = self.generate_skill_idea()
+                print(f"💡 Generated idea: {plan.idea}")
+            
+            # Step 2: Generate name
+            print("🔧 Generating skill name...")
+            plan.name = self.generate_skill_name(plan.idea)
+            print(f"📛 Name: {plan.name}")
+            
+            # Step 3: Generate description
+            print("📝 Generating description...")
+            plan.description = self.generate_skill_description(plan.idea)
+            print(f"📋 Description: {plan.description}")
+            
+            # Step 4: Generate role
+            print("🏷️ Determining role category...")
+            plan.role = self.generate_skill_role(plan.idea)
+            print(f"🎭 Role: {plan.role}")
+            
+            # Step 5: Generate vibe test phrases
+            print("🧪 Generating vibe test phrases...")
+            plan.vibe_test_phrases = self.generate_vibe_test_phrases(plan.idea, plan.name)
+            print(f"💬 Generated {len(plan.vibe_test_phrases)} test phrases")
+            
+            # Step 6: Generate parameters
+            print("⚙️ Generating parameters...")
+            plan.parameters = self.generate_parameters(plan.idea, plan.name)
+            param_count = len(plan.parameters)
+            print(f"🔧 Parameters: {param_count} {'parameter' if param_count == 1 else 'parameters'}")
+            
+            # Step 7: Generate function code
+            print("💻 Generating function code...")
+            plan.function_code = self.generate_function_code(plan)
+            print(f"✅ Generated {len(plan.function_code.splitlines())} lines of code")
+            
+            return plan
+            
+        except Exception as e:
+            print(f"❌ Error building plan: {e}")
+            raise
+    
+    def validate_and_test_plan(self, plan: SkillPlan) -> Tuple[bool, List[str]]:
+        """Validate and safely test a skill plan."""
+        errors = []
+        
+        # Basic validation
+        if not plan.name or not plan.name.replace('_', '').isalnum():
+            errors.append("Invalid skill name")
+        
+        if not plan.description or len(plan.description) < 10:
+            errors.append("Description too short")
+        
+        if not plan.vibe_test_phrases or len(plan.vibe_test_phrases) < 3:
+            errors.append("Need at least 3 vibe test phrases")
+        
+        if not plan.function_code or 'def execute' not in plan.function_code:
+            errors.append("Function code missing or invalid")
+        
+        if errors:
+            return False, errors
+        
+        # Test code safely
+        print("🔒 Testing code safely...")
+        success, output = self.code_executor.test_code_safely(plan.function_code, {})
+        
+        if not success:
+            errors.append(f"Code execution failed: {output}")
+            return False, errors
+        
+        print("✅ Code tested successfully")
+        return True, []
+    
+    def run_isolated_vibe_test(self, skill: Skill) -> Tuple[bool, Dict[str, Any]]:
+        """Run vibe test for a single skill."""
+        print("🧪 Running vibe tests...")
+        
+        # Create analysis engine
+        analysis_engine = AnalysisEngine(self.analysis_model, self.client)
+        
+        total_correct = 0
+        total_tests = 0
+        phrase_results = {}
+        
+        for phrase in skill.vibe_test_phrases[:3]:  # Test first 3 phrases
+            correct = 0
+            iterations = 2  # Keep it simple - 2 iterations per phrase
+            
+            for i in range(iterations):
+                try:
+                    prompt = f"""Should the '{skill.name}' skill be used for: "{phrase}"?
+                    
+Skill description: {skill.description}
+
+Answer only 'yes' or 'no'."""
+                    
+                    response = analysis_engine.ask_yes_no_question(prompt)
+                    if response:
+                        correct += 1
+                        total_correct += 1
+                    total_tests += 1
+                    
+                except Exception as e:
+                    print(f"⚠️ Vibe test error: {e}")
+                    total_tests += 1
+            
+            success_rate = (correct / iterations) * 100 if iterations > 0 else 0
+            phrase_results[phrase] = {
+                'correct': correct,
+                'total': iterations,
+                'success_rate': success_rate
+            }
+            
+            status = "✅" if success_rate >= 50 else "❌"
+            print(f"  {status} '{phrase[:40]}...': {correct}/{iterations}")
+        
+        overall_success = (total_correct / total_tests) * 100 if total_tests > 0 else 0
+        passed = overall_success >= 50.0
+        
+        print(f"🎯 Overall vibe test: {total_correct}/{total_tests} ({overall_success:.0f}%)")
+        
+        return passed, {
+            'total_correct': total_correct,
+            'total_tests': total_tests,
+            'success_rate': overall_success,
+            'phrase_results': phrase_results
+        }
+    
+    def generate_skill(self, idea: Optional[str] = None, max_attempts: int = 3) -> SkillGenerationResult:
+        """Generate a complete skill using the incremental approach."""
         import time
         start_time = time.time()
         
-        # Generate skill idea if not provided
-        if not skill_idea:
-            skill_idea = self.generate_skill_idea()
-            print(f"🎯 Generated skill idea: {skill_idea}")
+        step_results = {
+            'plan_created': False,
+            'validation_passed': False,
+            'skill_registered': False,
+            'vibe_test_passed': False
+        }
         
-        validation_errors = []
-        attempts = 0
-        
-        while attempts < max_attempts:
-            attempts += 1
-            print(f"🔧 Generation attempt {attempts}/{max_attempts}...")
-            
-            # Generate the skill using AI
-            skill_prompt = self.skill_template.format(task=skill_idea)
-            result = self.ai_query.file_write(
-                requirements=skill_prompt,
-                context="Generate a complete skill definition as valid JSON"
-            )
+        for attempt in range(1, max_attempts + 1):
+            print(f"\n🚀 Generation attempt {attempt}/{max_attempts}")
+            print("=" * 50)
             
             try:
-                # Parse the generated JSON
-                skill_data = json.loads(result.content)
+                # Build the skill plan
+                plan = self.build_skill_plan(idea)
+                step_results['plan_created'] = True
                 
-                # Validate structure
-                is_valid, errors = self.validator.validate_skill_structure(skill_data)
-                if not is_valid:
-                    validation_errors.extend(errors)
-                    print(f"❌ Validation errors: {errors}")
+                # Validate and test the plan
+                valid, errors = self.validate_and_test_plan(plan)
+                if not valid:
+                    print(f"❌ Validation failed: {errors}")
+                    if attempt == max_attempts:
+                        return SkillGenerationResult(
+                            success=False,
+                            skill=None,
+                            plan=plan,
+                            step_results=step_results,
+                            errors=errors,
+                            generation_time=time.time() - start_time,
+                            attempts=attempt
+                        )
                     continue
                 
-                # Validate code safety
-                is_safe, safety_issues = self.validator.validate_code_safety(
-                    skill_data['function_code']
-                )
-                if not is_safe:
-                    validation_errors.extend(safety_issues)
-                    print(f"❌ Safety issues: {safety_issues}")
-                    continue
+                step_results['validation_passed'] = True
                 
-                # Validate code compilation
-                compiles, compile_error = self.validator.validate_code_compilation(
-                    skill_data['function_code']
-                )
-                if not compiles:
-                    if compile_error:
-                        validation_errors.append(compile_error)
-                    print(f"❌ Compilation error: {compile_error}")
-                    continue
-                
-                # Create Skill object
+                # Create and register the skill
                 skill = Skill(
-                    name=skill_data['name'],
-                    description=skill_data['description'],
-                    vibe_test_phrases=skill_data['vibe_test_phrases'],
-                    parameters=skill_data['parameters'],
-                    function_code=skill_data['function_code'],
-                    verified=False,  # Never auto-verify
-                    scope="local",  # Always local for generated skills
-                    role=skill_data.get('role', 'general')
+                    name=plan.name,
+                    description=plan.description,
+                    vibe_test_phrases=plan.vibe_test_phrases or [],
+                    parameters=plan.parameters or {},
+                    function_code=plan.function_code,
+                    verified=False,
+                    scope="local",
+                    role=plan.role
                 )
                 
-                # Register the skill
-                success = self.skill_registry.register_skill(skill)
-                if not success:
-                    validation_errors.append("Failed to register skill")
+                # Try to register safely
+                try:
+                    success = self.skill_registry.register_skill(skill)
+                    if not success:
+                        raise Exception("Failed to register skill")
+                    step_results['skill_registered'] = True
+                    print(f"✅ Skill '{skill.name}' registered successfully")
+                except Exception as e:
+                    print(f"❌ Registration failed: {e}")
                     continue
                 
-                print(f"✅ Skill '{skill.name}' generated and registered successfully!")
-                
-                # Run vibe test on the new skill
-                print(f"🧪 Running vibe test for '{skill.name}'...")
+                # Run vibe tests
                 vibe_passed, vibe_results = self.run_isolated_vibe_test(skill)
+                step_results['vibe_test_passed'] = vibe_passed
                 
                 generation_time = time.time() - start_time
                 
                 return SkillGenerationResult(
                     success=True,
                     skill=skill,
-                    validation_errors=[],
-                    compilation_success=True,
-                    vibe_test_passed=vibe_passed,
-                    vibe_test_results=vibe_results,
+                    plan=plan,
+                    step_results=step_results,
+                    errors=[],
                     generation_time=generation_time,
-                    iterations_needed=attempts
+                    attempts=attempt,
+                    vibe_test_passed=vibe_passed,
+                    vibe_test_results=vibe_results
                 )
                 
-            except json.JSONDecodeError as e:
-                validation_errors.append(f"JSON parse error: {str(e)}")
-                print(f"❌ Failed to parse generated JSON: {e}")
             except Exception as e:
-                validation_errors.append(f"Unexpected error: {str(e)}")
-                print(f"❌ Unexpected error: {e}")
+                print(f"❌ Attempt {attempt} failed: {e}")
+                if attempt == max_attempts:
+                    return SkillGenerationResult(
+                        success=False,
+                        skill=None,
+                        plan=None,
+                        step_results=step_results,
+                        errors=[f"Generation failed: {str(e)}"],
+                        generation_time=time.time() - start_time,
+                        attempts=attempt
+                    )
         
-        # All attempts failed
-        generation_time = time.time() - start_time
+        # Should not reach here
         return SkillGenerationResult(
             success=False,
             skill=None,
-            validation_errors=validation_errors,
-            compilation_success=False,
-            vibe_test_passed=False,
-            vibe_test_results=None,
-            generation_time=generation_time,
-            iterations_needed=attempts
+            plan=None,
+            step_results=step_results,
+            errors=["Max attempts exceeded"],
+            generation_time=time.time() - start_time,
+            attempts=max_attempts
         )
-    
-    def run_isolated_vibe_test(self, skill: Skill, iterations: int = 3) -> Tuple[bool, Dict[str, Any]]:
-        """Run vibe test only for a specific newly generated skill.
-        
-        Args:
-            skill: The skill to test
-            iterations: Number of test iterations per phrase
-            
-        Returns:
-            Tuple of (test_passed, test_results)
-        """
-        # Create a temporary registry with just this skill
-        temp_registry = SkillRegistry(skills_directory=None)
-        temp_registry.skills = {skill.name: skill}
-        temp_registry.compiled_functions = self.skill_registry.compiled_functions
-        
-        # Create analysis engine for testing
-        analysis_engine = AnalysisEngine(self.analysis_model, self.client)
-        
-        # Test each vibe phrase
-        total_correct = 0
-        total_tests = 0
-        phrase_results = {}
-        
-        print(f"Testing {len(skill.vibe_test_phrases)} vibe test phrases...")
-        
-        for phrase in skill.vibe_test_phrases:
-            phrase_correct = 0
-            
-            for i in range(iterations):
-                try:
-                    # Ask if this skill should be selected for this phrase
-                    prompt = f"""Should the '{skill.name}' skill be used for this input: "{phrase}"?
-
-Skill description: {skill.description}
-
-Answer only 'yes' or 'no'."""
-                    
-                    response = analysis_engine.ask_yes_no_question(prompt)
-                    
-                    if response:
-                        phrase_correct += 1
-                        total_correct += 1
-                    
-                    total_tests += 1
-                    
-                except Exception as e:
-                    print(f"Error testing phrase: {e}")
-                    total_tests += 1
-            
-            success_rate = (phrase_correct / iterations) * 100 if iterations > 0 else 0
-            phrase_results[phrase] = {
-                'correct': phrase_correct,
-                'total': iterations,
-                'success_rate': success_rate
-            }
-            
-            phrase_display = phrase[:50] + '...' if len(phrase) > 50 else phrase
-            status = "✅" if success_rate >= 60 else "❌"
-            print(f"  {status} '{phrase_display}': {phrase_correct}/{iterations} ({success_rate:.0f}%)")
-        
-        overall_success_rate = (total_correct / total_tests) * 100 if total_tests > 0 else 0
-        test_passed = overall_success_rate >= 60.0
-        
-        print(f"Overall vibe test: {total_correct}/{total_tests} ({overall_success_rate:.0f}%)")
-        
-        return test_passed, {
-            'skill_name': skill.name,
-            'total_correct': total_correct,
-            'total_tests': total_tests,
-            'success_rate': overall_success_rate,
-            'phrase_results': phrase_results
-        }
-    
-    def generate_batch(self, count: int = 5, skill_ideas: Optional[List[str]] = None) -> List[SkillGenerationResult]:
-        """Generate multiple skills in batch.
-        
-        Args:
-            count: Number of skills to generate
-            skill_ideas: Optional list of specific skill ideas
-            
-        Returns:
-            List of SkillGenerationResult objects
-        """
-        results = []
-        
-        print(f"🚀 Starting batch generation of {count} skills...")
-        print("=" * 60)
-        
-        for i in range(count):
-            print(f"\n📦 Generating skill {i+1}/{count}")
-            print("-" * 40)
-            
-            skill_idea = skill_ideas[i] if skill_ideas and i < len(skill_ideas) else None
-            result = self.generate_skill(skill_idea)
-            results.append(result)
-            
-            if result.success and result.skill:
-                print(f"✅ Successfully generated: {result.skill.name}")
-            else:
-                print(f"❌ Failed to generate skill after {result.iterations_needed} attempts")
-        
-        # Summary
-        successful = sum(1 for r in results if r.success)
-        vibe_passed = sum(1 for r in results if r.vibe_test_passed)
-        
-        print("\n" + "=" * 60)
-        print(f"📊 Generation Summary:")
-        print(f"  Total attempted: {count}")
-        print(f"  Successfully generated: {successful}/{count}")
-        print(f"  Passed vibe tests: {vibe_passed}/{successful}")
-        print(f"  Average generation time: {sum(r.generation_time for r in results) / len(results):.2f}s")
-        
-        return results
 
 
 def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str] = None, 
                         count: int = 1, ideas: Optional[List[str]] = None) -> bool:
-    """Main entry point for skill generation.
-    
-    Args:
-        model: Model to use for generation
-        analysis_model: Model for vibe testing (defaults to main model)
-        count: Number of skills to generate
-        ideas: Optional list of specific skill ideas
-        
-    Returns:
-        True if at least one skill was successfully generated
-    """
-    print("🤖 OllamaPy Automated Skill Generation")
+    """Main entry point for incremental skill generation."""
+    print("🤖 OllamaPy Incremental Skill Generation")
     print("=" * 60)
     print(f"Generation model: {model}")
     print(f"Analysis model: {analysis_model or model}")
     print(f"Target count: {count}")
     print()
     
-    generator = SkillGenerator(model, analysis_model)
+    generator = IncrementalSkillGenerator(model, analysis_model)
     
-    if count == 1 and not ideas:
-        # Single skill generation
-        result = generator.generate_skill()
+    successful_skills = []
+    failed_attempts = []
+    
+    for i in range(count):
+        print(f"\n🎯 Generating skill {i+1}/{count}")
+        print("=" * 40)
+        
+        idea = ideas[i] if ideas and i < len(ideas) else None
+        result = generator.generate_skill(idea, max_attempts=3)
         
         if result.success and result.skill:
-            print(f"\n✅ Successfully generated skill: {result.skill.name}")
+            successful_skills.append(result.skill)
+            status = "✅" if result.vibe_test_passed else "⚠️"
+            print(f"\n{status} SUCCESS: {result.skill.name}")
             print(f"   Description: {result.skill.description}")
             print(f"   Role: {result.skill.role}")
             print(f"   Vibe test: {'PASSED' if result.vibe_test_passed else 'FAILED'}")
-            print(f"   Generation time: {result.generation_time:.2f}s")
-            print(f"   Attempts needed: {result.iterations_needed}")
-            return True
+            print(f"   Time: {result.generation_time:.1f}s, Attempts: {result.attempts}")
         else:
-            print(f"\n❌ Failed to generate skill")
-            print(f"   Validation errors: {result.validation_errors}")
-            return False
+            failed_attempts.append(result)
+            print(f"\n❌ FAILED after {result.attempts} attempts")
+            if result.errors:
+                print(f"   Errors: {', '.join(result.errors)}")
+    
+    # Summary
+    print(f"\n📊 Generation Complete!")
+    print("=" * 40)
+    print(f"✅ Successful: {len(successful_skills)}/{count}")
+    print(f"❌ Failed: {len(failed_attempts)}/{count}")
+    
+    if successful_skills:
+        print(f"\n🎉 Generated Skills:")
+        for skill in successful_skills:
+            print(f"  • {skill.name}: {skill.description}")
+        return True
     else:
-        # Batch generation
-        results = generator.generate_batch(count, ideas)
-        successful = sum(1 for r in results if r.success)
-        
-        if successful > 0:
-            print(f"\n✅ Successfully generated {successful}/{count} skills")
-            
-            # List generated skills
-            print("\nGenerated skills:")
-            for r in results:
-                if r.success and r.skill:
-                    status = "✅" if r.vibe_test_passed else "⚠️"
-                    print(f"  {status} {r.skill.name}: {r.skill.description}")
-            
-            return True
-        else:
-            print(f"\n❌ Failed to generate any skills")
-            return False
+        print(f"\n😞 No skills were successfully generated")
+        return False
