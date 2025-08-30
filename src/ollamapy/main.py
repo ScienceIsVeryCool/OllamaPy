@@ -53,10 +53,23 @@ def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model
     return run_tests(model=model, iterations=iterations, analysis_model=analysis_model)
 
 
+def run_skill_gen(model: str = "gemma3:4b", analysis_model: str = None, count: int = 1, ideas: list = None):
+    """Run automated skill generation.
+    
+    Args:
+        model: The model to use for generation (default: gemma3:4b)
+        analysis_model: Optional model for vibe testing (defaults to main model)
+        count: Number of skills to generate (default: 1)
+        ideas: Optional list of specific skill ideas
+    """
+    from .skill_generator import run_skill_generation
+    return run_skill_generation(model=model, analysis_model=analysis_model, count=count, ideas=ideas)
+
+
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="OllamaPy v0.7.0 - Terminal chat interface for Ollama with AI vibe tests",
+        description="OllamaPy v0.8.0 - Terminal chat interface for Ollama with AI skills system",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -68,6 +81,10 @@ Examples:
   ollamapy --vibetest -n 5          # Run vibe tests with 5 iterations each
   ollamapy --vibetest --model llama3.2:3b -n 3  # Custom model and iterations
   ollamapy --vibetest --analysis-model gemma2:2b --model llama3.2:7b  # Separate models for testing
+  ollamapy --skillgen               # Generate a new skill automatically
+  ollamapy --skillgen --count 5     # Generate 5 new skills
+  ollamapy --skillgen --idea "analyze CSV data"  # Generate specific skill
+  ollamapy --skillgen --count 3 --model llama3.2:7b  # Use specific model
         """
     )
     
@@ -100,6 +117,25 @@ Examples:
     )
     
     parser.add_argument(
+        "--skillgen",
+        action="store_true",
+        help="Generate new skills automatically using AI"
+    )
+    
+    parser.add_argument(
+        "--count", "-c",
+        type=int,
+        default=1,
+        help="Number of skills to generate (default: 1, used with --skillgen)"
+    )
+    
+    parser.add_argument(
+        "--idea", "-i",
+        action="append",
+        help="Specific skill idea to generate (can be used multiple times)"
+    )
+    
+    parser.add_argument(
         "-n", "--iterations",
         type=int,
         default=1,
@@ -116,6 +152,15 @@ Examples:
             model=args.model, 
             iterations=args.iterations, 
             analysis_model=args.analysis_model
+        )
+        sys.exit(0 if success else 1)
+    elif args.skillgen:
+        analysis_model = args.analysis_model if args.analysis_model else args.model
+        success = run_skill_gen(
+            model=args.model,
+            analysis_model=analysis_model,
+            count=args.count,
+            ideas=args.idea
         )
         sys.exit(0 if success else 1)
     else:
