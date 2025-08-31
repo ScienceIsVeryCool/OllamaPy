@@ -5,16 +5,30 @@ build-backend = "hatchling.build"
 [project]
 name = "ollamapy"
 version = "0.8.0"
-description = "A simple Python package for Ollama utilities with built-in AI vibe tests"
-authors = [{name = "The Lazy Artist", email = "TheRealLazyArtist@iCloud.com"}]
+description = "A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities, dynamic skill generation, and interactive skill editing"
+authors = [{name = "The Lazy Artist", email = "noreply@github.com"}]
 requires-python = ">=3.8"
-dependencies = ["requests>=2.25.0"]
+dependencies = [
+    "requests>=2.25.0",
+    "plotly>=5.0.0",
+]
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
-keywords = ["ollama", "llama", "ai", "python", "utilities", "chat", "terminal", "vibe-tests"]
+keywords = [
+    "ai",
+    "chat",
+    "ollama",
+    "llm",
+    "chatbot",
+    "skills",
+    "meta-reasoning",
+    "terminal",
+    "cli",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
@@ -23,21 +37,62 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Communications :: Chat",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ScienceIsVeryCool/OllamaPy"
+Documentation = "https://scienceisverycoool.github.io/OllamaPy"
 Repository = "https://github.com/ScienceIsVeryCool/OllamaPy"
 Issues = "https://github.com/ScienceIsVeryCool/OllamaPy/issues"
 
 [project.optional-dependencies]
-dev = ["pytest>=6.0.0", "black", "isort", "mypy"]
-test = ["pytest>=6.0.0"]
+editor = [
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "werkzeug>=2.3.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+    "pre-commit>=3.0.0",
+]
+all = [
+    "flask>=2.3.0",
+    "flask-cors>=4.0.0",
+    "werkzeug>=2.3.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
+    "pre-commit>=3.0.0",
+]
 
 [project.scripts]
 ollamapy = "ollamapy.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ollamapy"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/requirements.txt",
+]

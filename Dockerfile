@@ -30,21 +30,26 @@ COPY LICENSE .
 # Install the package
 RUN pip install -e .
 
-# Create directory for user skills
-RUN mkdir -p /root/.ollamapy/skills
-VOLUME ["/root/.ollamapy/skills"]
+# Create non-root user first
+RUN groupadd -r ollamapy && useradd -r -g ollamapy ollamapy --home-dir /home/ollamapy --create-home
 
-# Create non-root user for security (optional)
-RUN groupadd -r ollamapy && useradd -r -g ollamapy ollamapy
-RUN chown -R ollamapy:ollamapy /app /root/.ollamapy
+# Create directory for user skills in user's home
+RUN mkdir -p /home/ollamapy/.ollamapy/skills && \
+    chown -R ollamapy:ollamapy /app /home/ollamapy/.ollamapy
+VOLUME ["/home/ollamapy/.ollamapy/skills"]
+
+# Switch to non-root user
 USER ollamapy
+
+# Set user home directory
+ENV HOME=/home/ollamapy
 
 # Expose port for skill editor
 EXPOSE 8765
 
-# Health check
+# Health check - using python instead of curl for non-root user
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8765/ || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:8765', timeout=5)" || exit 1
 
 # Default command - run skill editor
 CMD ["python", "-m", "ollamapy", "--skill-editor", "--port", "8765"]
