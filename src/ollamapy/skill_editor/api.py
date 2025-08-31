@@ -14,29 +14,29 @@ from .validator import SkillValidator
 
 class SkillEditorAPI:
     """Flask-based API for skill editing operations."""
-    
+
     def __init__(self, skills_directory: Optional[str] = None, port: int = 5000):
         """Initialize the skill editor API.
-        
+
         Args:
             skills_directory: Directory containing skill JSON files
             port: Port to run the Flask server on
         """
         self.app = Flask(__name__)
         CORS(self.app)  # Enable CORS for frontend requests
-        
+
         # Initialize skill registry
         self.registry = SkillRegistry(skills_directory)
         self.validator = SkillValidator()
         self.port = port
-        
+
         # Set up routes
         self._setup_routes()
-    
+
     def _setup_routes(self):
         """Set up all API routes."""
-        
-        @self.app.route('/api/skills', methods=['GET'])
+
+        @self.app.route("/api/skills", methods=["GET"])
         def get_all_skills():
             """Get all skills."""
             try:
@@ -47,233 +47,297 @@ class SkillEditorAPI:
                 return jsonify({"success": True, "skills": skill_data})
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/<skill_name>', methods=['GET'])
+
+        @self.app.route("/api/skills/<skill_name>", methods=["GET"])
         def get_skill(skill_name):
             """Get a specific skill."""
             try:
                 if skill_name not in self.registry.skills:
                     return jsonify({"success": False, "error": "Skill not found"}), 404
-                
+
                 skill = self.registry.skills[skill_name]
                 return jsonify({"success": True, "skill": skill.to_dict()})
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/<skill_name>', methods=['PUT'])
+
+        @self.app.route("/api/skills/<skill_name>", methods=["PUT"])
         def update_skill(skill_name):
             """Update an existing skill."""
             try:
                 skill_data = request.json
                 if not skill_data:
                     return jsonify({"success": False, "error": "No data provided"}), 400
-                
+
                 # Check if skill exists
                 if skill_name not in self.registry.skills:
                     return jsonify({"success": False, "error": "Skill not found"}), 404
-                
+
                 existing_skill = self.registry.skills[skill_name]
-                
+
                 # Protect built-in skills
                 if existing_skill.verified:
-                    return jsonify({"success": False, "error": "Cannot modify built-in skill"}), 403
-                
+                    return (
+                        jsonify(
+                            {"success": False, "error": "Cannot modify built-in skill"}
+                        ),
+                        403,
+                    )
+
                 # Validate the skill data
                 validation_result = self.validator.validate_skill_data(skill_data)
                 if not validation_result.is_valid:
-                    return jsonify({
-                        "success": False, 
-                        "error": "Validation failed",
-                        "validation_errors": validation_result.errors
-                    }), 400
-                
+                    return (
+                        jsonify(
+                            {
+                                "success": False,
+                                "error": "Validation failed",
+                                "validation_errors": validation_result.errors,
+                            }
+                        ),
+                        400,
+                    )
+
                 # Update timestamps
-                skill_data['last_modified'] = datetime.now().isoformat()
-                skill_data['name'] = skill_name  # Ensure name consistency
-                
+                skill_data["last_modified"] = datetime.now().isoformat()
+                skill_data["name"] = skill_name  # Ensure name consistency
+
                 # Create updated skill
                 updated_skill = Skill.from_dict(skill_data)
-                
+
                 # Register the updated skill
                 success = self.registry.register_skill(updated_skill)
                 if not success:
-                    return jsonify({"success": False, "error": "Failed to register updated skill"}), 500
-                
-                return jsonify({"success": True, "message": "Skill updated successfully"})
-                
+                    return (
+                        jsonify(
+                            {
+                                "success": False,
+                                "error": "Failed to register updated skill",
+                            }
+                        ),
+                        500,
+                    )
+
+                return jsonify(
+                    {"success": True, "message": "Skill updated successfully"}
+                )
+
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/<skill_name>', methods=['DELETE'])
+
+        @self.app.route("/api/skills/<skill_name>", methods=["DELETE"])
         def delete_skill(skill_name):
             """Delete a skill."""
             try:
                 if skill_name not in self.registry.skills:
                     return jsonify({"success": False, "error": "Skill not found"}), 404
-                
+
                 skill = self.registry.skills[skill_name]
-                
+
                 # Protect built-in skills
                 if skill.verified:
-                    return jsonify({"success": False, "error": "Cannot delete built-in skill"}), 403
-                
+                    return (
+                        jsonify(
+                            {"success": False, "error": "Cannot delete built-in skill"}
+                        ),
+                        403,
+                    )
+
                 # Remove from registry
                 del self.registry.skills[skill_name]
                 if skill_name in self.registry.compiled_functions:
                     del self.registry.compiled_functions[skill_name]
-                
+
                 # Remove file
                 skill_file = self.registry.skills_dir / f"{skill_name}.json"
                 if skill_file.exists():
                     skill_file.unlink()
-                
-                return jsonify({"success": True, "message": "Skill deleted successfully"})
-                
+
+                return jsonify(
+                    {"success": True, "message": "Skill deleted successfully"}
+                )
+
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills', methods=['POST'])
+
+        @self.app.route("/api/skills", methods=["POST"])
         def create_skill():
             """Create a new skill."""
             try:
                 skill_data = request.json
                 if not skill_data:
                     return jsonify({"success": False, "error": "No data provided"}), 400
-                
+
                 # Validate required fields
-                required_fields = ['name', 'description', 'function_code']
+                required_fields = ["name", "description", "function_code"]
                 for field in required_fields:
                     if field not in skill_data:
-                        return jsonify({"success": False, "error": f"Missing required field: {field}"}), 400
-                
-                skill_name = skill_data['name']
-                
+                        return (
+                            jsonify(
+                                {
+                                    "success": False,
+                                    "error": f"Missing required field: {field}",
+                                }
+                            ),
+                            400,
+                        )
+
+                skill_name = skill_data["name"]
+
                 # Check if skill already exists
                 if skill_name in self.registry.skills:
-                    return jsonify({"success": False, "error": "Skill already exists"}), 409
-                
+                    return (
+                        jsonify({"success": False, "error": "Skill already exists"}),
+                        409,
+                    )
+
                 # Set defaults for optional fields
-                skill_data.setdefault('vibe_test_phrases', [])
-                skill_data.setdefault('parameters', {})
-                skill_data.setdefault('verified', False)
-                skill_data.setdefault('scope', 'local')
-                skill_data.setdefault('role', 'general')
-                skill_data.setdefault('tags', [])
-                skill_data.setdefault('execution_count', 0)
-                skill_data.setdefault('success_rate', 100.0)
-                skill_data.setdefault('average_execution_time', 0.0)
-                skill_data['created_at'] = datetime.now().isoformat()
-                skill_data['last_modified'] = datetime.now().isoformat()
-                
+                skill_data.setdefault("vibe_test_phrases", [])
+                skill_data.setdefault("parameters", {})
+                skill_data.setdefault("verified", False)
+                skill_data.setdefault("scope", "local")
+                skill_data.setdefault("role", "general")
+                skill_data.setdefault("tags", [])
+                skill_data.setdefault("execution_count", 0)
+                skill_data.setdefault("success_rate", 100.0)
+                skill_data.setdefault("average_execution_time", 0.0)
+                skill_data["created_at"] = datetime.now().isoformat()
+                skill_data["last_modified"] = datetime.now().isoformat()
+
                 # Validate the skill data
                 validation_result = self.validator.validate_skill_data(skill_data)
                 if not validation_result.is_valid:
-                    return jsonify({
-                        "success": False, 
-                        "error": "Validation failed",
-                        "validation_errors": validation_result.errors
-                    }), 400
-                
+                    return (
+                        jsonify(
+                            {
+                                "success": False,
+                                "error": "Validation failed",
+                                "validation_errors": validation_result.errors,
+                            }
+                        ),
+                        400,
+                    )
+
                 # Create skill
                 new_skill = Skill.from_dict(skill_data)
-                
+
                 # Register the skill
                 success = self.registry.register_skill(new_skill)
                 if not success:
-                    return jsonify({"success": False, "error": "Failed to register skill"}), 500
-                
-                return jsonify({
-                    "success": True, 
-                    "message": "Skill created successfully",
-                    "skill_name": skill_name
-                })
-                
+                    return (
+                        jsonify(
+                            {"success": False, "error": "Failed to register skill"}
+                        ),
+                        500,
+                    )
+
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "Skill created successfully",
+                        "skill_name": skill_name,
+                    }
+                )
+
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/validate', methods=['POST'])
+
+        @self.app.route("/api/skills/validate", methods=["POST"])
         def validate_skill():
             """Validate skill data without saving."""
             try:
                 skill_data = request.json
                 if not skill_data:
                     return jsonify({"success": False, "error": "No data provided"}), 400
-                
+
                 validation_result = self.validator.validate_skill_data(skill_data)
-                
-                return jsonify({
-                    "success": True,
-                    "is_valid": validation_result.is_valid,
-                    "errors": validation_result.errors,
-                    "warnings": validation_result.warnings
-                })
-                
+
+                return jsonify(
+                    {
+                        "success": True,
+                        "is_valid": validation_result.is_valid,
+                        "errors": validation_result.errors,
+                        "warnings": validation_result.warnings,
+                    }
+                )
+
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/test', methods=['POST'])
+
+        @self.app.route("/api/skills/test", methods=["POST"])
         def test_skill():
             """Test a skill without saving it."""
             try:
                 request_data = request.json
-                skill_data = request_data.get('skill_data')
-                test_input = request_data.get('test_input', {})
-                
+                skill_data = request_data.get("skill_data")
+                test_input = request_data.get("test_input", {})
+
                 if not skill_data:
-                    return jsonify({"success": False, "error": "No skill data provided"}), 400
-                
+                    return (
+                        jsonify({"success": False, "error": "No skill data provided"}),
+                        400,
+                    )
+
                 # Validate first
                 validation_result = self.validator.validate_skill_data(skill_data)
                 if not validation_result.is_valid:
-                    return jsonify({
-                        "success": False,
-                        "error": "Skill validation failed",
-                        "validation_errors": validation_result.errors
-                    }), 400
-                
+                    return (
+                        jsonify(
+                            {
+                                "success": False,
+                                "error": "Skill validation failed",
+                                "validation_errors": validation_result.errors,
+                            }
+                        ),
+                        400,
+                    )
+
                 # Create temporary skill instance
                 temp_skill = Skill.from_dict(skill_data)
-                
+
                 # Clear logs before testing
                 self.registry.clear_logs()
-                
+
                 # Try to compile and execute
                 try:
                     func = self.registry._compile_skill_function(temp_skill)
-                    
+
                     # Execute with test input
                     if temp_skill.parameters and test_input:
                         func(**test_input)
                     else:
                         func()
-                    
+
                     # Get execution logs
                     logs = self.registry.get_logs()
-                    
-                    return jsonify({
-                        "success": True,
-                        "execution_successful": True,
-                        "output": logs,
-                        "message": "Skill executed successfully"
-                    })
-                    
+
+                    return jsonify(
+                        {
+                            "success": True,
+                            "execution_successful": True,
+                            "output": logs,
+                            "message": "Skill executed successfully",
+                        }
+                    )
+
                 except Exception as exec_error:
-                    return jsonify({
-                        "success": True,
-                        "execution_successful": False,
-                        "error": str(exec_error),
-                        "message": "Skill compilation or execution failed"
-                    })
-                
+                    return jsonify(
+                        {
+                            "success": True,
+                            "execution_successful": False,
+                            "error": str(exec_error),
+                            "message": "Skill compilation or execution failed",
+                        }
+                    )
+
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/roles', methods=['GET'])
+
+        @self.app.route("/api/skills/roles", methods=["GET"])
         def get_skill_roles():
             """Get all available skill roles."""
             roles = [
                 "general",
-                "text_processing", 
+                "text_processing",
                 "mathematics",
                 "data_analysis",
                 "file_operations",
@@ -283,11 +347,11 @@ class SkillEditorAPI:
                 "validation",
                 "emotional_response",
                 "information",
-                "advanced"
+                "advanced",
             ]
             return jsonify({"success": True, "roles": roles})
-        
-        @self.app.route('/api/skills/export', methods=['GET'])
+
+        @self.app.route("/api/skills/export", methods=["GET"])
         def export_skills():
             """Export all skills as JSON."""
             try:
@@ -295,40 +359,51 @@ class SkillEditorAPI:
                 skill_data = {}
                 for name, skill in skills.items():
                     skill_data[name] = skill.to_dict()
-                
-                return jsonify({
-                    "success": True,
-                    "export_date": datetime.now().isoformat(),
-                    "skills_count": len(skill_data),
-                    "skills": skill_data
-                })
+
+                return jsonify(
+                    {
+                        "success": True,
+                        "export_date": datetime.now().isoformat(),
+                        "skills_count": len(skill_data),
+                        "skills": skill_data,
+                    }
+                )
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/api/skills/import', methods=['POST'])
+
+        @self.app.route("/api/skills/import", methods=["POST"])
         def import_skills():
             """Import skills from JSON data."""
             try:
                 import_data = request.json
-                if not import_data or 'skills' not in import_data:
-                    return jsonify({"success": False, "error": "Invalid import data"}), 400
-                
+                if not import_data or "skills" not in import_data:
+                    return (
+                        jsonify({"success": False, "error": "Invalid import data"}),
+                        400,
+                    )
+
                 imported_count = 0
                 errors = []
-                
-                for skill_name, skill_data in import_data['skills'].items():
+
+                for skill_name, skill_data in import_data["skills"].items():
                     try:
                         # Skip if skill already exists
                         if skill_name in self.registry.skills:
-                            errors.append(f"Skill '{skill_name}' already exists, skipped")
+                            errors.append(
+                                f"Skill '{skill_name}' already exists, skipped"
+                            )
                             continue
-                        
+
                         # Validate skill data
-                        validation_result = self.validator.validate_skill_data(skill_data)
+                        validation_result = self.validator.validate_skill_data(
+                            skill_data
+                        )
                         if not validation_result.is_valid:
-                            errors.append(f"Skill '{skill_name}' validation failed: {validation_result.errors}")
+                            errors.append(
+                                f"Skill '{skill_name}' validation failed: {validation_result.errors}"
+                            )
                             continue
-                        
+
                         # Create and register skill
                         skill = Skill.from_dict(skill_data)
                         success = self.registry.register_skill(skill)
@@ -336,34 +411,38 @@ class SkillEditorAPI:
                             imported_count += 1
                         else:
                             errors.append(f"Failed to register skill '{skill_name}'")
-                    
+
                     except Exception as skill_error:
-                        errors.append(f"Error importing skill '{skill_name}': {str(skill_error)}")
-                
-                return jsonify({
-                    "success": True,
-                    "imported_count": imported_count,
-                    "errors": errors
-                })
-                
+                        errors.append(
+                            f"Error importing skill '{skill_name}': {str(skill_error)}"
+                        )
+
+                return jsonify(
+                    {
+                        "success": True,
+                        "imported_count": imported_count,
+                        "errors": errors,
+                    }
+                )
+
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-        
-        @self.app.route('/')
+
+        @self.app.route("/")
         def serve_index():
             """Serve the main editor interface."""
             return self._get_editor_html()
-        
-        @self.app.route('/skill/<skill_name>')
+
+        @self.app.route("/skill/<skill_name>")
         def serve_skill_editor(skill_name):
             """Serve the skill editor interface."""
             return self._get_skill_editor_html(skill_name)
-        
-        @self.app.route('/new-skill')
+
+        @self.app.route("/new-skill")
         def serve_new_skill():
             """Serve the new skill creation interface."""
             return self._get_new_skill_html()
-    
+
     def _get_editor_html(self) -> str:
         """Generate the main editor interface HTML."""
         return """<!DOCTYPE html>
@@ -559,7 +638,7 @@ class SkillEditorAPI:
     </script>
 </body>
 </html>"""
-    
+
     def _get_skill_editor_html(self, skill_name: str) -> str:
         """Generate the skill editor interface HTML."""
         return f"""<!DOCTYPE html>
@@ -974,7 +1053,7 @@ class SkillEditorAPI:
     </script>
 </body>
 </html>"""
-    
+
     def _get_new_skill_html(self) -> str:
         """Generate the new skill creation interface HTML."""
         return """<!DOCTYPE html>
@@ -1422,10 +1501,10 @@ class SkillEditorAPI:
     </script>
 </body>
 </html>"""
-    
+
     def run(self):
         """Run the Flask development server."""
         print(f"🚀 Starting Skill Editor API on http://localhost:{self.port}")
         print(f"💾 Skills directory: {self.registry.skills_dir}")
         print(f"📊 Loaded {len(self.registry.skills)} skills")
-        self.app.run(debug=True, port=self.port, host='0.0.0.0')
+        self.app.run(debug=True, port=self.port, host="0.0.0.0")

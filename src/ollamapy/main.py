@@ -21,10 +21,13 @@ def greet(name):
     return f"Hello, {name}!"
 
 
-def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.", 
-         analysis_model: str = "gemma3:4b"):
+def chat(
+    model: str = "gemma3:4b",
+    system: str = "You are a helpful assistant.",
+    analysis_model: str = "gemma3:4b",
+):
     """Start a chat session with Ollama.
-    
+
     Args:
         model: The model to use for chat (default: gemma3:4b)
         system: Optional system message to set context
@@ -36,27 +39,37 @@ def chat(model: str = "gemma3:4b", system: str = "You are a helpful assistant.",
     analysis_engine = AnalysisEngine(analysis_model, client)
     chat_session = ChatSession(model, client, system)
     ai_query = AIQuery(client, model=analysis_model)
-    
+
     # Create and run the terminal interface
-    terminal_interface = TerminalInterface(model_manager, analysis_engine, chat_session, ai_query)
+    terminal_interface = TerminalInterface(
+        model_manager, analysis_engine, chat_session, ai_query
+    )
     terminal_interface.run()
 
 
-def run_vibe_tests(model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = "gemma3:4b"):
+def run_vibe_tests(
+    model: str = "gemma3:4b", iterations: int = 1, analysis_model: str = "gemma3:4b"
+):
     """Run built-in vibe tests.
-    
+
     Args:
         model: The model to use for testing (default: gemma3:4b)
         iterations: Number of iterations per test (default: 1)
         analysis_model: Optional separate model for action analysis (defaults to main model)
     """
     from .vibe_tests import run_vibe_tests as run_tests
+
     return run_tests(model=model, iterations=iterations, analysis_model=analysis_model)
 
 
-def run_skill_gen(model: str = "gemma3:4b", analysis_model: Optional[str] = None, count: int = 1, ideas: Optional[list] = None):
+def run_skill_gen(
+    model: str = "gemma3:4b",
+    analysis_model: Optional[str] = None,
+    count: int = 1,
+    ideas: Optional[list] = None,
+):
     """Run automated skill generation.
-    
+
     Args:
         model: The model to use for generation (default: gemma3:4b)
         analysis_model: Optional model for vibe testing (defaults to main model)
@@ -64,12 +77,15 @@ def run_skill_gen(model: str = "gemma3:4b", analysis_model: Optional[str] = None
         ideas: Optional list of specific skill ideas
     """
     from .skill_generator import run_skill_generation
-    return run_skill_generation(model=model, analysis_model=analysis_model, count=count, ideas=ideas)
+
+    return run_skill_generation(
+        model=model, analysis_model=analysis_model, count=count, ideas=ideas
+    )
 
 
 def run_skill_editor(port: int = 5000, skills_directory: Optional[str] = None):
     """Run the interactive skill editor server.
-    
+
     Args:
         port: Port to run the server on (default: 5000)
         skills_directory: Directory containing skill files (default: auto-detect)
@@ -81,7 +97,7 @@ def run_skill_editor(port: int = 5000, skills_directory: Optional[str] = None):
         print(f"Please install Flask and flask-cors:")
         print(f"  pip install flask flask-cors")
         return False
-    
+
     api = SkillEditorAPI(skills_directory=skills_directory, port=port)
     api.run()
     return True
@@ -108,91 +124,94 @@ Examples:
   ollamapy --skillgen --count 3 --model llama3.2:7b  # Use specific model
   ollamapy --skill-editor           # Launch interactive skill editor web interface
   ollamapy --skill-editor --port 8080  # Use custom port for skill editor
-        """
+        """,
     )
-    
+
     parser.add_argument(
-        "--model", "-m",
+        "--model",
+        "-m",
         default="gemma3:4b",
-        help="Model to use for chat responses (default: gemma3:4b)"
+        help="Model to use for chat responses (default: gemma3:4b)",
     )
-    
+
     parser.add_argument(
-        "--analysis-model", "-a",
-        help="Model to use for action analysis (defaults to main model if not specified). Use a smaller, faster model for better performance."
+        "--analysis-model",
+        "-a",
+        help="Model to use for action analysis (defaults to main model if not specified). Use a smaller, faster model for better performance.",
     )
-    
+
     parser.add_argument(
-        "--system", "-s",
-        help="System message to set context for the AI"
+        "--system", "-s", help="System message to set context for the AI"
     )
-    
+
     parser.add_argument(
-        "--hello",
-        action="store_true",
-        help="Just print hello and exit (for testing)"
+        "--hello", action="store_true", help="Just print hello and exit (for testing)"
     )
-    
+
     parser.add_argument(
         "--vibetest",
         action="store_true",
-        help="Run built-in vibe tests to evaluate AI decision-making consistency"
+        help="Run built-in vibe tests to evaluate AI decision-making consistency",
     )
-    
+
     parser.add_argument(
         "--skillgen",
         action="store_true",
-        help="Generate new skills automatically using AI"
+        help="Generate new skills automatically using AI",
     )
-    
+
     parser.add_argument(
-        "--count", "-c",
+        "--count",
+        "-c",
         type=int,
         default=1,
-        help="Number of skills to generate (default: 1, used with --skillgen)"
+        help="Number of skills to generate (default: 1, used with --skillgen)",
     )
-    
+
     parser.add_argument(
-        "--idea", "-i",
+        "--idea",
+        "-i",
         action="append",
-        help="Specific skill idea to generate (can be used multiple times)"
+        help="Specific skill idea to generate (can be used multiple times)",
     )
-    
+
     parser.add_argument(
-        "-n", "--iterations",
+        "-n",
+        "--iterations",
         type=int,
         default=1,
-        help="Number of iterations for vibe tests (default: 1)"
+        help="Number of iterations for vibe tests (default: 1)",
     )
-    
+
     parser.add_argument(
         "--skill-editor",
         action="store_true",
-        help="Launch interactive skill editor web interface"
+        help="Launch interactive skill editor web interface",
     )
-    
+
     parser.add_argument(
-        "--port", "-p",
+        "--port",
+        "-p",
         type=int,
         default=5000,
-        help="Port for skill editor server (default: 5000)"
+        help="Port for skill editor server (default: 5000)",
     )
-    
+
     parser.add_argument(
         "--skills-dir",
-        help="Directory containing skill files (auto-detected if not specified)"
+        help="Directory containing skill files (auto-detected if not specified)",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.hello:
         print(hello())
         print(greet("Python"))
     elif args.vibetest:
         success = run_vibe_tests(
-            model=args.model, 
-            iterations=args.iterations, 
-            analysis_model=args.analysis_model
+            model=args.model,
+            iterations=args.iterations,
+            analysis_model=args.analysis_model,
         )
         sys.exit(0 if success else 1)
     elif args.skillgen:
@@ -201,20 +220,17 @@ Examples:
             model=args.model,
             analysis_model=analysis_model,
             count=args.count,
-            ideas=args.idea
+            ideas=args.idea,
         )
         sys.exit(0 if success else 1)
     elif args.skill_editor:
-        success = run_skill_editor(
-            port=args.port,
-            skills_directory=args.skills_dir
-        )
+        success = run_skill_editor(port=args.port, skills_directory=args.skills_dir)
         sys.exit(0 if success else 1)
     else:
         chat(
-            model=args.model, 
-            system=args.system, 
-            analysis_model= args.analysis_model if args.analysis_model else "gemma3:4b"
+            model=args.model,
+            system=args.system,
+            analysis_model=args.analysis_model if args.analysis_model else "gemma3:4b",
         )
 
 
