@@ -108,6 +108,7 @@ class SkillDocumentationGenerator:
             edit_button = '<span class="protected-note">🔒 Built-in skills cannot be edited</span>'
         
         common_styles = self.get_common_styles()
+        newline = '\n'
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -406,7 +407,7 @@ class SkillDocumentationGenerator:
                 
                 <div class="form-group">
                     <label>Vibe Test Phrases (one per line)</label>
-                    <textarea id="edit-vibe-phrases" class="form-control" rows="5">{"\\n".join(skill_data.get('vibe_test_phrases', []))}</textarea>
+                    <textarea id="edit-vibe-phrases" class="form-control" rows="5">{newline.join(skill_data.get('vibe_test_phrases', []))}</textarea>
                 </div>
                 
                 <div class="form-group">
@@ -493,10 +494,10 @@ class SkillDocumentationGenerator:
                 
                 if (data.success) {{
                     if (data.execution_successful) {{
-                        output.textContent = 'Test passed!\\n\\nOutput:\\n' + data.output.join('\\n');
+                        output.textContent = 'Test passed!' + newline + newline + 'Output:' + newline + data.output.join(newline);
                         output.style.background = '#2d5a27';
                     }} else {{
-                        output.textContent = 'Test failed:\\n' + data.error;
+                        output.textContent = 'Test failed:' + newline + data.error;
                         output.style.background = '#8b2635';
                     }}
                 }} else {{
@@ -519,7 +520,7 @@ class SkillDocumentationGenerator:
                 name: skillData.name,
                 description: document.getElementById('edit-description').value,
                 role: document.getElementById('edit-role').value,
-                vibe_test_phrases: vibePhrasesText.split('\\n').filter(p => p.trim()),
+                vibe_test_phrases: vibePhrasesText.split(newline).filter(p => p.trim()),
                 parameters: skillData.parameters || {{}},
                 function_code: document.getElementById('edit-function-code').value,
                 verified: skillData.verified,
