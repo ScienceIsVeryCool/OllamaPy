@@ -67,6 +67,26 @@ def run_skill_gen(model: str = "gemma3:4b", analysis_model: Optional[str] = None
     return run_skill_generation(model=model, analysis_model=analysis_model, count=count, ideas=ideas)
 
 
+def run_skill_editor(port: int = 5000, skills_directory: Optional[str] = None):
+    """Run the interactive skill editor server.
+    
+    Args:
+        port: Port to run the server on (default: 5000)
+        skills_directory: Directory containing skill files (default: auto-detect)
+    """
+    try:
+        from .skill_editor.api import SkillEditorAPI
+    except ImportError as e:
+        print(f"❌ Error: Missing dependencies for skill editor.")
+        print(f"Please install Flask and flask-cors:")
+        print(f"  pip install flask flask-cors")
+        return False
+    
+    api = SkillEditorAPI(skills_directory=skills_directory, port=port)
+    api.run()
+    return True
+
+
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -86,6 +106,8 @@ Examples:
   ollamapy --skillgen --count 5     # Generate 5 new skills
   ollamapy --skillgen --idea "analyze CSV data"  # Generate specific skill
   ollamapy --skillgen --count 3 --model llama3.2:7b  # Use specific model
+  ollamapy --skill-editor           # Launch interactive skill editor web interface
+  ollamapy --skill-editor --port 8080  # Use custom port for skill editor
         """
     )
     
@@ -143,6 +165,24 @@ Examples:
         help="Number of iterations for vibe tests (default: 1)"
     )
     
+    parser.add_argument(
+        "--skill-editor",
+        action="store_true",
+        help="Launch interactive skill editor web interface"
+    )
+    
+    parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=5000,
+        help="Port for skill editor server (default: 5000)"
+    )
+    
+    parser.add_argument(
+        "--skills-dir",
+        help="Directory containing skill files (auto-detected if not specified)"
+    )
+    
     args = parser.parse_args()
     
     if args.hello:
@@ -162,6 +202,12 @@ Examples:
             analysis_model=analysis_model,
             count=args.count,
             ideas=args.idea
+        )
+        sys.exit(0 if success else 1)
+    elif args.skill_editor:
+        success = run_skill_editor(
+            port=args.port,
+            skills_directory=args.skills_dir
         )
         sys.exit(0 if success else 1)
     else:

@@ -99,6 +99,9 @@ class SkillDocumentationGenerator:
         new_badge = '<span class="badge-new">NEW</span>' if is_new else ''
         verified_badge = '<span class="badge-verified">VERIFIED</span>' if verified else '<span class="badge-unverified">UNVERIFIED</span>'
         
+        # Edit button (only for non-verified skills)
+        edit_button = f'<button class="edit-btn" onclick="editSkill()" {"disabled" if verified else ""}>{"🔒 Protected" if verified else "✏️ Edit Skill"}</button>' if not verified else '<span class="protected-note">🔒 Built-in skills cannot be edited</span>'
+        
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -223,6 +226,116 @@ class SkillDocumentationGenerator:
         .nav-button:hover {{
             background: #764ba2;
         }}
+        .edit-btn {{
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background 0.2s;
+        }}
+        .edit-btn:hover:not(:disabled) {{
+            background: #218838;
+        }}
+        .edit-btn:disabled {{
+            background: #6c757d;
+            cursor: not-allowed;
+        }}
+        .protected-note {{
+            color: #6c757d;
+            font-style: italic;
+            padding: 12px 0;
+        }}
+        .edit-panel {{
+            display: none;
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 30px 0;
+        }}
+        .form-group {{
+            margin-bottom: 20px;
+        }}
+        .form-group label {{
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }}
+        .form-control {{
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }}
+        .form-control:focus {{
+            outline: none;
+            border-color: #667eea;
+        }}
+        .form-control.code {{
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            resize: vertical;
+        }}
+        .btn-save {{
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }}
+        .btn-cancel {{
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+        }}
+        .btn-test {{
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+        }}
+        .message {{
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }}
+        .message.success {{
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }}
+        .message.error {{
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }}
+        .test-output {{
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }}
     </style>
 </head>
 <body>
@@ -254,10 +367,64 @@ class SkillDocumentationGenerator:
             </div>
         </div>
         
-        <div class="section">
-            <h2>📝 Description</h2>
-            <p>{description}</p>
+        <div style="text-align: center; margin: 30px 0;">
+            {edit_button}
         </div>
+        
+        <div id="edit-panel" class="edit-panel">
+            <h2>✏️ Edit Skill</h2>
+            <div id="message-area"></div>
+            <form id="edit-form">
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="edit-description" class="form-control" rows="3">{description}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="edit-role" class="form-control">
+                        <option value="general" {"selected" if role == "general" else ""}>General</option>
+                        <option value="text_processing" {"selected" if role == "text_processing" else ""}>Text Processing</option>
+                        <option value="mathematics" {"selected" if role == "mathematics" else ""}>Mathematics</option>
+                        <option value="data_analysis" {"selected" if role == "data_analysis" else ""}>Data Analysis</option>
+                        <option value="file_operations" {"selected" if role == "file_operations" else ""}>File Operations</option>
+                        <option value="web_utilities" {"selected" if role == "web_utilities" else ""}>Web Utilities</option>
+                        <option value="time_date" {"selected" if role == "time_date" else ""}>Time & Date</option>
+                        <option value="formatting" {"selected" if role == "formatting" else ""}>Formatting</option>
+                        <option value="validation" {"selected" if role == "validation" else ""}>Validation</option>
+                        <option value="emotional_response" {"selected" if role == "emotional_response" else ""}>Emotional Response</option>
+                        <option value="information" {"selected" if role == "information" else ""}>Information</option>
+                        <option value="advanced" {"selected" if role == "advanced" else ""}>Advanced</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Vibe Test Phrases (one per line)</label>
+                    <textarea id="edit-vibe-phrases" class="form-control" rows="5">{"\\n".join(skill_data.get('vibe_test_phrases', []))}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Function Code</label>
+                    <textarea id="edit-function-code" class="form-control code" rows="15">{self.escape_html(skill_data.get('function_code', ''))}</textarea>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <button type="button" class="btn-test" onclick="testSkill()">🧪 Test Skill</button>
+                    <div id="test-output" class="test-output"></div>
+                </div>
+                
+                <div>
+                    <button type="submit" class="btn-save">💾 Save Changes</button>
+                    <button type="button" class="btn-cancel" onclick="cancelEdit()">❌ Cancel</button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="view-panel">
+            <div class="section">
+                <h2>📝 Description</h2>
+                <p>{description}</p>
+            </div>
         
         <div class="section">
             <h2>🧪 Vibe Test Phrases</h2>
@@ -270,9 +437,10 @@ class SkillDocumentationGenerator:
             {params_html}
         </div>
         
-        <div class="section">
-            <h2>💻 Implementation</h2>
-            {code_html}
+            <div class="section">
+                <h2>💻 Implementation</h2>
+                {code_html}
+            </div>
         </div>
         
         <div class="nav-buttons">
@@ -281,6 +449,150 @@ class SkillDocumentationGenerator:
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    
+    <script>
+        const skillData = {json.dumps(skill_data, indent=2)};
+        const isBuiltIn = {str(verified).lower()};
+        
+        function editSkill() {{
+            if (isBuiltIn) {{
+                showMessage('Built-in skills cannot be edited', 'error');
+                return;
+            }}
+            document.getElementById('view-panel').style.display = 'none';
+            document.getElementById('edit-panel').style.display = 'block';
+        }}
+        
+        function cancelEdit() {{
+            document.getElementById('edit-panel').style.display = 'none';
+            document.getElementById('view-panel').style.display = 'block';
+            clearMessage();
+        }}
+        
+        async function testSkill() {{
+            const formData = collectFormData();
+            
+            try {{
+                const response = await fetch('http://localhost:5000/api/skills/test', {{
+                    method: 'POST',
+                    headers: {{'Content-Type': 'application/json'}},
+                    body: JSON.stringify({{
+                        skill_data: formData,
+                        test_input: {{}}
+                    }})
+                }});
+                
+                const data = await response.json();
+                const output = document.getElementById('test-output');
+                
+                if (data.success) {{
+                    if (data.execution_successful) {{
+                        output.textContent = 'Test passed!\\n\\nOutput:\\n' + data.output.join('\\n');
+                        output.style.background = '#2d5a27';
+                    }} else {{
+                        output.textContent = 'Test failed:\\n' + data.error;
+                        output.style.background = '#8b2635';
+                    }}
+                }} else {{
+                    output.textContent = 'Error: ' + data.error;
+                    output.style.background = '#8b2635';
+                }}
+                
+                output.style.display = 'block';
+            }} catch (error) {{
+                const output = document.getElementById('test-output');
+                output.textContent = 'Network error: ' + error.message;
+                output.style.background = '#8b2635';
+                output.style.display = 'block';
+            }}
+        }}
+        
+        function collectFormData() {{
+            const vibePhrasesText = document.getElementById('edit-vibe-phrases').value;
+            return {{
+                name: skillData.name,
+                description: document.getElementById('edit-description').value,
+                role: document.getElementById('edit-role').value,
+                vibe_test_phrases: vibePhrasesText.split('\\n').filter(p => p.trim()),
+                parameters: skillData.parameters || {{}},
+                function_code: document.getElementById('edit-function-code').value,
+                verified: skillData.verified,
+                scope: skillData.scope || 'local',
+                tags: skillData.tags || [],
+                created_at: skillData.created_at,
+                execution_count: skillData.execution_count || 0,
+                success_rate: skillData.success_rate || 100.0,
+                average_execution_time: skillData.average_execution_time || 0.0
+            }};
+        }}
+        
+        async function saveSkill() {{
+            if (isBuiltIn) {{
+                showMessage('Built-in skills cannot be edited', 'error');
+                return;
+            }}
+            
+            const formData = collectFormData();
+            formData.last_modified = new Date().toISOString();
+            
+            try {{
+                const response = await fetch(`http://localhost:5000/api/skills/${{skillData.name}}`, {{
+                    method: 'PUT',
+                    headers: {{'Content-Type': 'application/json'}},
+                    body: JSON.stringify(formData)
+                }});
+                
+                const data = await response.json();
+                
+                if (data.success) {{
+                    showMessage('Skill updated successfully! Refresh the page to see changes.', 'success');
+                    // Update local skill data
+                    Object.assign(skillData, formData);
+                }} else {{
+                    showMessage('Failed to update skill: ' + data.error, 'error');
+                    if (data.validation_errors) {{
+                        showMessage('Validation errors: ' + data.validation_errors.join(', '), 'error');
+                    }}
+                }}
+            }} catch (error) {{
+                showMessage('Network error: ' + error.message, 'error');
+            }}
+        }}
+        
+        function showMessage(message, type) {{
+            const area = document.getElementById('message-area');
+            area.innerHTML = `<div class="message ${{type}}">${{message}}</div>`;
+            setTimeout(() => area.innerHTML = '', 5000);
+        }}
+        
+        function clearMessage() {{
+            document.getElementById('message-area').innerHTML = '';
+        }}
+        
+        // Form submission handler
+        document.getElementById('edit-form').addEventListener('submit', function(e) {{
+            e.preventDefault();
+            saveSkill();
+        }});
+        
+        // Check if skill editor API is available
+        async function checkAPIAvailability() {{
+            try {{
+                await fetch('http://localhost:5000/api/skills', {{method: 'HEAD'}});
+            }} catch (error) {{
+                console.warn('Skill editor API not available. Interactive editing disabled.');
+                const editBtn = document.querySelector('.edit-btn');
+                if (editBtn && !isBuiltIn) {{
+                    editBtn.disabled = true;
+                    editBtn.textContent = '🔌 API Offline';
+                    editBtn.title = 'Start the skill editor server to enable editing';
+                }}
+            }}
+        }}
+        
+        // Check API availability on page load
+        checkAPIAvailability();
+    </script>
 </body>
 </html>"""
     
