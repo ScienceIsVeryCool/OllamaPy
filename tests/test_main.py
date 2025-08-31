@@ -1,6 +1,6 @@
 """Main test suite for OllamaPy."""
 
-from ollamapy.main import hello, greet
+from src.ollamapy.main import hello, greet
 
 
 def test_hello():
@@ -16,7 +16,7 @@ def test_greet():
 
 def test_vibe_test_import():
     """Test that vibe test functionality can be imported."""
-    from ollamapy.vibe_tests import VibeTestRunner, run_vibe_tests
+    from src.ollamapy.vibe_tests import VibeTestRunner, run_vibe_tests
 
     # Test that we can create a runner
     runner = VibeTestRunner()

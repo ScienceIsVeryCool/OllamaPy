@@ -29,18 +29,27 @@ jobs:
         source .venv-ci/bin/activate
         pip install -e .[dev]
         
-    - name: Quick validation tests
+    - name: Run comprehensive test suite
       run: |
         source .venv-ci/bin/activate
         
-        # Test basic imports
-        python -c "from src.ollamapy.main import main; print('✅ Main module imports successfully')"
-        
-        # Test CLI functionality
-        python -m src.ollamapy.main --hello || echo "⚠️ CLI test failed"
-        
-        # Run minimal tests
-        python -m pytest tests/test_main.py -v || echo "⚠️ Some tests failed"
+        # Run our comprehensive test script
+        if [ -f "scripts/test.sh" ]; then
+          chmod +x scripts/test.sh
+          ./scripts/test.sh
+        else
+          # Fallback to manual tests
+          echo "🔬 Running basic tests..."
+          
+          # Test basic imports
+          python -c "from src.ollamapy.main import main; print('✅ Main module imports successfully')"
+          
+          # Test CLI functionality
+          python -m src.ollamapy.main --hello || echo "⚠️ CLI test failed"
+          
+          # Run core tests
+          pytest tests/test_main*.py tests/test_ollama_client.py tests/test_package_validation.py -v || echo "⚠️ Some tests failed"
+        fi
         
     - name: Cleanup
       if: always()
