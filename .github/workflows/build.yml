@@ -18,28 +18,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+    - name: Set up Python (use system Python)
+      run: |
+        python3 --version
+        python3 -m pip install --upgrade pip
     
     - name: Install build dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install build twine wheel pytest
+        python3 -m pip install build twine wheel pytest
     
     - name: Run quick tests before building
       run: |
-        pip install -e .
-        python -c "from src.ollamapy.main import main; print('✅ Basic import successful')"
+        python3 -m pip install -e .
+        python3 -c "from src.ollamapy.main import main; print('✅ Basic import successful')"
     
     - name: Build package
       run: |
-        python -m build
+        python3 -m build
     
     - name: Check package
       run: |
-        twine check dist/*
+        python3 -m twine check dist/*
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -59,10 +58,10 @@ jobs:
         python-version: ['3.11']
     
     steps:
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+    - name: Set up Python (use system Python)
+      run: |
+        python3 --version
+        python3 -m pip install --upgrade pip
     
     - name: Download build artifacts
       uses: actions/download-artifact@v4
@@ -72,13 +71,13 @@ jobs:
     
     - name: Test wheel installation
       run: |
-        pip install dist/*.whl
-        python -c "import ollamapy; print('✅ Package installed successfully')"
-        ollamapy --hello
+        python3 -m pip install dist/*.whl
+        python3 -c "import ollamapy; print('✅ Package installed successfully')"
+        python3 -m ollamapy.main --hello
     
     - name: Test source installation
       run: |
-        pip uninstall -y ollamapy
-        pip install dist/*.tar.gz
-        python -c "import ollamapy; print('✅ Source package installed successfully')"
-        ollamapy --hello
+        python3 -m pip uninstall -y ollamapy
+        python3 -m pip install dist/*.tar.gz
+        python3 -c "import ollamapy; print('✅ Source package installed successfully')"
+        python3 -m ollamapy.main --hello
