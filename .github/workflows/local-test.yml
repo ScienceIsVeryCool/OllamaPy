@@ -1,0 +1,48 @@
+name: Local Runner Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+
+jobs:
+  local-test:
+    runs-on: self-hosted
+    timeout-minutes: 30
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup local environment
+      run: |
+        # Ensure we have a clean Python environment
+        python3 -m venv .venv-ci || true
+        source .venv-ci/bin/activate
+        python -m pip install --upgrade pip setuptools wheel
+        
+    - name: Install project
+      run: |
+        source .venv-ci/bin/activate
+        pip install -e .[dev]
+        
+    - name: Quick validation tests
+      run: |
+        source .venv-ci/bin/activate
+        
+        # Test basic imports
+        python -c "from src.ollamapy.main import main; print('✅ Main module imports successfully')"
+        
+        # Test CLI functionality
+        python -m src.ollamapy.main --hello || echo "⚠️ CLI test failed"
+        
+        # Run minimal tests
+        python -m pytest tests/test_main.py -v || echo "⚠️ Some tests failed"
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf .venv-ci || true

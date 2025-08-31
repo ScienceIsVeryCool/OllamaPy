@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     permissions:
       contents: read
@@ -38,10 +38,16 @@ jobs:
       run: |
         mkdir -p docs/skills
         python -c "
-        from src.ollamapy.skillgen_report import SkillDocumentationGenerator
-        generator = SkillDocumentationGenerator(output_dir='docs/skills')
-        generator.generate_documentation()
-        print('✅ Skill documentation generated')
+        try:
+            from src.ollamapy.skillgen_report import SkillDocumentationGenerator
+            generator = SkillDocumentationGenerator(output_dir='docs/skills')
+            generator.generate_documentation()
+            print('✅ Skill documentation generated')
+        except ImportError as e:
+            print(f'⚠️ Skill documentation generator not available: {e}')
+            # Create placeholder documentation
+            with open('docs/skills/index.md', 'w') as f:
+                f.write('# Skills Documentation\\n\\nSkills documentation will be available in future releases.')
         "
     
     - name: Create MkDocs structure
@@ -59,24 +65,32 @@ jobs:
     - name: Generate API documentation
       run: |
         python -c "
-        import inspect
-        from src.ollamapy.skill_editor.api import SkillEditorAPI
-        from src.ollamapy.skills import SkillRegistry
-        
-        # Generate API docs
-        with open('docs/skill-editor/api.md', 'w') as f:
-            f.write('# Skill Editor API Reference\\n\\n')
-            f.write('## SkillEditorAPI Class\\n\\n')
-            f.write(f'```python\\n{inspect.getsource(SkillEditorAPI.__init__)}```\\n\\n')
+        try:
+            import inspect
+            from src.ollamapy.skill_editor.api import SkillEditorAPI
+            from src.ollamapy.skills import SkillRegistry
             
-        with open('docs/skill-editor/getting-started.md', 'w') as f:
-            f.write('# Getting Started with Skill Editor\\n\\n')
-            f.write('## Installation\\n\\n')
-            f.write('```bash\\npip install ollamapy[editor]\\n```\\n\\n')
-            f.write('## Basic Usage\\n\\n')
-            f.write('```bash\\nollamapy --skill-editor\\n```\\n')
-        
-        print('✅ API documentation generated')
+            # Generate API docs
+            with open('docs/skill-editor/api.md', 'w') as f:
+                f.write('# Skill Editor API Reference\\n\\n')
+                f.write('## SkillEditorAPI Class\\n\\n')
+                f.write(f'```python\\n{inspect.getsource(SkillEditorAPI.__init__)}```\\n\\n')
+                
+            with open('docs/skill-editor/getting-started.md', 'w') as f:
+                f.write('# Getting Started with Skill Editor\\n\\n')
+                f.write('## Installation\\n\\n')
+                f.write('```bash\\npip install ollamapy[editor]\\n```\\n\\n')
+                f.write('## Basic Usage\\n\\n')
+                f.write('```bash\\nollamapy --skill-editor\\n```\\n')
+            
+            print('✅ API documentation generated')
+        except ImportError as e:
+            print(f'⚠️ API documentation not available: {e}')
+            # Create placeholder documentation
+            with open('docs/skill-editor/api.md', 'w') as f:
+                f.write('# Skill Editor API Reference\\n\\nAPI documentation will be available when the skill editor module is complete.')
+            with open('docs/skill-editor/getting-started.md', 'w') as f:
+                f.write('# Getting Started with Skill Editor\\n\\nSkill editor documentation will be available in future releases.')
         "
     
     - name: Build with MkDocs

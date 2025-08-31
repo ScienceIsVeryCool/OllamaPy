@@ -83,7 +83,7 @@ all = [
 ]
 
 [project.scripts]
-ollamapy = "ollamapy.main:main"
+ollamapy = "src.ollamapy.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ollamapy"]

@@ -1,0 +1,30 @@
+name: Runner Health Check
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: self-hosted
+    steps:
+    - name: Check runner status
+      run: |
+        echo "✅ Runner is healthy"
+        echo "Runner: $(hostname)"
+        echo "OS: $(uname -a)"
+        echo "Python: $(python3 --version)"
+        echo "Docker: $(docker --version || echo 'Docker not available')"
+        echo "Available space: $(df -h . | tail -1)"
+        echo "Memory: $(free -h)"
+        
+    - name: Test basic functionality
+      run: |
+        python3 -c "
+        import sys
+        print(f'Python version: {sys.version}')
+        import os
+        print(f'Working directory: {os.getcwd()}')
+        print('✅ Basic Python functionality working')
+        "

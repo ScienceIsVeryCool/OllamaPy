@@ -16,7 +16,7 @@ jobs:
 
   deploy:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: release
     permissions:
       contents: write
