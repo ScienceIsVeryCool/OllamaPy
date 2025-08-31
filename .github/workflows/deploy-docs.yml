@@ -1,0 +1,96 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  release:
+    types: [created]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install mkdocs mkdocs-material mkdocs-include-markdown-plugin
+    
+    - name: Generate skill documentation
+      run: |
+        mkdir -p docs/skills
+        python -c "
+        from src.ollamapy.skillgen_report import SkillDocumentationGenerator
+        generator = SkillDocumentationGenerator(output_dir='docs/skills')
+        generator.generate_documentation()
+        print('✅ Skill documentation generated')
+        "
+    
+    - name: Create MkDocs structure
+      run: |
+        mkdir -p docs
+        
+        # Create main index if it doesn't exist
+        if [ ! -f docs/index.md ]; then
+          cp README.md docs/index.md
+        fi
+        
+        # Create skill editor guide
+        mkdir -p docs/skill-editor
+    
+    - name: Generate API documentation
+      run: |
+        python -c "
+        import inspect
+        from src.ollamapy.skill_editor.api import SkillEditorAPI
+        from src.ollamapy.skills import SkillRegistry
+        
+        # Generate API docs
+        with open('docs/skill-editor/api.md', 'w') as f:
+            f.write('# Skill Editor API Reference\\n\\n')
+            f.write('## SkillEditorAPI Class\\n\\n')
+            f.write(f'```python\\n{inspect.getsource(SkillEditorAPI.__init__)}```\\n\\n')
+            
+        with open('docs/skill-editor/getting-started.md', 'w') as f:
+            f.write('# Getting Started with Skill Editor\\n\\n')
+            f.write('## Installation\\n\\n')
+            f.write('```bash\\npip install ollamapy[editor]\\n```\\n\\n')
+            f.write('## Basic Usage\\n\\n')
+            f.write('```bash\\nollamapy --skill-editor\\n```\\n')
+        
+        print('✅ API documentation generated')
+        "
+    
+    - name: Build with MkDocs
+      run: |
+        mkdocs build
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+    
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: 'site'
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2

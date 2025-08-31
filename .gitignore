@@ -42,3 +42,5 @@ env/
 .env/
 .env
 skill_docs/*
+skill_docs_test/*
+src/ollamapy/skills_data/

@@ -1,6 +1,6 @@
 # OllamaPy
 
-A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities and comprehensive performance analysis. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency and timing performance.
+A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities, dynamic skill generation, and interactive skill editing. OllamaPy provides an intuitive way to interact with local AI models while featuring unique "vibe tests" that evaluate AI decision-making consistency, automated skill generation, and a web-based skill editor for creating and customizing AI capabilities.
 
 ## Demo
 
@@ -8,16 +8,25 @@ A powerful terminal-based chat interface for Ollama with AI meta-reasoning capab
 
 ## Features
 
+### Core System
 - 🤖 **Terminal Chat Interface** - Clean, user-friendly chat experience in your terminal
 - 🔄 **Streaming Responses** - Real-time streaming for natural conversation flow
 - 📚 **Model Management** - Automatic model pulling and listing of available models
 - 🧠 **Meta-Reasoning** - AI analyzes user input and selects appropriate actions
-- 🛠️ **Extensible Actions** - Easy-to-extend action system with parameter support
+- 🏗️ **Modular Architecture** - Clean separation of concerns for easy testing and extension
+
+### Skills System
+- 🛠️ **Dynamic Skills** - Extensible skill system with intelligent parameter extraction
+- 🎯 **Auto Skill Generation** - AI creates new skills automatically based on prompts
+- 🌐 **Interactive Web Editor** - Full-featured web interface for creating and editing skills
+- 🔐 **Built-in Protection** - Verified built-in skills are protected from accidental modification
+- ✅ **Real-time Validation** - Live syntax checking and skill testing
+
+### Testing & Analysis  
 - 🧪 **AI Vibe Tests** - Built-in tests to evaluate AI consistency and reliability
 - ⏱️ **Performance Analysis** - Comprehensive timing analysis with consistency scoring
-- 📊 **Interactive Reports** - Rich HTML reports with timing visualizations
-- 🔢 **Parameter Extraction** - AI intelligently extracts parameters from natural language
-- 🏗️ **Modular Architecture** - Clean separation of concerns for easy testing and extension
+- 📊 **Interactive Reports** - Rich HTML reports with timing visualizations and skill documentation
+- 🔢 **Parameter Intelligence** - AI intelligently extracts parameters from natural language
 
 ## Prerequisites
 
@@ -70,6 +79,18 @@ ollamapy
 # Use a specific model
 ollamapy --model gemma2:2b
 ollamapy -m codellama:7b
+```
+
+### Interactive Skill Editor
+```bash
+# Launch the web-based skill editor
+ollamapy --skill-editor
+
+# Use a custom port
+ollamapy --skill-editor --port 8080
+
+# Specify custom skills directory
+ollamapy --skill-editor --skills-dir /path/to/skills
 ```
 
 ### Dual Model Setup (Analysis + Chat)
@@ -305,6 +326,122 @@ Timing Analysis:
 
 Tests pass with a 60% or higher success rate, ensuring reasonable consistency in decision-making.
 
+## Interactive Skill Editor
+
+OllamaPy includes a comprehensive web-based skill editor that allows you to create, modify, and manage AI skills through an intuitive interface.
+
+### Getting Started
+
+Launch the skill editor with:
+```bash
+ollamapy --skill-editor
+```
+
+Then open your browser to `http://localhost:5000` to access the editor.
+
+### Key Features
+
+#### **📋 Skill Management Dashboard**
+- View all skills with filterable grid layout
+- See skill status (Built-in vs Custom)
+- Quick access to edit, test, and delete operations
+- Search and filter capabilities
+
+#### **✏️ Interactive Skill Editing**
+- **Real-time Code Editor**: Syntax highlighting for Python skill code
+- **Live Validation**: Instant feedback on code syntax and structure
+- **Parameter Management**: Dynamic parameter editor with type validation
+- **Vibe Test Editor**: Manage trigger phrases that activate skills
+- **Role Assignment**: Categorize skills by function (mathematics, file operations, etc.)
+
+#### **🧪 Built-in Testing**
+- **Test Skills Instantly**: Execute skills directly in the editor
+- **See Live Output**: View skill execution logs in real-time  
+- **Validate Before Saving**: Catch errors before deployment
+- **Parameter Testing**: Test skills with different input combinations
+
+#### **🔐 Safety Features**
+- **Protected Built-ins**: Verified system skills cannot be modified
+- **Syntax Validation**: Prevent deployment of broken skills
+- **Code Safety Checks**: Warnings for potentially dangerous operations
+- **Backup Recommendations**: Automatic timestamps on modifications
+
+#### **🎯 Skill Templates**
+Quick-start templates for common skill types:
+- **Simple Actions**: Basic skills with no parameters
+- **Mathematical Functions**: Computation-focused skills
+- **File Operations**: File system interaction skills
+- **API Calls**: External service integration skills
+
+### Creating New Skills
+
+1. **Click "+" to create a new skill**
+2. **Choose a template** or start from scratch
+3. **Fill in the details**:
+   - **Name**: Unique identifier (camelCase/snake_case)
+   - **Description**: When this skill should be used
+   - **Role**: Categorization for organization
+   - **Vibe Test Phrases**: Trigger examples for AI recognition
+4. **Write the function code**:
+   ```python
+   def execute(param1=None, param2=None):
+       from ollamapy.skills import log
+       
+       # Your implementation here
+       result = do_something(param1, param2)
+       log(f"[MySkill] Result: {result}")
+   ```
+5. **Test your skill** before saving
+6. **Save and deploy** instantly
+
+### Editing Existing Skills
+
+- **Click "Edit" on any custom skill**
+- **Modify any aspect** except the skill name
+- **Test changes** before saving
+- **Built-in skills show read-only view** for reference
+
+### Skill Code Requirements
+
+Your skill functions must:
+- **Be named `execute`**
+- **Use `log()` for output** that the AI can see
+- **Handle parameters** as defined in the parameter section
+- **Include error handling** for robust operation
+
+Example skill structure:
+```python
+def execute(text=None):
+    from ollamapy.skills import log
+    
+    if not text:
+        log("[MySkill] Error: Text parameter is required")
+        return
+    
+    try:
+        result = process_text(text)
+        log(f"[MySkill] Successfully processed: {result}")
+    except Exception as e:
+        log(f"[MySkill] Error: {str(e)}")
+```
+
+### API Integration
+
+The skill editor provides a REST API for programmatic access:
+- `GET /api/skills` - List all skills
+- `POST /api/skills` - Create new skill
+- `PUT /api/skills/{name}` - Update existing skill
+- `DELETE /api/skills/{name}` - Delete custom skill
+- `POST /api/skills/test` - Test skill execution
+- `POST /api/skills/validate` - Validate skill data
+
+### Advanced Features
+
+- **Import/Export**: Backup and share skill collections
+- **Version Control**: Track skill modification history
+- **Batch Operations**: Manage multiple skills efficiently
+- **Live Documentation**: Skills automatically appear in generated docs
+
 ## Chat Commands
 
 While chatting, you can use these built-in commands:
@@ -512,13 +649,47 @@ ollama pull gemma3:4b
 - Check system resources and Ollama server health
 - Use timing analysis to identify performance bottlenecks
 
+### Skill Editor Issues
+
+#### "Missing dependencies for skill editor"
+Install the required web framework dependencies:
+```bash
+pip install flask flask-cors
+```
+
+#### Skill editor won't start
+- Check if port 5000 is already in use: `lsof -i :5000`
+- Try a different port: `ollamapy --skill-editor --port 8080`
+- Ensure you have write permissions to the skills directory
+
+#### Can't edit skills in browser
+- Make sure the skill editor server is running
+- Check browser console for JavaScript errors
+- Verify API connection at `http://localhost:5000/api/skills`
+- Try refreshing the page or clearing browser cache
+
+#### Built-in skills appear as editable
+- This is normal - built-in skills show an edit interface but will reject changes
+- Look for "🔒 Protected" or verification status indicators
+- Built-in skills are marked with `verified: true` in their data
+
+#### Skills not updating after editing
+- Check the browser console for API errors
+- Verify the skill editor server is receiving requests
+- Ensure proper JSON formatting in skill data
+- Try creating a simple test skill first
+
 ## Project Information
 
 - **Version**: 0.8.0
 - **License**: GPL-3.0-or-later
 - **Author**: The Lazy Artist
 - **Python**: >=3.8
-- **Dependencies**: requests>=2.25.0, plotly (for reports)
+- **Dependencies**: 
+  - `requests>=2.25.0` (HTTP client for Ollama API)
+  - `plotly>=5.0.0` (Interactive reports and visualizations)
+  - `flask>=2.0.0` (Web framework for skill editor - optional)
+  - `flask-cors>=3.0.0` (CORS support for skill editor API - optional)
 
 ## Links
 

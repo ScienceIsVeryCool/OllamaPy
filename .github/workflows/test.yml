@@ -1,0 +1,120 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements*.txt', 'setup.py') }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install -r requirements-dev.txt
+    
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Format check with black
+      run: |
+        black --check --diff src/ tests/
+    
+    - name: Run tests with pytest
+      run: |
+        pytest tests/ -v --cov=src/ollamapy --cov-report=xml --cov-report=html
+    
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
+    
+    - name: Test Flask server startup
+      run: |
+        python -c "
+        try:
+            from src.ollamapy.skill_editor.api import SkillEditorAPI
+            api = SkillEditorAPI(port=5555)
+            print('✅ Flask server can be imported and initialized')
+        except ImportError as e:
+            print(f'⚠️  Flask dependencies not available: {e}')
+        except Exception as e:
+            print(f'❌ Error: {e}')
+            raise
+        "
+    
+    - name: Test basic CLI functionality
+      run: |
+        python -m src.ollamapy.main --hello
+    
+    - name: Test skill system integration
+      run: |
+        python -c "
+        from src.ollamapy.skills import SkillRegistry
+        registry = SkillRegistry()
+        print(f'✅ Skills loaded: {len(registry.skills)} skills')
+        assert len(registry.skills) > 0, 'No skills loaded'
+        "
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install security tools
+      run: |
+        pip install bandit safety
+    
+    - name: Run security scan with bandit
+      run: |
+        bandit -r src/ -f json -o bandit-report.json || true
+        bandit -r src/ --severity-level medium
+    
+    - name: Check for known vulnerabilities
+      run: |
+        safety check --json --output safety-report.json || true
+        safety check
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json

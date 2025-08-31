@@ -1,0 +1,7 @@
+# Core dependencies
+requests>=2.25.0
+plotly>=5.0.0
+
+# Optional skill editor dependencies (install with: pip install ollamapy[editor])
+# flask>=2.3.0
+# flask-cors>=4.0.0
