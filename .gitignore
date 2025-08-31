@@ -41,3 +41,4 @@ env/
 .venv/
 .env/
 .env
+skill_docs/*

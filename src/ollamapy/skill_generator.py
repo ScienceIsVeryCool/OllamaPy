@@ -689,8 +689,22 @@ Answer only 'yes' or 'no'."""
 
 
 def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str] = None, 
-                        count: int = 1, ideas: Optional[List[str]] = None) -> bool:
-    """Main entry point for incremental skill generation."""
+                        count: int = 1, ideas: Optional[List[str]] = None,
+                        generate_report: bool = True) -> bool:
+    """Main entry point for incremental skill generation with reporting.
+    
+    Args:
+        model: Generation model to use
+        analysis_model: Analysis model for vibe tests
+        count: Number of skills to generate
+        ideas: Optional list of skill ideas
+        generate_report: Whether to generate HTML documentation report
+        
+    Returns:
+        True if at least one skill was successfully generated
+    """
+    from .skillgen_report import SkillGenerationReporter
+    
     print("🤖 OllamaPy Incremental Skill Generation")
     print("=" * 60)
     print(f"Generation model: {model}")
@@ -704,9 +718,11 @@ def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str]
     print()
     
     generator = IncrementalSkillGenerator(model, analysis_model)
+    reporter = SkillGenerationReporter(model, analysis_model) if generate_report else None
     
     successful_skills = []
     failed_attempts = []
+    all_results = []
     
     for i in range(count):
         print(f"\n🎯 Generating skill {i+1}/{count}")
@@ -714,6 +730,21 @@ def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str]
         
         idea = ideas[i] if ideas and i < len(ideas) else None
         result = generator.generate_skill(idea, max_attempts=3)
+        
+        # Store result for reporting
+        all_results.append(result)
+        if reporter:
+            reporter.add_result({
+                'success': result.success,
+                'skill': result.skill,
+                'plan': result.plan,
+                'errors': result.errors,
+                'attempts': result.attempts,
+                'generation_time': result.generation_time,
+                'step_results': result.step_results,
+                'vibe_test_passed': result.vibe_test_passed,
+                'vibe_test_results': result.vibe_test_results
+            })
         
         if result.success and result.skill:
             successful_skills.append(result.skill)
@@ -749,8 +780,19 @@ def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str]
         
         print(f"\n💡 Tip: These simple skills provide a foundation for more complex ones!")
         print(f"🔄 Next generations will continue following DRY principle")
-        return True
     else:
         print(f"\n😞 No skills were successfully generated")
         print(f"💡 Try again - the system learns from each attempt")
-        return False
+    
+    # Generate report if requested
+    if generate_report and reporter:
+        print(f"\n📄 Generating skill documentation report...")
+        try:
+            report_path = reporter.generate_report()
+            print(f"✅ Report generated: {report_path}")
+            print(f"📂 Open the report in your browser to view:")
+            print(f"   file://{os.path.abspath(report_path)}")
+        except Exception as e:
+            print(f"⚠️ Failed to generate report: {e}")
+    
+    return len(successful_skills) > 0
