@@ -43,6 +43,8 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         python3 -m pip install -e .[dev]
+        # Install additional test dependencies
+        python3 -m pip install toml psutil
         # Install editor dependencies for full testing
         python3 -m pip install -e .[editor] || echo "Editor dependencies not available on this platform"
     
