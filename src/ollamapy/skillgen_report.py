@@ -100,8 +100,14 @@ class SkillDocumentationGenerator:
         verified_badge = '<span class="badge-verified">VERIFIED</span>' if verified else '<span class="badge-unverified">UNVERIFIED</span>'
         
         # Edit button (only for non-verified skills)
-        edit_button = f'<button class="edit-btn" onclick="editSkill()" {"disabled" if verified else ""}>{"🔒 Protected" if verified else "✏️ Edit Skill"}</button>' if not verified else '<span class="protected-note">🔒 Built-in skills cannot be edited</span>'
+        if not verified:
+            disabled_attr = "disabled" if verified else ""
+            button_text = "🔒 Protected" if verified else "✏️ Edit Skill"
+            edit_button = f'<button class="edit-btn" onclick="editSkill()" {disabled_attr}>{button_text}</button>'
+        else:
+            edit_button = '<span class="protected-note">🔒 Built-in skills cannot be edited</span>'
         
+        common_styles = self.get_common_styles()
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -110,7 +116,7 @@ class SkillDocumentationGenerator:
     <title>{skill_name} - Skill Documentation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <style>
-        {self.get_common_styles()}
+        {common_styles}
         .skill-header {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -624,9 +630,10 @@ class SkillDocumentationGenerator:
         skills_html = ""
         for role in sorted(skills_by_role.keys()):
             role_emoji = self.get_role_emoji(role)
+            role_title = role.replace('_', ' ').title()
             skills_html += f"""
             <div class="role-section">
-                <h2>{role_emoji} {role.replace('_', ' ').title()}</h2>
+                <h2>{role_emoji} {role_title}</h2>
                 <div class="skills-grid">
             """
             
@@ -668,6 +675,7 @@ class SkillDocumentationGenerator:
         if generation_results:
             charts_html = self.generate_report_charts(generation_results)
         
+        common_styles = self.get_common_styles()
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -676,7 +684,7 @@ class SkillDocumentationGenerator:
     <title>OllamaPy Skills Documentation</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        {self.get_common_styles()}
+        {common_styles}
         .header {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -915,6 +923,7 @@ class SkillDocumentationGenerator:
             
             errors_html += "</div>"
         
+        common_styles = self.get_common_styles()
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -922,7 +931,7 @@ class SkillDocumentationGenerator:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skill Generation Error Report</title>
     <style>
-        {self.get_common_styles()}
+        {common_styles}
         .header {{
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: white;
