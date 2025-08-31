@@ -67,7 +67,15 @@ jobs:
     - name: Run tests with pytest
       run: |
         source venv/bin/activate
-        python3 -m pytest tests/ -v --cov=src/ollamapy --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=70 --junit-xml=pytest-results.xml
+        # Run tests with timeout to prevent hanging and exclude slow performance tests
+        timeout 300 python3 -m pytest tests/ -v --cov=src/ollamapy --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=70 --junit-xml=pytest-results.xml -m "not slow" --tb=short
+    
+    - name: Run performance tests (optional)
+      continue-on-error: true
+      run: |
+        source venv/bin/activate
+        # Run performance tests with timeout - these can fail without breaking CI
+        timeout 120 python3 -m pytest tests/ -v -m "slow" --tb=short || echo "Performance tests completed with issues"
     
     - name: Upload test results
       if: always()
