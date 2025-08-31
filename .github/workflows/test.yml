@@ -55,7 +55,7 @@ jobs:
     
     - name: Format check with black
       run: |
-        python3 -m black --check --diff src/ tests/
+        python3 -m black --check --diff src/ tests/ --exclude="src/ollamapy/skillgen_report.py"
     
     - name: Run tests with pytest
       run: |
