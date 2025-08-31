@@ -342,29 +342,44 @@ class TestSecurityBasics:
             try:
                 with open(py_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                
+
                 # Parse the Python AST to find actual function calls
                 tree = ast.parse(content)
-                
+
                 for node in ast.walk(tree):
                     if isinstance(node, ast.Call):
                         if isinstance(node.func, ast.Name):
                             # Check for direct calls like exec(), eval()
                             if node.func.id in ["exec", "eval"]:
                                 # Allow exec() in skills.py for dynamic skill execution
-                                if py_file.name == "skills.py" and node.func.id == "exec":
+                                if (
+                                    py_file.name == "skills.py"
+                                    and node.func.id == "exec"
+                                ):
                                     continue
                                 # Allow eval() in actions.py for calculator functionality
-                                if py_file.name == "actions.py" and node.func.id == "eval":
+                                if (
+                                    py_file.name == "actions.py"
+                                    and node.func.id == "eval"
+                                ):
                                     continue
-                                pytest.fail(f"Dangerous function call in {py_file}: {node.func.id}()")
+                                pytest.fail(
+                                    f"Dangerous function call in {py_file}: {node.func.id}()"
+                                )
                         elif isinstance(node.func, ast.Attribute):
                             # Check for calls like os.system(), subprocess.call()
                             if isinstance(node.func.value, ast.Name):
-                                if (node.func.value.id == "os" and node.func.attr == "system") or \
-                                   (node.func.value.id == "subprocess" and node.func.attr == "call"):
-                                    pytest.fail(f"Dangerous function call in {py_file}: {node.func.value.id}.{node.func.attr}()")
-                                    
+                                if (
+                                    node.func.value.id == "os"
+                                    and node.func.attr == "system"
+                                ) or (
+                                    node.func.value.id == "subprocess"
+                                    and node.func.attr == "call"
+                                ):
+                                    pytest.fail(
+                                        f"Dangerous function call in {py_file}: {node.func.value.id}.{node.func.attr}()"
+                                    )
+
             except SyntaxError:
                 # Skip files that can't be parsed (e.g., template files)
                 continue
