@@ -213,7 +213,7 @@ class ContextCompressor:
         """Split text into manageable chunks"""
         words = text.split()
         chunks = []
-        current_chunk = []
+        current_chunk: List[str] = []
         current_size = 0
         
         for word in words:
@@ -314,7 +314,8 @@ File content:"""
         question: str,
         options: List[str],
         context: str = "",
-        auto_compress: bool = True
+        auto_compress: bool = True,
+        show_context: bool = True
     ) -> MultipleChoiceResult:
         """Ask AI to choose from multiple options with lettered answers"""
         
@@ -340,8 +341,8 @@ File content:"""
             options=formatted_options
         )
         
-        # Get response
-        response = self.client.generate(self.model, prompt)
+        # Get response with context monitoring
+        response = self.client.generate(self.model, prompt, show_context=show_context)
         
         # Parse response
         letter, index, confidence = self.parser.parse_multiple_choice(response, options)
@@ -360,7 +361,8 @@ File content:"""
         self,
         question: str,
         context: str = "",
-        auto_compress: bool = True
+        auto_compress: bool = True,
+        show_context: bool = True
     ) -> SingleWordResult:
         """Ask AI for a single word response"""
         
@@ -379,8 +381,8 @@ File content:"""
             question=question
         )
         
-        # Get response
-        response = self.client.generate(self.model, prompt)
+        # Get response with context monitoring
+        response = self.client.generate(self.model, prompt, show_context=show_context)
         
         # Parse response
         word, confidence = self.parser.parse_single_word(response)
@@ -397,7 +399,8 @@ File content:"""
         self,
         prompt: str,
         context: str = "",
-        auto_compress: bool = True
+        auto_compress: bool = True,
+        show_context: bool = True
     ) -> OpenResult:
         """Ask AI for an open-ended detailed response"""
         
@@ -416,8 +419,8 @@ File content:"""
             prompt=prompt
         )
         
-        # Get response
-        response = self.client.generate(self.model, full_prompt)
+        # Get response with context monitoring
+        response = self.client.generate(self.model, full_prompt, show_context=show_context)
         
         return OpenResult(
             content=response.strip(),
@@ -430,7 +433,8 @@ File content:"""
         self,
         requirements: str,
         context: str = "",
-        auto_compress: bool = True
+        auto_compress: bool = True,
+        show_context: bool = True
     ) -> FileWriteResult:
         """Ask AI to generate file content"""
         
@@ -449,8 +453,8 @@ File content:"""
             requirements=requirements
         )
         
-        # Get response
-        response = self.client.generate(self.model, prompt)
+        # Get response with context monitoring
+        response = self.client.generate(self.model, prompt, show_context=show_context)
         
         # Clean the response
         content = self.parser.clean_file_content(response)

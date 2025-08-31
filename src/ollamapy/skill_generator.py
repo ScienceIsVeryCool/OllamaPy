@@ -157,65 +157,112 @@ class IncrementalSkillGenerator:
         self.skill_registry = SkillRegistry()
         self.code_executor = SafeCodeExecutor()
         
+    def get_existing_skills_summary(self) -> str:
+        """Get a summary of existing skills to avoid duplication."""
+        skills = self.skill_registry.get_all_skills()
+        
+        if not skills:
+            return "No existing skills found."
+        
+        skill_summaries = []
+        for name, skill in skills.items():
+            role = skill.role if hasattr(skill, 'role') else 'unknown'
+            skill_summaries.append(f"- {name} ({role}): {skill.description[:50]}...")
+        
+        return f"Existing skills ({len(skills)} total):\n" + "\n".join(skill_summaries[:15])  # Show max 15 for context
+    
     def generate_skill_idea(self) -> str:
-        """Step 1: Generate a focused skill idea."""
-        prompt = """Generate ONE specific, useful skill idea for an AI assistant.
+        """Step 1: Generate a focused, simple, unique skill idea."""
+        existing_skills = self.get_existing_skills_summary()
+        
+        prompt = f"""Generate ONE specific, simple, useful skill idea for an AI assistant.
 
-Think of a practical task that users commonly need help with. Be specific and focused.
+IMPORTANT GUIDELINES:
+1. START SIMPLE - Choose basic, straightforward tasks first
+2. FOLLOW DRY PRINCIPLE - Do NOT duplicate existing functionality
+3. Be practical and focused on common user needs
+4. Avoid complex operations that require multiple steps
 
-Examples of good ideas:
-- "Convert text between different cases (uppercase, lowercase, title case)"
-- "Calculate compound interest with various compounding periods"
-- "Extract email addresses from text"
-- "Generate random passwords with specific criteria"
+{existing_skills}
 
-Respond with just the skill idea in one clear sentence. Be specific about what it does."""
+Good SIMPLE skill ideas (start with these types):
+- "Count words in text"
+- "Reverse a string"
+- "Convert temperature between Celsius and Fahrenheit"
+- "Generate a simple random number within a range"
+- "Check if a number is even or odd"
+- "Remove whitespace from text"
+- "Find the length of text"
 
-        result = self.ai_query.open(prompt)
+Avoid complex ideas like:
+- Multi-step data analysis
+- File system operations
+- Web scraping or API calls
+- Complex mathematical formulas
+
+Based on the existing skills above, generate ONE simple skill idea that doesn't already exist.
+Respond with just the skill idea in one clear sentence. Keep it simple and basic."""
+
+        result = self.ai_query.open(prompt, show_context=True)
         return result.content.strip()
     
     def generate_skill_name(self, idea: str) -> str:
         """Step 2: Generate a skill name from the idea."""
+        existing_skills = self.get_existing_skills_summary()
+        
         prompt = f"""Based on this skill idea: "{idea}"
 
-Generate a good function name for this skill.
+Generate a good, UNIQUE function name for this skill.
 
 Rules:
 - Use only lowercase letters, numbers, and underscores
-- Be descriptive but concise
+- Be descriptive but concise  
 - Follow Python naming conventions
-- Should be 2-4 words joined by underscores
+- Should be 2-3 words joined by underscores (keep it simple)
+- Must NOT conflict with existing skill names
 
-Examples:
-- "convert_text_case"
-- "calculate_compound_interest"
-- "extract_emails"
-- "generate_password"
+Existing skill names to AVOID:
+{existing_skills}
+
+Examples of good simple names:
+- "count_words"
+- "reverse_text"
+- "check_even"
+- "convert_temp"
 
 Respond with ONLY the function name, nothing else."""
 
         result = self.ai_query.single_word(
-            question=f"What should the function name be for this skill: {idea}?"
+            question=f"Function name for: {idea}",
+            show_context=True
         )
         return result.word
     
     def generate_skill_description(self, idea: str) -> str:
         """Step 3: Generate a clear skill description."""
+        existing_skills = self.get_existing_skills_summary()
+        
         prompt = f"""Based on this skill idea: "{idea}"
 
-Write a clear, concise description of when this skill should be used.
+Write a clear, simple description of when this skill should be used.
 
 The description should:
-- Be 10-50 words
+- Be 10-30 words (keep it simple)
 - Explain WHEN to use this skill
 - Be specific about what it does
 - Use simple, clear language
+- Be different from existing skills
 
-Example: "Use when the user wants to convert text between different cases like uppercase, lowercase, or title case"
+{existing_skills}
+
+Example good descriptions:
+- "Use when the user wants to count words in a text"
+- "Use when the user needs to reverse a string"
+- "Use when the user wants to check if a number is even or odd"
 
 Respond with ONLY the description, nothing else."""
 
-        result = self.ai_query.open(prompt)
+        result = self.ai_query.open(prompt, show_context=True)
         return result.content.strip().strip('"').strip("'")
     
     def generate_skill_role(self, idea: str) -> str:
@@ -242,17 +289,28 @@ Respond with ONLY the letter (A, B, C, etc.)"""
             options=[
                 "text_processing", "mathematics", "data_analysis", "file_operations",
                 "web_utilities", "time_date", "formatting", "validation", "general"
-            ]
+            ],
+            show_context=True
         )
         return result.value
     
     def generate_vibe_test_phrases(self, idea: str, name: str) -> List[str]:
         """Step 5: Generate vibe test phrases."""
-        prompt = f"""Based on this skill: "{idea}" (function name: {name})
+        existing_skills = self.get_existing_skills_summary()
+        
+        prompt = f"""Based on this SIMPLE skill: "{idea}" (function name: {name})
 
-Generate 5 realistic things a user might say that should trigger this skill.
+Generate 5 realistic, simple things a user might say that should trigger this skill.
 
-Make them natural, varied user requests. Think about different ways people might ask for the same thing.
+Make them natural, varied user requests. For simple skills, users ask simple questions.
+
+IMPORTANT: Make sure these phrases are DIFFERENT from existing skills:
+{existing_skills}
+
+For simple skills, users typically ask:
+- Direct questions: "How many words are in this?"
+- Simple commands: "Reverse this text"
+- Basic requests: "Is 42 even?"
 
 Format as a simple numbered list:
 1. First example
@@ -330,22 +388,35 @@ Respond with ONLY the JSON, nothing else."""
             params_desc = f"Parameters: {', '.join(param_list)}"
         else:
             params_desc = "No parameters required"
+        
+        existing_skills = self.get_existing_skills_summary()
 
-        prompt = f"""Write a Python function for this skill:
+        prompt = f"""Write a SIMPLE Python function for this basic skill:
 
 Idea: {plan.idea}
 Function name: execute
 Description: {plan.description}
 {params_desc}
 
-Requirements:
+IMPORTANT - Keep it SIMPLE:
 1. Function MUST be named 'execute'
 2. Use log("message") to output results (log function is available)
-3. Include error handling with try/except
-4. Add descriptive log messages
-5. Keep it simple and focused
-6. No dangerous operations (no subprocess, eval, exec)
-7. Only import: math, json, datetime, os, re, random
+3. Include basic error handling with try/except
+4. Add clear log messages explaining what you're doing
+5. Keep it short and focused (5-15 lines max)
+6. No complex logic or algorithms
+7. No dangerous operations (no subprocess, eval, exec)
+8. Only import basic modules if needed: math, json, re
+9. Make it different from existing skills
+
+Existing skills to avoid duplicating:
+{existing_skills}
+
+For simple skills, the code should be straightforward:
+- Input validation
+- Simple operation
+- Clear logging
+- Return result
 
 Write ONLY the function code, no explanations:"""
 
@@ -365,14 +436,23 @@ Write ONLY the function code, no explanations:"""
         plan = SkillPlan()
         
         try:
+            # Show existing skills context
+            existing_count = len(self.skill_registry.get_all_skills())
+            print(f"📚 Context: {existing_count} existing skills in registry")
+            print("🎯 Following DRY principle - avoiding duplication")
+            print("🚀 Prioritizing SIMPLE skills first")
+            print()
+            
             # Step 1: Generate or use provided idea
             if idea:
                 plan.idea = idea
                 print(f"📝 Using provided idea: {idea}")
+                print("🔍 Checking against existing skills for uniqueness...")
             else:
-                print("🎯 Generating skill idea...")
+                print("🎯 Generating simple, unique skill idea...")
                 plan.idea = self.generate_skill_idea()
                 print(f"💡 Generated idea: {plan.idea}")
+                print("✅ Verified uniqueness against existing skills")
             
             # Step 2: Generate name
             print("🔧 Generating skill name...")
@@ -401,9 +481,15 @@ Write ONLY the function code, no explanations:"""
             print(f"🔧 Parameters: {param_count} {'parameter' if param_count == 1 else 'parameters'}")
             
             # Step 7: Generate function code
-            print("💻 Generating function code...")
+            print("💻 Generating simple function code...")
             plan.function_code = self.generate_function_code(plan)
-            print(f"✅ Generated {len(plan.function_code.splitlines())} lines of code")
+            lines_count = len(plan.function_code.splitlines())
+            print(f"✅ Generated {lines_count} lines of code")
+            
+            if lines_count > 20:
+                print("⚠️  Code is longer than expected for a simple skill")
+            else:
+                print("✅ Code length appropriate for simple skill")
             
             return plan
             
@@ -465,7 +551,7 @@ Skill description: {skill.description}
 
 Answer only 'yes' or 'no'."""
                     
-                    response = analysis_engine.ask_yes_no_question(prompt)
+                    response = analysis_engine.ask_yes_no_question(prompt, show_context=False)
                     if response:
                         correct += 1
                         total_correct += 1
@@ -611,6 +697,11 @@ def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str]
     print(f"Analysis model: {analysis_model or model}")
     print(f"Target count: {count}")
     print()
+    print("🎯 Strategy: Generate SIMPLE skills first")
+    print("🔄 Following DRY principle - no duplication")
+    print("🚀 Multi-step prompts for better success rate")
+    print("🔒 Safe execution with crash protection")
+    print()
     
     generator = IncrementalSkillGenerator(model, analysis_model)
     
@@ -647,8 +738,19 @@ def run_skill_generation(model: str = "gemma3:4b", analysis_model: Optional[str]
     if successful_skills:
         print(f"\n🎉 Generated Skills:")
         for skill in successful_skills:
-            print(f"  • {skill.name}: {skill.description}")
+            role_emoji = {
+                'text_processing': '📝',
+                'mathematics': '🔢', 
+                'formatting': '✨',
+                'validation': '✅',
+                'general': '🔧'
+            }.get(skill.role, '🔧')
+            print(f"  {role_emoji} {skill.name}: {skill.description}")
+        
+        print(f"\n💡 Tip: These simple skills provide a foundation for more complex ones!")
+        print(f"🔄 Next generations will continue following DRY principle")
         return True
     else:
         print(f"\n😞 No skills were successfully generated")
+        print(f"💡 Try again - the system learns from each attempt")
         return False

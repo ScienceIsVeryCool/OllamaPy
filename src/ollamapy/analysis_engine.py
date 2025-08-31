@@ -36,18 +36,23 @@ class AnalysisEngine:
         cleaned = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
         return cleaned.strip()
     
-    def get_cleaned_response(self, prompt: str, system_message: str = "You are a decision assistant. Answer only 'yes' or 'no' to questions.") -> str:
+    def get_cleaned_response(self, prompt: str, system_message: str = "You are a decision assistant. Answer only 'yes' or 'no' to questions.", show_context: bool = True) -> str:
         """Get a cleaned response from the analysis model.
         
         Args:
             prompt: The prompt to send
             system_message: The system message to use
+            show_context: Whether to show context usage
             
         Returns:
             The cleaned response content
         """
         response_content = ""
         try:
+            # Show context usage if requested
+            if show_context:
+                self.client.print_context_usage(self.analysis_model, prompt, system_message)
+            
             # Stream the response from the analysis model
             for chunk in self.client.chat_stream(
                 model=self.analysis_model,
@@ -63,7 +68,7 @@ class AnalysisEngine:
             print(f"\n❌ Error getting response: {e}")
             return ""
     
-    def ask_yes_no_question(self, prompt: str) -> bool:
+    def ask_yes_no_question(self, prompt: str, show_context: bool = True) -> bool:
         """Ask the analysis model a yes/no question and parse the response.
         
         This is the core of our simplified analysis. We ask a clear yes/no question
@@ -75,7 +80,7 @@ class AnalysisEngine:
         Returns:
             True if the model answered yes, False otherwise
         """
-        cleaned_response = self.get_cleaned_response(prompt)
+        cleaned_response = self.get_cleaned_response(prompt, show_context=show_context)
         
         # Convert to lowercase for easier parsing
         response_lower = cleaned_response.lower().strip()
@@ -131,7 +136,7 @@ Examples for {param_type} type:
 """
         
         system_message = "You are a parameter extractor. Respond only with the extracted value or NOT_FOUND."
-        cleaned_response = self.get_cleaned_response(prompt, system_message).strip()
+        cleaned_response = self.get_cleaned_response(prompt, system_message, show_context=True).strip()
         
         return extract_parameter_from_response(cleaned_response, param_type)
     
