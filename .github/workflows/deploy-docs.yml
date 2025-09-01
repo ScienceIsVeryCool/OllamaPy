@@ -24,18 +24,25 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      run: |
+        # Use system Python 3.13 which is available on the local runner
+        /usr/bin/python3.13 --version
+        which /usr/bin/python3.13
+        # Ensure pip is available and up to date
+        /usr/bin/python3.13 -m pip install --upgrade pip
     
     - name: Install dependencies
       run: |
+        # Create and activate virtual environment
+        /usr/bin/python3.13 -m venv venv
+        source venv/bin/activate
         python -m pip install --upgrade pip
-        pip install -e .
-        pip install mkdocs mkdocs-material mkdocs-include-markdown-plugin
+        python -m pip install -e .
+        python -m pip install mkdocs mkdocs-material mkdocs-include-markdown-plugin
     
     - name: Generate skill documentation
       run: |
+        source venv/bin/activate
         mkdir -p docs/skills
         python -c "
         try:
@@ -64,6 +71,7 @@ jobs:
     
     - name: Generate API documentation
       run: |
+        source venv/bin/activate
         python -c "
         try:
             import inspect
@@ -95,6 +103,7 @@ jobs:
     
     - name: Build with MkDocs
       run: |
+        source venv/bin/activate
         mkdocs build
     
     - name: Setup Pages

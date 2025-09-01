@@ -164,7 +164,13 @@ jobs:
         
         # Generate skills showcase
         echo "Generating skills showcase"
+        # Create temporary venv for showcase generation
+        /usr/bin/python3.13 -m venv temp_venv
+        source temp_venv/bin/activate
+        python -m pip install --upgrade pip
+        python -m pip install -e .
         python scripts/generate_skills_showcase.py
+        deactivate
         
         # Copy coverage reports to coverage.html (rename from index.html)
         if [ -d "./coverage-reports/htmlcov" ]; then
