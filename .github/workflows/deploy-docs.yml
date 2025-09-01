@@ -28,8 +28,6 @@ jobs:
         # Use system Python 3.13 which is available on the local runner
         /usr/bin/python3.13 --version
         which /usr/bin/python3.13
-        # Ensure pip is available and up to date
-        /usr/bin/python3.13 -m pip install --upgrade pip
     
     - name: Install dependencies
       run: |
