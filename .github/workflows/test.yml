@@ -127,11 +127,14 @@ jobs:
   deploy-coverage:
     runs-on: self-hosted
     needs: test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test-pipeline-fixes'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix-github-pages' || github.event_name == 'pull_request'
     permissions:
       contents: read
       pages: write
       id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Download test artifacts
@@ -140,13 +143,44 @@ jobs:
         name: test-results-3.11
         path: ./coverage-reports
     
+    - name: List downloaded files
+      run: |
+        echo "Listing contents of coverage-reports:"
+        ls -la ./coverage-reports/
+        echo "Looking for htmlcov directory:"
+        find ./coverage-reports -name "htmlcov" -type d
+    
+    - name: Create deployment directory
+      run: |
+        mkdir -p ./pages-deploy
+        if [ -d "./coverage-reports/htmlcov" ]; then
+          echo "Copying htmlcov directory"
+          cp -r ./coverage-reports/htmlcov/* ./pages-deploy/
+        else
+          echo "htmlcov not found, creating placeholder"
+          echo "<h1>Coverage reports will be available after first test run</h1>" > ./pages-deploy/index.html
+        fi
+        
+        # Add a simple navigation index if it doesn't exist
+        if [ ! -f "./pages-deploy/index.html" ]; then
+          cat > ./pages-deploy/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html><head><title>OllamaPy Coverage</title></head>
+        <body><h1>OllamaPy Test Coverage</h1>
+        <p>Coverage reports not available yet.</p></body></html>
+        EOF
+        fi
+        
+        echo "Final pages-deploy contents:"
+        ls -la ./pages-deploy/
+    
     - name: Setup Pages
       uses: actions/configure-pages@v4
     
     - name: Upload to GitHub Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: ./coverage-reports/htmlcov
+        path: ./pages-deploy
     
     - name: Deploy to GitHub Pages
       id: deployment
