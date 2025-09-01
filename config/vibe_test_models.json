@@ -75,7 +75,7 @@
       "execution_target": "GPU",
       "timeout": 30,
       "context_window": 256000,
-      "enabled": true
+      "enabled": false
     },
     {
       "name": "deepseek-r1:8b", 
