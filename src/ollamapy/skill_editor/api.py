@@ -59,7 +59,7 @@ class SkillEditorAPI:
                 return jsonify({"success": True, "skill": skill.to_dict()})
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
-                
+
         @self.app.route("/api/skills/<skill_name>/download", methods=["GET"])
         def download_skill(skill_name):
             """Download a specific skill as JSON."""
@@ -69,11 +69,13 @@ class SkillEditorAPI:
 
                 skill = self.registry.skills[skill_name]
                 skill_data = skill.to_dict()
-                
+
                 # Create response with proper JSON content type and download headers
                 response = jsonify(skill_data)
-                response.headers['Content-Disposition'] = f'attachment; filename="{skill_name}.json"'
-                response.headers['Content-Type'] = 'application/json'
+                response.headers["Content-Disposition"] = (
+                    f'attachment; filename="{skill_name}.json"'
+                )
+                response.headers["Content-Type"] = "application/json"
                 return response
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
@@ -402,7 +404,7 @@ class SkillEditorAPI:
 
                 imported_count = 0
                 errors = []
-                
+
                 # Handle single skill import
                 if "name" in import_data:
                     skills_to_import = {import_data["name"]: import_data}
@@ -411,15 +413,21 @@ class SkillEditorAPI:
                     skills_to_import = import_data["skills"]
                 else:
                     return (
-                        jsonify({"success": False, "error": "Invalid import data format. Expected single skill or skills collection."}),
+                        jsonify(
+                            {
+                                "success": False,
+                                "error": "Invalid import data format. Expected single skill or skills collection.",
+                            }
+                        ),
                         400,
                     )
 
                 # Import JSON schema validation
                 import jsonschema
+
                 schema_path = Path(__file__).parent.parent / "skill_schema.json"
                 if schema_path.exists():
-                    with open(schema_path, 'r') as f:
+                    with open(schema_path, "r") as f:
                         schema = json.load(f)
                 else:
                     schema = None
