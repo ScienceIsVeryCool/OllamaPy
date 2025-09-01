@@ -3,69 +3,371 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OllamaPy - Test Coverage Reports</title>
+    <title>OllamaPy - AI Capabilities Dashboard</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
         }
-        .header {
+        
+        .hero {
             text-align: center;
-            background: #f4f4f4;
-            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 20px;
+            margin-bottom: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .hero h1 {
+            margin: 0;
+            font-size: 3.5em;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+        
+        .hero .tagline {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+        
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .capability-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .capability-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .capability-header {
+            display: flex;
+            align-items: center;
             margin-bottom: 20px;
+        }
+        
+        .capability-icon {
+            font-size: 2.5em;
+            margin-right: 15px;
+        }
+        
+        .capability-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .capability-description {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+        
+        .capability-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
             border-radius: 8px;
         }
-        .coverage-link {
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .capability-link {
             display: inline-block;
-            background: #007cba;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px;
+            border-radius: 25px;
             text-decoration: none;
-            border-radius: 5px;
-            margin: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
         }
-        .coverage-link:hover {
-            background: #005a8b;
+        
+        .capability-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-        .info {
-            background: #e7f4ff;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
+        
+        .quick-links {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .quick-links h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 1.8em;
+        }
+        
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .quick-link {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .quick-link:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+        
+        .quick-link-icon {
+            font-size: 1.5em;
+            margin-right: 12px;
+        }
+        
+        .quick-link-text {
+            font-weight: 500;
+        }
+        
+        .footer {
+            text-align: center;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+        
+        .footer-link:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5em;
+            }
+            
+            .capabilities-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .capability-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🐍 OllamaPy</h1>
-        <p>Python client for Ollama with advanced features</p>
+    <div class="hero">
+        <h1>🤖 OllamaPy</h1>
+        <div class="tagline">AI Capabilities Dashboard</div>
+        <div class="subtitle">Dynamic skill generation • Meta-reasoning • Interactive development</div>
     </div>
     
-    <h2>📊 Test Coverage Reports</h2>
-    
-    <div class="info">
-        <p>The coverage reports below are automatically generated from our test suite and updated on every commit to main.</p>
-        <p>Our current test coverage includes comprehensive integration tests, unit tests, and performance benchmarks.</p>
+    <div class="capabilities-grid">
+        <div class="capability-card">
+            <div class="capability-header">
+                <div class="capability-icon">🎯</div>
+                <div class="capability-title">Skills Showcase</div>
+            </div>
+            <div class="capability-description">
+                Explore our comprehensive collection of AI skills - from weather queries to code generation. 
+                Each skill includes implementation details, parameters, and usage examples.
+            </div>
+            <div class="capability-stats">
+                <div class="stat">
+                    <div class="stat-number">15</div>
+                    <div class="stat-label">Skills</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">6</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">12</div>
+                    <div class="stat-label">Verified</div>
+                </div>
+            </div>
+            <a href="skills.html" class="capability-link">Explore Skills →</a>
+        </div>
+        
+        <div class="capability-card">
+            <div class="capability-header">
+                <div class="capability-icon">📊</div>
+                <div class="capability-title">Test Coverage</div>
+            </div>
+            <div class="capability-description">
+                Comprehensive test coverage reports showing code quality metrics, integration tests, 
+                and performance benchmarks across the entire codebase.
+            </div>
+            <div class="capability-stats">
+                <div class="stat">
+                    <div class="stat-number">35%</div>
+                    <div class="stat-label">Coverage</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">117</div>
+                    <div class="stat-label">Tests</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">✅</div>
+                    <div class="stat-label">Status</div>
+                </div>
+            </div>
+            <a href="coverage.html" class="capability-link">View Coverage →</a>
+        </div>
+        
+        <div class="capability-card">
+            <div class="capability-header">
+                <div class="capability-icon">⚡</div>
+                <div class="capability-title">Skill Generation</div>
+            </div>
+            <div class="capability-description">
+                Dynamic AI skill generation system that creates new capabilities on demand. 
+                View generated skills, their success rates, and implementation reports.
+            </div>
+            <div class="capability-stats">
+                <div class="stat">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">Potential</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">Auto</div>
+                    <div class="stat-label">Generated</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">🧠</div>
+                    <div class="stat-label">AI Powered</div>
+                </div>
+            </div>
+            <a href="#skillgen" class="capability-link">Coming Soon →</a>
+        </div>
+        
+        <div class="capability-card">
+            <div class="capability-header">
+                <div class="capability-icon">🔬</div>
+                <div class="capability-title">Vibe Testing</div>
+            </div>
+            <div class="capability-description">
+                Advanced AI consistency and behavior analysis through "vibe tests" - ensuring 
+                reliable AI responses across different contexts and use cases.
+            </div>
+            <div class="capability-stats">
+                <div class="stat">
+                    <div class="stat-number">Meta</div>
+                    <div class="stat-label">Analysis</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Success</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">🎯</div>
+                    <div class="stat-label">Precision</div>
+                </div>
+            </div>
+            <a href="#vibe-tests" class="capability-link">Coming Soon →</a>
+        </div>
     </div>
     
-    <div style="text-align: center;">
-        <a href="./index.html" class="coverage-link">📈 View Coverage Report</a>
+    <div class="quick-links">
+        <h2>🚀 Quick Access</h2>
+        <div class="links-grid">
+            <a href="skills.html" class="quick-link">
+                <span class="quick-link-icon">🎯</span>
+                <span class="quick-link-text">Browse All Skills</span>
+            </a>
+            <a href="coverage.html" class="quick-link">
+                <span class="quick-link-icon">📊</span>
+                <span class="quick-link-text">Coverage Reports</span>
+            </a>
+            <a href="https://github.com/ScienceIsVeryCool/OllamaPy" class="quick-link">
+                <span class="quick-link-icon">📦</span>
+                <span class="quick-link-text">GitHub Repository</span>
+            </a>
+            <a href="https://pypi.org/project/ollamapy/" class="quick-link">
+                <span class="quick-link-icon">🐍</span>
+                <span class="quick-link-text">PyPI Package</span>
+            </a>
+        </div>
     </div>
     
-    <h2>📋 Repository Information</h2>
-    <ul>
-        <li><strong>Repository:</strong> <a href="https://github.com/ScienceIsVeryCool/OllamaPy">github.com/ScienceIsVeryCool/OllamaPy</a></li>
-        <li><strong>Coverage Target:</strong> 30% minimum (currently achieving 35%+)</li>
-        <li><strong>Test Framework:</strong> pytest with coverage reporting</li>
-        <li><strong>Auto-deployed via:</strong> GitHub Actions</li>
-    </ul>
-    
-    <footer style="text-align: center; margin-top: 40px; color: #666;">
-        <p>Last updated: Generated automatically via CI/CD pipeline</p>
-    </footer>
+    <div class="footer">
+        <p><strong>OllamaPy AI Capabilities Dashboard</strong></p>
+        <p>A unified view of all AI capabilities, testing results, and generated skills</p>
+        <div class="footer-links">
+            <a href="skills.html" class="footer-link">Skills</a>
+            <a href="coverage.html" class="footer-link">Coverage</a>
+            <a href="https://github.com/ScienceIsVeryCool/OllamaPy" class="footer-link">GitHub</a>
+            <a href="https://pypi.org/project/ollamapy/" class="footer-link">PyPI</a>
+        </div>
+    </div>
 </body>
 </html>

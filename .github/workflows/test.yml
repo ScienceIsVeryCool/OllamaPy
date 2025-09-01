@@ -137,6 +137,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
+    - uses: actions/checkout@v4
+    
     - name: Download test artifacts
       uses: actions/download-artifact@v4
       with:
@@ -153,22 +155,35 @@ jobs:
     - name: Create deployment directory
       run: |
         mkdir -p ./pages-deploy
-        if [ -d "./coverage-reports/htmlcov" ]; then
-          echo "Copying htmlcov directory"
-          cp -r ./coverage-reports/htmlcov/* ./pages-deploy/
-        else
-          echo "htmlcov not found, creating placeholder"
-          echo "<h1>Coverage reports will be available after first test run</h1>" > ./pages-deploy/index.html
+        
+        # Copy main pages from docs directory
+        if [ -d "./docs" ]; then
+          echo "Copying docs directory contents"
+          cp -r ./docs/* ./pages-deploy/
         fi
         
-        # Add a simple navigation index if it doesn't exist
-        if [ ! -f "./pages-deploy/index.html" ]; then
-          cat > ./pages-deploy/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html><head><title>OllamaPy Coverage</title></head>
-        <body><h1>OllamaPy Test Coverage</h1>
-        <p>Coverage reports not available yet.</p></body></html>
-        EOF
+        # Generate skills showcase
+        echo "Generating skills showcase"
+        python scripts/generate_skills_showcase.py
+        
+        # Copy coverage reports to coverage.html (rename from index.html)
+        if [ -d "./coverage-reports/htmlcov" ]; then
+          echo "Copying htmlcov directory to coverage.html"
+          cp -r ./coverage-reports/htmlcov/* ./pages-deploy/
+          
+          # Rename the coverage index.html to coverage.html
+          if [ -f "./pages-deploy/index.html" ]; then
+            mv ./pages-deploy/index.html ./pages-deploy/coverage.html
+            echo "Renamed coverage index.html to coverage.html"
+          fi
+          
+          # Copy our main index.html back
+          if [ -f "./docs/index.html" ]; then
+            cp ./docs/index.html ./pages-deploy/index.html
+            echo "Restored main index.html"
+          fi
+        else
+          echo "htmlcov not found, coverage will not be available"
         fi
         
         echo "Final pages-deploy contents:"
