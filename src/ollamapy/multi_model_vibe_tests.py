@@ -171,10 +171,17 @@ class MultiModelVibeTestRunner:
         if iterations is None:
             iterations = self.config["test_config"]["iterations"]
 
+        # Filter only enabled models
+        enabled_models = [m for m in self.config["models"] if m.get("enabled", True)]
+        total_models = len(enabled_models)
+        disabled_count = len(self.config["models"]) - total_models
+        
         print("🌟 Multi-Model Vibe Test Suite")
         print(
-            f"📋 Testing {len(self.config['models'])} models with {iterations} iterations each"
+            f"📋 Testing {total_models} enabled models with {iterations} iterations each"
         )
+        if disabled_count > 0:
+            print(f"⚠️  Skipping {disabled_count} disabled models")
         print(f"📊 Collecting runtime statistics and performance metrics")
         print("=" * 80)
 
@@ -188,12 +195,12 @@ class MultiModelVibeTestRunner:
         all_success = True
         self.all_results = {}
 
-        for i, model_config in enumerate(self.config["models"], 1):
+        for i, model_config in enumerate(enabled_models, 1):
             model_name = model_config["name"]
             model_timeout = model_config.get("timeout", 60)
 
             print(
-                f"\n[{i}/{len(self.config['models'])}] Preparing to test {model_name}..."
+                f"\n[{i}/{total_models}] Preparing to test {model_name}..."
             )
             print(f"⏱️  Model timeout: {model_timeout}s")
 

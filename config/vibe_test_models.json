@@ -8,12 +8,24 @@
   },
   "models": [
     {
+      "name": "gemma3:270m",
+      "display_name": "Gemma 3 270M", 
+      "description": "Compact 270M parameter model optimized for size (GPU: ~2.6s)",
+      "size": "292MB",
+      "execution_target": "GPU", 
+      "timeout": 20,
+      "context_window": 32000,
+      "enabled": true
+    },
+    {
       "name": "gemma3:1b",
       "display_name": "Gemma 3 1B",
       "description": "Ultra-compact 1B parameter model for maximum speed (GPU: ~2.2s)",
       "size": "815MB", 
       "execution_target": "GPU",
-      "timeout": 15
+      "timeout": 15,
+      "context_window": 32000,
+      "enabled": true
     },
     {
       "name": "gemma3:4b",
@@ -21,7 +33,9 @@
       "description": "Compact 4B parameter model optimized for speed (GPU: ~2.6s)",
       "size": "3.3GB",
       "execution_target": "GPU", 
-      "timeout": 20
+      "timeout": 20,
+      "context_window": 128000,
+      "enabled": true
     },
     {
       "name": "codellama:7b",
@@ -29,7 +43,9 @@
       "description": "Code-focused 7B parameter model specialized for programming tasks (GPU: ~3-4s)",
       "size": "3.8GB",
       "execution_target": "GPU",
-      "timeout": 25
+      "timeout": 25,
+      "context_window": 128000,
+      "enabled": false
     },
     {
       "name": "qwen2.5:7b",
@@ -37,7 +53,9 @@
       "description": "Advanced 7B parameter model with strong reasoning capabilities (GPU: ~4-5s)",
       "size": "4.7GB",
       "execution_target": "GPU",
-      "timeout": 30
+      "timeout": 30,
+      "context_window": 128000,
+      "enabled": false
     },
     {
       "name": "qwen3:8b",
@@ -45,7 +63,19 @@
       "description": "Latest 8B parameter model with enhanced performance (GPU: ~4-5s)",
       "size": "5.2GB", 
       "execution_target": "GPU",
-      "timeout": 30
+      "timeout": 30,
+      "context_window": 40000,
+      "enabled": false
+    },
+    {
+      "name": "qwen3:4b",
+      "display_name": "Qwen3 4B",
+      "description": "Latest 4B parameter model with enhanced context window size (GPU: ~4-5s)",
+      "size": "2.5GB", 
+      "execution_target": "GPU",
+      "timeout": 30,
+      "context_window": 256000,
+      "enabled": true
     },
     {
       "name": "deepseek-r1:8b", 
@@ -53,7 +83,9 @@
       "description": "Reasoning-focused 8B parameter model with chain-of-thought capabilities (GPU: ~4-5s)",
       "size": "5.2GB",
       "execution_target": "GPU", 
-      "timeout": 30
+      "timeout": 30,
+      "context_window": 128000,
+      "enabled": false
     },
     {
       "name": "gemma3:12b",
@@ -61,7 +93,9 @@
       "description": "Full-featured 12B parameter model for comprehensive performance (CPU: ~15s)",
       "size": "8.1GB",
       "execution_target": "CPU/RAM",
-      "timeout": 60
+      "timeout": 60,
+      "context_window": 128000,
+      "enabled": false
     },
     {
       "name": "gpt-oss:20b",
@@ -69,7 +103,9 @@
       "description": "Large 20B parameter open-source model for complex tasks (CPU: ~34s)",
       "size": "13GB",
       "execution_target": "CPU/RAM",
-      "timeout": 120
+      "timeout": 120,
+      "context_window": 128000,
+      "enabled": false
     }
   ],
   "test_config": {
