@@ -227,6 +227,7 @@ class TestSkillEditorFunction:
         # Test that the function exists and can be called
         try:
             from src.ollamapy.main import run_skill_editor
+
             # Just test that the function exists - don't actually run it
             assert callable(run_skill_editor)
         except ImportError:

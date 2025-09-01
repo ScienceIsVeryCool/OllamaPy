@@ -57,12 +57,14 @@ class TestCLIIntegration:
     def test_vibetest_command_integration(self, mock_run_vibe):
         """Test vibe test command integration."""
         mock_run_vibe.return_value = True
-        
+
         # Test the function directly instead of subprocess to avoid timeout
         from src.ollamapy.main import run_vibe_tests
-        
-        result = run_vibe_tests(count=1, model="test-model", analysis_model="test-model")
-        
+
+        result = run_vibe_tests(
+            count=1, model="test-model", analysis_model="test-model"
+        )
+
         # Should return True when mocked
         assert result is True
         mock_run_vibe.assert_called_once()
@@ -78,7 +80,7 @@ class TestModuleIntegration:
         client = OllamaClient()
         # Just test that the method exists and returns a string (even if empty due to no server)
         response = client.generate("test-model", "Hello integration test")
-        
+
         # Should return string (empty if no server available)
         assert isinstance(response, str)
 
@@ -89,7 +91,7 @@ class TestModuleIntegration:
         client = OllamaClient()
         # Just test that the method exists and returns a boolean
         is_available = client.is_available()
-        
+
         # Should return boolean (False if no server available)
         assert isinstance(is_available, bool)
 
@@ -176,7 +178,7 @@ class TestErrorHandlingIntegration:
 
         # Use an invalid URL to trigger network error
         client = OllamaClient(base_url="http://invalid-host-12345:11434")
-        
+
         # Should handle the error gracefully and return empty string
         response = client.generate("test-model", "Hello")
         assert isinstance(response, str)  # Should get empty string on error
@@ -187,7 +189,7 @@ class TestErrorHandlingIntegration:
 
         # Just test that we can create client with invalid URL without crashing
         client = OllamaClient(base_url="http://invalid-host:99999")
-        
+
         # Test availability check (should be fast to fail)
         is_available = client.is_available()
         assert isinstance(is_available, bool)  # Should be False for invalid host
