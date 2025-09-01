@@ -478,11 +478,35 @@ def generate_skills_showcase_html(skills: List[Dict[str, Any]]) -> str:
                     </div>"""
                 html += "</div>"
             
+            # Add vibe test section if the skill has test phrases
+            vibe_phrases = skill.get('vibe_test_phrases', [])
+            if vibe_phrases:
+                html += f"""
+                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
+                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
+"""
+                for phrase in vibe_phrases[:3]:  # Show first 3 phrases
+                    html += f'<li style="margin-bottom: 5px;">"{phrase}"</li>'
+                
+                if len(vibe_phrases) > 3:
+                    html += f'<li style="margin-bottom: 5px; color: #888; font-style: italic;">... and {len(vibe_phrases) - 3} more phrases</li>'
+                
+                html += f"""
+                    </ul>
+                    <div style="margin-top: 10px;">
+                        <a href="vibe_tests.html#{skill['name']}" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
+                            📊 View Model Performance Results →
+                        </a>
+                    </div>
+                </div>
+"""
+
             # Add function code (collapsed by default, expandable)
             if function_code:
                 formatted_code = format_function_code(function_code)
                 html += f"""
-                <details>
+                <details style="margin-top: 15px;">
                     <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
                         🔍 View Implementation
                     </summary>
@@ -501,6 +525,8 @@ def generate_skills_showcase_html(skills: List[Dict[str, Any]]) -> str:
         <p>This page showcases the current AI skill capabilities available in OllamaPy.</p>
         
         <div class="footer-links">
+            <a href="index.html" class="footer-link">🏠 Main Dashboard</a>
+            <a href="vibe_tests.html" class="footer-link">🧪 Vibe Test Results</a>
             <a href="coverage.html" class="footer-link">📊 Test Coverage</a>
             <a href="https://github.com/ScienceIsVeryCool/OllamaPy" class="footer-link">📦 GitHub Repository</a>
             <a href="https://pypi.org/project/ollamapy/" class="footer-link">🐍 PyPI Package</a>

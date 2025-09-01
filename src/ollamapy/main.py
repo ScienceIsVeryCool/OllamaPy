@@ -62,6 +62,18 @@ def run_vibe_tests(
     return run_tests(model=model, iterations=iterations, analysis_model=analysis_model)
 
 
+def run_multi_model_vibe_tests(iterations: int = 5, output_path: str = None):
+    """Run vibe tests across multiple configured models for comprehensive comparison.
+
+    Args:
+        iterations: Number of iterations per test (default: 5)
+        output_path: Path to save detailed JSON results for GitHub Pages
+    """
+    from .multi_model_vibe_tests import run_multi_model_tests
+
+    return run_multi_model_tests(iterations=iterations, output_path=output_path)
+
+
 def run_skill_gen(
     model: str = "gemma3:4b",
     analysis_model: Optional[str] = None,
@@ -155,6 +167,12 @@ Examples:
     )
 
     parser.add_argument(
+        "--multi-model-vibetest",
+        action="store_true",
+        help="Run vibe tests across multiple configured models for comprehensive comparison",
+    )
+
+    parser.add_argument(
         "--skillgen",
         action="store_true",
         help="Generate new skills automatically using AI",
@@ -213,6 +231,34 @@ Examples:
             iterations=args.iterations,
             analysis_model=args.analysis_model,
         )
+        sys.exit(0 if success else 1)
+    elif args.multi_model_vibetest:
+        # Save results to docs for GitHub Pages integration
+        from pathlib import Path
+        project_root = Path(__file__).parent.parent.parent
+        output_path = project_root / "docs" / "vibe_test_results.json"
+        
+        success = run_multi_model_vibe_tests(
+            iterations=args.iterations,
+            output_path=str(output_path)
+        )
+        
+        if success:
+            print(f"🚀 Running vibe test showcase generator...")
+            try:
+                import subprocess
+                result = subprocess.run([
+                    "python3", 
+                    str(project_root / "scripts" / "generate_vibe_test_showcase.py")
+                ], capture_output=True, text=True)
+                
+                if result.returncode == 0:
+                    print("✅ Vibe test showcase generated successfully!")
+                else:
+                    print(f"❌ Error generating showcase: {result.stderr}")
+            except Exception as e:
+                print(f"❌ Error running showcase generator: {e}")
+        
         sys.exit(0 if success else 1)
     elif args.skillgen:
         analysis_model = args.analysis_model if args.analysis_model else args.model

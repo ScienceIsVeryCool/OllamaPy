@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "name": "gemma3:4b",
+      "display_name": "Gemma 3 4B",
+      "description": "Compact 4B parameter model optimized for speed",
+      "timeout": 60
+    },
+    {
+      "name": "gemma3:12b", 
+      "display_name": "Gemma 3 12B",
+      "description": "Full-featured 12B parameter model for comprehensive performance",
+      "timeout": 180
+    }
+  ],
+  "test_config": {
+    "iterations": 5
+  }
+}
