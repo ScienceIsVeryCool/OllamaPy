@@ -99,6 +99,13 @@ jobs:
                 f.write('# Getting Started with Skill Editor\\n\\nSkill editor documentation will be available in future releases.')
         "
     
+    - name: Run multi-model vibe tests
+      run: |
+        source venv/bin/activate
+        echo "🚀 Running comprehensive multi-model vibe tests..."
+        python -m ollamapy.main --multi-model-vibetest -n 1
+        echo "✅ Vibe tests completed successfully"
+    
     - name: Build with MkDocs
       run: |
         source venv/bin/activate
