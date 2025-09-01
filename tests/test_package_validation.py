@@ -227,7 +227,6 @@ class TestTestSuite:
         expected_tests = [
             "test_main.py",
             "test_main_comprehensive.py",
-            "test_ollama_client.py",
             "test_package_validation.py",
         ]
 
