@@ -59,6 +59,24 @@ class SkillEditorAPI:
                 return jsonify({"success": True, "skill": skill.to_dict()})
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)}), 500
+                
+        @self.app.route("/api/skills/<skill_name>/download", methods=["GET"])
+        def download_skill(skill_name):
+            """Download a specific skill as JSON."""
+            try:
+                if skill_name not in self.registry.skills:
+                    return jsonify({"success": False, "error": "Skill not found"}), 404
+
+                skill = self.registry.skills[skill_name]
+                skill_data = skill.to_dict()
+                
+                # Create response with proper JSON content type and download headers
+                response = jsonify(skill_data)
+                response.headers['Content-Disposition'] = f'attachment; filename="{skill_name}.json"'
+                response.headers['Content-Type'] = 'application/json'
+                return response
+            except Exception as e:
+                return jsonify({"success": False, "error": str(e)}), 500
 
         @self.app.route("/api/skills/<skill_name>", methods=["PUT"])
         def update_skill(skill_name):
@@ -373,19 +391,40 @@ class SkillEditorAPI:
 
         @self.app.route("/api/skills/import", methods=["POST"])
         def import_skills():
-            """Import skills from JSON data."""
+            """Import skills from JSON data with schema validation."""
             try:
                 import_data = request.json
-                if not import_data or "skills" not in import_data:
+                if not import_data:
                     return (
-                        jsonify({"success": False, "error": "Invalid import data"}),
+                        jsonify({"success": False, "error": "No data provided"}),
                         400,
                     )
 
                 imported_count = 0
                 errors = []
+                
+                # Handle single skill import
+                if "name" in import_data:
+                    skills_to_import = {import_data["name"]: import_data}
+                # Handle multiple skills import
+                elif "skills" in import_data:
+                    skills_to_import = import_data["skills"]
+                else:
+                    return (
+                        jsonify({"success": False, "error": "Invalid import data format. Expected single skill or skills collection."}),
+                        400,
+                    )
 
-                for skill_name, skill_data in import_data["skills"].items():
+                # Import JSON schema validation
+                import jsonschema
+                schema_path = Path(__file__).parent.parent / "skill_schema.json"
+                if schema_path.exists():
+                    with open(schema_path, 'r') as f:
+                        schema = json.load(f)
+                else:
+                    schema = None
+
+                for skill_name, skill_data in skills_to_import.items():
                     try:
                         # Skip if skill already exists
                         if skill_name in self.registry.skills:
@@ -394,13 +433,28 @@ class SkillEditorAPI:
                             )
                             continue
 
-                        # Validate skill data
+                        # Validate against JSON schema if available
+                        if schema:
+                            try:
+                                jsonschema.validate(skill_data, schema)
+                            except jsonschema.ValidationError as ve:
+                                errors.append(
+                                    f"Skill '{skill_name}' schema validation failed: {ve.message} at path {'.'.join(str(x) for x in ve.absolute_path)}"
+                                )
+                                continue
+                            except jsonschema.SchemaError as se:
+                                errors.append(
+                                    f"Schema error for skill '{skill_name}': {se.message}"
+                                )
+                                continue
+
+                        # Validate skill data with existing validator
                         validation_result = self.validator.validate_skill_data(
                             skill_data
                         )
                         if not validation_result.is_valid:
                             errors.append(
-                                f"Skill '{skill_name}' validation failed: {validation_result.errors}"
+                                f"Skill '{skill_name}' validation failed: {', '.join(validation_result.errors)}"
                             )
                             continue
 
@@ -545,6 +599,52 @@ class SkillEditorAPI:
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
+        .import-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 110px;
+            background: #007bff;
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn-download {
+            background: #17a2b8;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        .btn-download:hover {
+            background: #138496;
+        }
+        .import-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+        .file-input {
+            margin: 10px 0;
+        }
+        .import-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .import-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .import-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
         .loading {
             text-align: center;
             padding: 40px;
@@ -557,9 +657,21 @@ class SkillEditorAPI:
         <p>Manage and edit your OllamaPy skills</p>
     </div>
     
+    <div id="import-controls" class="import-controls">
+        <h3>📥 Import Skill</h3>
+        <p>Select a JSON file to import a skill with validation:</p>
+        <input type="file" id="skill-file" class="file-input" accept=".json" />
+        <div>
+            <button onclick="importSkill()" class="btn">Import Skill</button>
+            <button onclick="toggleImport()" class="btn btn-secondary">Cancel</button>
+        </div>
+        <div id="import-status"></div>
+    </div>
+    
     <div id="loading" class="loading">Loading skills...</div>
     <div id="skills-container" class="skills-grid" style="display: none;"></div>
     
+    <button class="import-btn" onclick="toggleImport()" title="Import Skill">📥</button>
     <button class="new-skill-btn" onclick="location.href='/new-skill'" title="Create New Skill">+</button>
     
     <script>
@@ -599,6 +711,7 @@ class SkillEditorAPI:
                     <div class="skill-meta">
                         ${verifiedBadge}
                         <div>
+                            <button onclick="downloadSkill('${name}')" class="btn btn-download">📥 Download</button>
                             <a href="/skill/${name}" class="btn">Edit</a>
                             ${!skill.verified ? `<button onclick="deleteSkill('${name}')" class="btn btn-danger">Delete</button>` : ''}
                         </div>
@@ -630,6 +743,88 @@ class SkillEditorAPI:
                 }
             } catch (error) {
                 alert('Error deleting skill: ' + error.message);
+            }
+        }
+        
+        async function downloadSkill(skillName) {
+            try {
+                const response = await fetch(`/api/skills/${skillName}/download`);
+                const blob = await response.blob();
+                
+                if (response.ok) {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${skillName}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    const error = await response.json();
+                    alert('Failed to download skill: ' + error.error);
+                }
+            } catch (error) {
+                alert('Error downloading skill: ' + error.message);
+            }
+        }
+        
+        function toggleImport() {
+            const controls = document.getElementById('import-controls');
+            const isVisible = controls.style.display !== 'none';
+            controls.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) {
+                document.getElementById('import-status').innerHTML = '';
+                document.getElementById('skill-file').value = '';
+            }
+        }
+        
+        async function importSkill() {
+            const fileInput = document.getElementById('skill-file');
+            const statusDiv = document.getElementById('import-status');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusDiv.innerHTML = '<div class="import-error">Please select a JSON file to import.</div>';
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            try {
+                const fileText = await file.text();
+                const skillData = JSON.parse(fileText);
+                
+                const response = await fetch('/api/skills/import', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(skillData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.imported_count > 0) {
+                        statusDiv.innerHTML = `<div class="import-success">Successfully imported ${result.imported_count} skill(s)!</div>`;
+                        loadSkills(); // Reload skills list
+                        setTimeout(toggleImport, 2000); // Hide import panel after success
+                    } else {
+                        statusDiv.innerHTML = `<div class="import-error">No skills were imported. Errors: ${result.errors.join(', ')}</div>`;
+                    }
+                } else {
+                    statusDiv.innerHTML = `<div class="import-error">Import failed: ${result.error}</div>`;
+                }
+                
+                if (result.errors && result.errors.length > 0) {
+                    const errorList = result.errors.map(err => `<li>${err}</li>`).join('');
+                    statusDiv.innerHTML += `<div class="import-error"><strong>Validation Errors:</strong><ul>${errorList}</ul></div>`;
+                }
+                
+            } catch (error) {
+                if (error instanceof SyntaxError) {
+                    statusDiv.innerHTML = '<div class="import-error">Invalid JSON file format. Please check your file syntax.</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="import-error">Error importing skill: ${error.message}</div>`;
+                }
             }
         }
         

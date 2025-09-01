@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OllamaPy Skill Schema",
+  "description": "JSON schema for OllamaPy skill definitions",
+  "type": "object",
+  "required": [
+    "name",
+    "description", 
+    "vibe_test_phrases",
+    "parameters",
+    "function_code",
+    "verified",
+    "scope",
+    "role",
+    "created_at",
+    "last_modified",
+    "execution_count",
+    "success_rate",
+    "average_execution_time",
+    "tags"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Unique skill name (valid Python identifier)"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1000,
+      "description": "Clear description of when and how to use this skill"
+    },
+    "vibe_test_phrases": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 500
+      },
+      "description": "Example phrases that should trigger this skill"
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type", "description", "required"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "integer", "boolean", "array", "object"]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "default": {
+            "description": "Default value for optional parameters"
+          },
+          "enum": {
+            "type": "array",
+            "description": "List of allowed values"
+          },
+          "minimum": {
+            "type": "number",
+            "description": "Minimum value for numeric parameters"
+          },
+          "maximum": {
+            "type": "number", 
+            "description": "Maximum value for numeric parameters"
+          },
+          "minLength": {
+            "type": "integer",
+            "description": "Minimum length for string parameters"
+          },
+          "maxLength": {
+            "type": "integer",
+            "description": "Maximum length for string parameters"
+          }
+        }
+      },
+      "description": "Parameter definitions for the skill"
+    },
+    "function_code": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 50000,
+      "pattern": "def execute\\(",
+      "description": "Python function code that implements the skill (must contain 'def execute(')"
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "Whether this skill has been verified by the system"
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["global", "local", "session"],
+      "description": "Scope of the skill execution"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "information",
+        "mathematics", 
+        "file_operations",
+        "general",
+        "advanced",
+        "emotional_response",
+        "system",
+        "utility",
+        "entertainment",
+        "productivity",
+        "communication",
+        "analysis"
+      ],
+      "description": "Functional role/category of the skill"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when skill was created"
+    },
+    "last_modified": {
+      "type": "string", 
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when skill was last modified"
+    },
+    "execution_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of times this skill has been executed"
+    },
+    "success_rate": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 100.0,
+      "description": "Success rate percentage (0-100)"
+    },
+    "average_execution_time": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Average execution time in seconds"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "maxItems": 20,
+      "description": "Optional tags for categorization and search"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Optional semantic version (e.g., 1.0.0)"
+    },
+    "author": {
+      "type": "string",
+      "maxLength": 100,
+      "description": "Optional skill author"
+    },
+    "license": {
+      "type": "string",
+      "maxLength": 50,
+      "description": "Optional license identifier"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "maxItems": 50,
+      "description": "Optional Python package dependencies"
+    }
+  },
+  "additionalProperties": false
+}
