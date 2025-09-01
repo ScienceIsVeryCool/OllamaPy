@@ -235,30 +235,37 @@ Examples:
     elif args.multi_model_vibetest:
         # Save results to docs for GitHub Pages integration
         from pathlib import Path
+
         project_root = Path(__file__).parent.parent.parent
         output_path = project_root / "docs" / "vibe_test_results.json"
-        
+
         success = run_multi_model_vibe_tests(
-            iterations=args.iterations,
-            output_path=str(output_path)
+            iterations=args.iterations, output_path=str(output_path)
         )
-        
+
         if success:
             print(f"🚀 Running vibe test showcase generator...")
             try:
                 import subprocess
-                result = subprocess.run([
-                    "python3", 
-                    str(project_root / "scripts" / "generate_vibe_test_showcase.py")
-                ], capture_output=True, text=True)
-                
+
+                result = subprocess.run(
+                    [
+                        "python3",
+                        str(
+                            project_root / "scripts" / "generate_vibe_test_showcase.py"
+                        ),
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+
                 if result.returncode == 0:
                     print("✅ Vibe test showcase generated successfully!")
                 else:
                     print(f"❌ Error generating showcase: {result.stderr}")
             except Exception as e:
                 print(f"❌ Error running showcase generator: {e}")
-        
+
         sys.exit(0 if success else 1)
     elif args.skillgen:
         analysis_model = args.analysis_model if args.analysis_model else args.model

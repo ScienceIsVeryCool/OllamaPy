@@ -29,11 +29,11 @@ class MultiModelVibeTestRunner:
         self.config = self._load_config()
         self.client = OllamaClient()
         self.all_results = {}
-        
+
     def _load_config(self) -> Dict[str, Any]:
         """Load the model configuration."""
         try:
-            with open(self.config_path, 'r') as f:
+            with open(self.config_path, "r") as f:
                 return json.load(f)
         except FileNotFoundError:
             print(f"❌ Configuration file not found: {self.config_path}")
@@ -49,20 +49,20 @@ class MultiModelVibeTestRunner:
                 {
                     "name": "gemma3:4b",
                     "display_name": "Gemma 3 4B",
-                    "description": "Compact 4B parameter model optimized for speed"
+                    "description": "Compact 4B parameter model optimized for speed",
                 }
             ],
             "test_config": {
                 "iterations": 5,
                 "timeout": 120,
                 "collect_runtime_stats": True,
-                "include_performance_metrics": True
-            }
+                "include_performance_metrics": True,
+            },
         }
 
     def check_model_availability(self, model_name: str, timeout: int = 60) -> bool:
         """Check if a model is available in Ollama.
-        
+
         Args:
             model_name: Name of the model to check
             timeout: Timeout in seconds for the availability check
@@ -70,26 +70,28 @@ class MultiModelVibeTestRunner:
         try:
             # Try to generate a simple response to test availability with timeout
             import signal
-            
+
             def timeout_handler(signum, frame):
-                raise TimeoutError(f"Model availability check timed out after {timeout}s")
-            
+                raise TimeoutError(
+                    f"Model availability check timed out after {timeout}s"
+                )
+
             # Set timeout for the check
             signal.signal(signal.SIGALRM, timeout_handler)
             signal.alarm(timeout)
-            
+
             try:
                 response = self.client.generate(
                     model=model_name,
                     prompt="Hello",
                     stream=False,
-                    options={"num_predict": 1}
+                    options={"num_predict": 1},
                 )
                 signal.alarm(0)  # Cancel timeout
                 return response is not None
             finally:
                 signal.alarm(0)  # Ensure timeout is cancelled
-                
+
         except TimeoutError as e:
             print(f"❌ Model {model_name} availability check timed out: {e}")
             return False
@@ -97,7 +99,9 @@ class MultiModelVibeTestRunner:
             print(f"❌ Model {model_name} not available: {e}")
             return False
 
-    def run_tests_for_model(self, model_config: Dict[str, str], iterations: int) -> Dict[str, Any]:
+    def run_tests_for_model(
+        self, model_config: Dict[str, str], iterations: int
+    ) -> Dict[str, Any]:
         """Run vibe tests for a single model.
 
         Args:
@@ -113,14 +117,14 @@ class MultiModelVibeTestRunner:
         print("=" * 80)
 
         start_time = time.perf_counter()
-        
+
         # Create a vibe test runner for this model
         # Use the same model for both chat and analysis to get pure model performance
         runner = VibeTestRunner(model=model_name, analysis_model=model_name)
-        
+
         # Run the tests
         success = runner.run_all_tests(iterations=iterations)
-        
+
         end_time = time.perf_counter()
         total_runtime = end_time - start_time
 
@@ -129,20 +133,20 @@ class MultiModelVibeTestRunner:
 
         # Aggregate statistics
         total_tests = sum(
-            result["results"]["total_tests"] 
-            for result in detailed_results.values()
+            result["results"]["total_tests"] for result in detailed_results.values()
         )
         total_correct = sum(
-            result["results"]["total_correct"] 
-            for result in detailed_results.values()
+            result["results"]["total_correct"] for result in detailed_results.values()
         )
-        overall_success_rate = (total_correct / total_tests * 100) if total_tests > 0 else 0
+        overall_success_rate = (
+            (total_correct / total_tests * 100) if total_tests > 0 else 0
+        )
 
         # Calculate overall timing statistics
         all_times = []
         for result in detailed_results.values():
             all_times.extend(result["results"]["overall_timing_stats"]["raw_times"])
-        
+
         overall_timing = TimingStats(all_times) if all_times else TimingStats([])
 
         return {
@@ -153,11 +157,11 @@ class MultiModelVibeTestRunner:
                 "total_tests": total_tests,
                 "total_correct": total_correct,
                 "overall_success_rate": overall_success_rate,
-                "overall_timing_stats": overall_timing.to_dict()
+                "overall_timing_stats": overall_timing.to_dict(),
             },
             "detailed_results": detailed_results,
             "timestamp": datetime.now().isoformat(),
-            "iterations": iterations
+            "iterations": iterations,
         }
 
     def run_all_model_tests(self, iterations: Optional[int] = None) -> bool:
@@ -173,13 +177,17 @@ class MultiModelVibeTestRunner:
             iterations = self.config["test_config"]["iterations"]
 
         print("🌟 Multi-Model Vibe Test Suite")
-        print(f"📋 Testing {len(self.config['models'])} models with {iterations} iterations each")
+        print(
+            f"📋 Testing {len(self.config['models'])} models with {iterations} iterations each"
+        )
         print(f"📊 Collecting runtime statistics and performance metrics")
         print("=" * 80)
 
         # Check Ollama availability
         if not self.client.is_available():
-            print("❌ Ollama server is not available. Please start it with: ollama serve")
+            print(
+                "❌ Ollama server is not available. Please start it with: ollama serve"
+            )
             return False
 
         all_success = True
@@ -188,10 +196,12 @@ class MultiModelVibeTestRunner:
         for i, model_config in enumerate(self.config["models"], 1):
             model_name = model_config["name"]
             model_timeout = model_config.get("timeout", 60)
-            
-            print(f"\n[{i}/{len(self.config['models'])}] Preparing to test {model_name}...")
+
+            print(
+                f"\n[{i}/{len(self.config['models'])}] Preparing to test {model_name}..."
+            )
             print(f"⏱️  Model timeout: {model_timeout}s")
-            
+
             # Check if model is available with model-specific timeout
             if not self.check_model_availability(model_name, model_timeout):
                 print(f"❌ Skipping {model_name} - not available")
@@ -201,10 +211,10 @@ class MultiModelVibeTestRunner:
             try:
                 results = self.run_tests_for_model(model_config, iterations)
                 self.all_results[model_name] = results
-                
+
                 if not results["success"]:
                     all_success = False
-                    
+
             except Exception as e:
                 print(f"❌ Error testing {model_name}: {e}")
                 all_success = False
@@ -212,7 +222,7 @@ class MultiModelVibeTestRunner:
 
         # Generate comparison report
         self._print_comparison_summary()
-        
+
         return all_success
 
     def _print_comparison_summary(self):
@@ -228,30 +238,47 @@ class MultiModelVibeTestRunner:
         sorted_models = sorted(
             self.all_results.items(),
             key=lambda x: x[1]["summary"]["overall_success_rate"],
-            reverse=True
+            reverse=True,
         )
 
-        print(f"{'Model':<20} {'Success Rate':<12} {'Avg Time':<10} {'Consistency':<12} {'Status':<10}")
+        print(
+            f"{'Model':<20} {'Success Rate':<12} {'Avg Time':<10} {'Consistency':<12} {'Status':<10}"
+        )
         print("-" * 70)
 
         for model_name, results in sorted_models:
             display_name = results["model_config"]["display_name"]
             success_rate = results["summary"]["overall_success_rate"]
             avg_time = results["summary"]["overall_timing_stats"]["mean"]
-            consistency = results["summary"]["overall_timing_stats"]["consistency_score"]
+            consistency = results["summary"]["overall_timing_stats"][
+                "consistency_score"
+            ]
             status = "✅ PASS" if results["success"] else "❌ FAIL"
 
-            print(f"{display_name:<20} {success_rate:>6.1f}%     {avg_time:>6.2f}s    {consistency:>6.1f}/100     {status}")
+            print(
+                f"{display_name:<20} {success_rate:>6.1f}%     {avg_time:>6.2f}s    {consistency:>6.1f}/100     {status}"
+            )
 
         # Performance insights
-        fastest_model = min(sorted_models, key=lambda x: x[1]["summary"]["overall_timing_stats"]["mean"])
-        most_consistent = max(sorted_models, key=lambda x: x[1]["summary"]["overall_timing_stats"]["consistency_score"])
-        
+        fastest_model = min(
+            sorted_models, key=lambda x: x[1]["summary"]["overall_timing_stats"]["mean"]
+        )
+        most_consistent = max(
+            sorted_models,
+            key=lambda x: x[1]["summary"]["overall_timing_stats"]["consistency_score"],
+        )
+
         print(f"\n🏆 Performance Insights:")
-        print(f"   Fastest: {fastest_model[1]['model_config']['display_name']} ({fastest_model[1]['summary']['overall_timing_stats']['mean']:.2f}s avg)")
-        print(f"   Most Consistent: {most_consistent[1]['model_config']['display_name']} ({most_consistent[1]['summary']['overall_timing_stats']['consistency_score']:.1f}/100)")
-        
-        total_tests = sum(r["summary"]["total_tests"] for r in self.all_results.values())
+        print(
+            f"   Fastest: {fastest_model[1]['model_config']['display_name']} ({fastest_model[1]['summary']['overall_timing_stats']['mean']:.2f}s avg)"
+        )
+        print(
+            f"   Most Consistent: {most_consistent[1]['model_config']['display_name']} ({most_consistent[1]['summary']['overall_timing_stats']['consistency_score']:.1f}/100)"
+        )
+
+        total_tests = sum(
+            r["summary"]["total_tests"] for r in self.all_results.values()
+        )
         total_time = sum(r["total_runtime"] for r in self.all_results.values())
         print(f"   Total Tests: {total_tests}")
         print(f"   Total Runtime: {total_time:.1f}s")
@@ -274,9 +301,9 @@ class MultiModelVibeTestRunner:
                 "generated_at": datetime.now().isoformat(),
                 "config_file": str(self.config_path),
                 "total_models_tested": len(self.all_results),
-                "test_config": self.config["test_config"]
+                "test_config": self.config["test_config"],
             },
-            "models": []
+            "models": [],
         }
 
         for model_name, results in self.all_results.items():
@@ -291,16 +318,18 @@ class MultiModelVibeTestRunner:
                     "total_tests": skill_data["results"]["total_tests"],
                     "total_correct": skill_data["results"]["total_correct"],
                     "timing_stats": skill_data["results"]["overall_timing_stats"],
-                    "phrase_results": {}
+                    "phrase_results": {},
                 }
-                
+
                 # Process phrase-level results
-                for phrase, phrase_data in skill_data["results"]["phrase_results"].items():
+                for phrase, phrase_data in skill_data["results"][
+                    "phrase_results"
+                ].items():
                     processed_skills[skill_name]["phrase_results"][phrase] = {
                         "success_rate": phrase_data["success_rate"],
                         "timing_stats": phrase_data["timing_stats"],
                         "expected_params": phrase_data["expected_params"],
-                        "secondary_actions": phrase_data["secondary_action_counts"]
+                        "secondary_actions": phrase_data["secondary_action_counts"],
                     }
 
             model_result = {
@@ -311,12 +340,12 @@ class MultiModelVibeTestRunner:
                 "summary": results["summary"],
                 "skills": processed_skills,
                 "timestamp": results["timestamp"],
-                "iterations": results["iterations"]
+                "iterations": results["iterations"],
             }
             github_results["models"].append(model_result)
 
         # Save to file
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(github_results, f, indent=2)
 
         print(f"📁 Detailed results saved to: {output_path}")
@@ -334,15 +363,38 @@ class MultiModelVibeTestRunner:
         return {
             "total_models": len(self.all_results),
             "models_passed": sum(1 for r in self.all_results.values() if r["success"]),
-            "models_failed": sum(1 for r in self.all_results.values() if not r["success"]),
-            "average_success_rate": sum(r["summary"]["overall_success_rate"] for r in self.all_results.values()) / len(self.all_results),
+            "models_failed": sum(
+                1 for r in self.all_results.values() if not r["success"]
+            ),
+            "average_success_rate": sum(
+                r["summary"]["overall_success_rate"] for r in self.all_results.values()
+            )
+            / len(self.all_results),
             "total_runtime": sum(r["total_runtime"] for r in self.all_results.values()),
-            "fastest_model": min(self.all_results.items(), key=lambda x: x[1]["summary"]["overall_timing_stats"]["mean"])[0] if self.all_results else None,
-            "most_accurate_model": max(self.all_results.items(), key=lambda x: x[1]["summary"]["overall_success_rate"])[0] if self.all_results else None
+            "fastest_model": (
+                min(
+                    self.all_results.items(),
+                    key=lambda x: x[1]["summary"]["overall_timing_stats"]["mean"],
+                )[0]
+                if self.all_results
+                else None
+            ),
+            "most_accurate_model": (
+                max(
+                    self.all_results.items(),
+                    key=lambda x: x[1]["summary"]["overall_success_rate"],
+                )[0]
+                if self.all_results
+                else None
+            ),
         }
 
 
-def run_multi_model_tests(config_path: Optional[str] = None, iterations: Optional[int] = None, output_path: Optional[str] = None) -> bool:
+def run_multi_model_tests(
+    config_path: Optional[str] = None,
+    iterations: Optional[int] = None,
+    output_path: Optional[str] = None,
+) -> bool:
     """Convenience function to run multi-model vibe tests.
 
     Args:
@@ -355,8 +407,8 @@ def run_multi_model_tests(config_path: Optional[str] = None, iterations: Optiona
     """
     runner = MultiModelVibeTestRunner(config_path)
     success = runner.run_all_model_tests(iterations)
-    
+
     if output_path:
         runner.save_results_json(output_path)
-    
+
     return success
