@@ -88,12 +88,6 @@ jobs:
           coverage.xml
         retention-days: 30
     
-    - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
     
     - name: Test Flask server startup
       run: |
@@ -129,6 +123,34 @@ jobs:
         except Exception as e:
             print(f'⚠️  Skills system error (non-critical): {e}')
         "
+
+  deploy-coverage:
+    runs-on: self-hosted
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test-pipeline-fixes'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    steps:
+    - name: Download test artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results-3.11
+        path: ./coverage-reports
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./coverage-reports/htmlcov
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
 
   security:
     runs-on: self-hosted
