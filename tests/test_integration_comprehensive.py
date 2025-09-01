@@ -216,15 +216,15 @@ class TestDataFlowIntegration:
         try:
             from src.ollamapy.chat_session import ChatSession
             from src.ollamapy.ollama_client import OllamaClient
-            
+
             # Just test that we can create a chat session without crashing
             client = OllamaClient()
             session = ChatSession("test-model", client, "Test system")
-            
+
             # Test that the session exists and has expected attributes
             assert session is not None
             assert hasattr(session, "model")
-            
+
         except (ImportError, AttributeError):
             pytest.skip("ChatSession not fully available")
 
