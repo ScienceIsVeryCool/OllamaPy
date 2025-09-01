@@ -3,4 +3,4 @@
 from .api import SkillEditorAPI
 from .validator import SkillValidator
 
-__all__ = ['SkillEditorAPI', 'SkillValidator']
+__all__ = ["SkillEditorAPI", "SkillValidator"]

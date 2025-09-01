@@ -7,14 +7,14 @@ from .analysis_engine import AnalysisEngine
 from .chat_session import ChatSession
 from .terminal_interface import TerminalInterface
 from .skills import (
-    get_available_actions, 
-    get_actions_with_vibe_tests, 
+    get_available_actions,
+    get_actions_with_vibe_tests,
     execute_action,
     SKILL_REGISTRY,
     clear_action_logs,
     get_action_logs,
     Skill,
-    SkillRegistry
+    SkillRegistry,
 )
 from .parameter_utils import (
     convert_parameter_value,
@@ -22,19 +22,25 @@ from .parameter_utils import (
     extract_numbers_from_text,
     extract_expressions_from_text,
     prepare_function_parameters,
-    extract_parameter_from_response
+    extract_parameter_from_response,
 )
 from .vibe_tests import VibeTestRunner, run_vibe_tests
 from .vibe_report import VibeTestReportGenerator
-from .skill_generator import IncrementalSkillGenerator, SafeCodeExecutor, SkillGenerationResult, SkillPlan, run_skill_generation
+from .skill_generator import (
+    IncrementalSkillGenerator,
+    SafeCodeExecutor,
+    SkillGenerationResult,
+    SkillPlan,
+    run_skill_generation,
+)
 
 __all__ = [
-    "hello", 
-    "greet", 
-    "chat", 
+    "hello",
+    "greet",
+    "chat",
     "OllamaClient",
     "ModelManager",
-    "AnalysisEngine", 
+    "AnalysisEngine",
     "ChatSession",
     "TerminalInterface",
     "get_available_actions",
@@ -46,17 +52,17 @@ __all__ = [
     "clear_action_logs",
     "get_action_logs",
     "convert_parameter_value",
-    "validate_required_parameters", 
+    "validate_required_parameters",
     "extract_numbers_from_text",
     "extract_expressions_from_text",
     "prepare_function_parameters",
     "extract_parameter_from_response",
-    "VibeTestRunner", 
+    "VibeTestRunner",
     "run_vibe_tests",
     "VibeTestReportGenerator",
     "IncrementalSkillGenerator",
     "SafeCodeExecutor",
     "SkillGenerationResult",
     "SkillPlan",
-    "run_skill_generation"
+    "run_skill_generation",
 ]

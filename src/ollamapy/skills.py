@@ -15,6 +15,7 @@ from .ai_query import AIQuery
 @dataclass
 class Skill:
     """Data model for a skill with all required fields."""
+
     name: str
     description: str
     vibe_test_phrases: List[str]
@@ -29,120 +30,124 @@ class Skill:
     success_rate: float = 100.0
     average_execution_time: float = 0.0
     tags: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert skill to dictionary for serialization."""
         return asdict(self)
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Skill':
+    def from_dict(cls, data: Dict[str, Any]) -> "Skill":
         """Create skill from dictionary."""
         return cls(**data)
 
 
 class SkillRegistry:
     """Registry for managing skills dynamically."""
-    
+
     def __init__(self, skills_directory: Optional[str] = None):
         """Initialize the skill registry.
-        
+
         Args:
             skills_directory: Directory to load/save skills from. If None, uses default.
         """
         self.skills: Dict[str, Skill] = {}
         self.compiled_functions: Dict[str, Callable] = {}
         self.execution_logs: List[str] = []
-        
+
         # Set up skills directory
         if skills_directory:
             self.skills_dir = Path(skills_directory)
         else:
             # Default to a skills directory in the package
             self.skills_dir = Path(__file__).parent / "skills_data"
-        
+
         self.skills_dir.mkdir(exist_ok=True)
-        
+
         # Load existing skills
         self.load_skills()
-        
+
         # Initialize with built-in skills if no skills exist
         if not self.skills:
             self._initialize_builtin_skills()
-    
+
     def log(self, message: str):
         """Add a message to the execution log."""
         self.execution_logs.append(message)
-    
+
     def clear_logs(self):
         """Clear all execution logs."""
         self.execution_logs = []
-    
+
     def get_logs(self) -> List[str]:
         """Get all execution logs."""
         return self.execution_logs.copy()
-    
+
     def register_skill(self, skill: Skill) -> bool:
         """Register a new skill in the registry.
-        
+
         Args:
             skill: The skill to register
-            
+
         Returns:
             True if successfully registered, False otherwise
         """
         try:
             # Compile the function code
             compiled_func = self._compile_skill_function(skill)
-            
+
             # Store the skill and compiled function
             self.skills[skill.name] = skill
             self.compiled_functions[skill.name] = compiled_func
-            
+
             # Save to disk
             self.save_skill(skill)
-            
+
             return True
         except Exception as e:
             self.log(f"[System] Error registering skill '{skill.name}': {str(e)}")
             return False
-    
+
     def _compile_skill_function(self, skill: Skill) -> Callable:
         """Compile skill function code into executable function.
-        
+
         Args:
             skill: The skill containing function code
-            
+
         Returns:
             Compiled function
         """
         # Create a namespace for the function
         namespace = {
-            'log': self.log,
-            'os': os,
-            'datetime': datetime,
-            'math': __import__('math'),
-            'json': json,
-            'Path': Path,
-            'subprocess': subprocess,
-            'sys': sys
+            "log": self.log,
+            "os": os,
+            "datetime": datetime,
+            "math": __import__("math"),
+            "json": json,
+            "Path": Path,
+            "subprocess": subprocess,
+            "sys": sys,
         }
-        
+
         # Execute the function code in the namespace
         exec(skill.function_code, namespace)
-        
+
         # The function should be named 'execute' in the code
-        if 'execute' not in namespace:
-            raise ValueError(f"Skill '{skill.name}' function code must define an 'execute' function")
-        
-        func = namespace['execute']
+        if "execute" not in namespace:
+            raise ValueError(
+                f"Skill '{skill.name}' function code must define an 'execute' function"
+            )
+
+        func = namespace["execute"]
         if not callable(func):
             raise ValueError(f"Skill '{skill.name}' execute must be callable")
-        
+
         return func
-    
-    def execute_skill(self, skill_name: str, parameters: Optional[Dict[str, Any]] = None) -> None:
+
+    def execute_skill(
+        self, skill_name: str, parameters: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Execute a skill with given parameters.
-        
+
         Args:
             skill_name: Name of the skill to execute
             parameters: Parameters to pass to the skill
@@ -150,107 +155,99 @@ class SkillRegistry:
         if skill_name not in self.skills:
             self.log(f"[System] Error: Unknown skill '{skill_name}'")
             return
-        
+
         skill = self.skills[skill_name]
         func = self.compiled_functions.get(skill_name)
-        
+
         if not func:
             self.log(f"[System] Error: Skill '{skill_name}' function not compiled")
             return
-        
+
         # Update execution count
         skill.execution_count += 1
-        
+
         # Prepare parameters
         if parameters is None:
             parameters = {}
-        
+
         try:
             if skill.parameters:
                 call_params = prepare_function_parameters(parameters, skill.parameters)
                 func(**call_params)
             else:
                 func()
-            
+
             # Update last modified time
             skill.last_modified = datetime.now().isoformat()
             self.save_skill(skill)
-            
+
         except Exception as e:
             self.log(f"[System] Error executing skill '{skill_name}': {str(e)}")
-    
+
     def get_skills_by_scope(self, scope: str) -> Dict[str, Skill]:
         """Get all skills of a specific scope (global or local).
-        
+
         Args:
             scope: "global" or "local"
-            
+
         Returns:
             Dictionary of skills with the specified scope
         """
         return {
-            name: skill 
-            for name, skill in self.skills.items() 
-            if skill.scope == scope
+            name: skill for name, skill in self.skills.items() if skill.scope == scope
         }
-    
+
     def get_skills_by_role(self, role: str) -> Dict[str, Skill]:
         """Get all skills for a specific role.
-        
+
         Args:
             role: Role category
-            
+
         Returns:
             Dictionary of skills for the role
         """
         return {
-            name: skill 
-            for name, skill in self.skills.items() 
-            if skill.role == role
+            name: skill for name, skill in self.skills.items() if skill.role == role
         }
-    
+
     def get_verified_skills(self) -> Dict[str, Skill]:
         """Get all verified skills.
-        
+
         Returns:
             Dictionary of verified skills
         """
-        return {
-            name: skill 
-            for name, skill in self.skills.items() 
-            if skill.verified
-        }
-    
+        return {name: skill for name, skill in self.skills.items() if skill.verified}
+
     def save_skill(self, skill: Skill):
         """Save a skill to disk.
-        
+
         Args:
             skill: The skill to save
         """
         skill_file = self.skills_dir / f"{skill.name}.json"
-        with open(skill_file, 'w') as f:
+        with open(skill_file, "w") as f:
             json.dump(skill.to_dict(), f, indent=2)
-    
+
     def load_skills(self):
         """Load all skills from the skills directory."""
         for skill_file in self.skills_dir.glob("*.json"):
             try:
-                with open(skill_file, 'r') as f:
+                with open(skill_file, "r") as f:
                     skill_data = json.load(f)
-                
+
                 skill = Skill.from_dict(skill_data)
-                
+
                 # Compile and register the skill
                 compiled_func = self._compile_skill_function(skill)
                 self.skills[skill.name] = skill
                 self.compiled_functions[skill.name] = compiled_func
-                
+
             except Exception as e:
                 print(f"Error loading skill from {skill_file}: {e}")
-    
+
     def _initialize_builtin_skills(self):
         """Initialize built-in skills (converted from original actions)."""
-        
+
         # Fear skill
         fear_skill = Skill(
             name="fear",
@@ -258,7 +255,7 @@ class SkillRegistry:
             vibe_test_phrases=[
                 "I think aliens are trying to kill me",
                 "AAAAAAAAAAHHHHHHHHHHHHHHHHHHHHH",
-                "Immigrants are taking my job"
+                "Immigrants are taking my job",
             ],
             parameters={},
             function_code="""
@@ -267,10 +264,10 @@ def execute():
 """,
             verified=True,
             scope="global",
-            role="emotional_response"
+            role="emotional_response",
         )
         self.register_skill(fear_skill)
-        
+
         # File Reader skill
         file_reader_skill = Skill(
             name="fileReader",
@@ -278,13 +275,13 @@ def execute():
             vibe_test_phrases=[
                 "What do you think of this paper? /home/paper.txt",
                 "Do you think this code will run? /storage/python_code.py",
-                "/home/documents/fileName.txt"
+                "/home/documents/fileName.txt",
             ],
             parameters={
                 "filePath": {
                     "type": "string",
                     "description": "The path to the file the user wants you to read",
-                    "required": True
+                    "required": True,
                 }
             },
             function_code="""
@@ -299,10 +296,10 @@ def execute(filePath: str):
 """,
             verified=True,
             scope="local",
-            role="file_operations"
+            role="file_operations",
         )
         self.register_skill(file_reader_skill)
-        
+
         # Directory Reader skill
         directory_reader_skill = Skill(
             name="directoryReader",
@@ -310,13 +307,13 @@ def execute(filePath: str):
             vibe_test_phrases=[
                 "What do you think of this project? /home/myCodingProject",
                 "Do you think this code will run? /storage/myOtherCodingProject/",
-                "/home/documents/randomPlace/"
+                "/home/documents/randomPlace/",
             ],
             parameters={
                 "dir": {
                     "type": "string",
                     "description": "The dir path to the point of interest the user wants you to open and explore.",
-                    "required": True
+                    "required": True,
                 }
             },
             function_code="""
@@ -341,10 +338,10 @@ def execute(dir: str):
 """,
             verified=True,
             scope="local",
-            role="file_operations"
+            role="file_operations",
         )
         self.register_skill(directory_reader_skill)
-        
+
         # Weather skill
         weather_skill = Skill(
             name="getWeather",
@@ -356,13 +353,13 @@ def execute(dir: str):
                 "Do I need an umbrella due to rain today?",
                 "Do I need sunscreen today due to UV?",
                 "What's the weather like?",
-                "Tell me about today's weather"
+                "Tell me about today's weather",
             ],
             parameters={
                 "location": {
                     "type": "string",
                     "description": "The location to get weather for (city name or coordinates)",
-                    "required": False
+                    "required": False,
                 }
             },
             function_code="""
@@ -382,10 +379,10 @@ def execute(location: str = "current location"):
 """,
             verified=True,
             scope="global",
-            role="information"
+            role="information",
         )
         self.register_skill(weather_skill)
-        
+
         # Time skill
         time_skill = Skill(
             name="getTime",
@@ -396,13 +393,13 @@ def execute(location: str = "current location"):
                 "what time is it?",
                 "Is it 4 o'clock?",
                 "What day is it?",
-                "What's the date today?"
+                "What's the date today?",
             ],
             parameters={
                 "timezone": {
                     "type": "string",
                     "description": "The timezone to get time for (e.g., 'EST', 'PST', 'UTC')",
-                    "required": False
+                    "required": False,
                 }
             },
             function_code="""
@@ -430,10 +427,10 @@ def execute(timezone: str = None):
 """,
             verified=True,
             scope="global",
-            role="information"
+            role="information",
         )
         self.register_skill(time_skill)
-        
+
         # Square root skill
         square_root_skill = Skill(
             name="square_root",
@@ -444,13 +441,13 @@ def execute(timezone: str = None):
                 "find the square root of 144",
                 "√81 = ?",
                 "I need the square root of 2",
-                "square root of 100"
+                "square root of 100",
             ],
             parameters={
                 "number": {
                     "type": "number",
                     "description": "The number to calculate the square root of",
-                    "required": True
+                    "required": True,
                 }
             },
             function_code="""
@@ -484,10 +481,10 @@ def execute(number: float = None):
 """,
             verified=True,
             scope="global",
-            role="mathematics"
+            role="mathematics",
         )
         self.register_skill(square_root_skill)
-        
+
         # Calculate skill
         calculate_skill = Skill(
             name="calculate",
@@ -498,13 +495,13 @@ def execute(number: float = None):
                 "compute 100 / 4",
                 "15 - 8 equals what?",
                 "multiply 12 by 9",
-                "what is 2 plus 2?"
+                "what is 2 plus 2?",
             ],
             parameters={
                 "expression": {
                     "type": "string",
                     "description": "The mathematical expression to evaluate (e.g., '5 + 3', '10 * 2')",
-                    "required": True
+                    "required": True,
                 }
             },
             function_code="""
@@ -560,10 +557,10 @@ def execute(expression: str = None):
 """,
             verified=True,
             scope="global",
-            role="mathematics"
+            role="mathematics",
         )
         self.register_skill(calculate_skill)
-        
+
         # NEW: Custom Python Shell skill
         custom_python_skill = Skill(
             name="customPythonShell",
@@ -573,7 +570,7 @@ def execute(expression: str = None):
                 "I need a specific calculation that's not available",
                 "Write a script to process this",
                 "Can you create a custom solution for this?",
-                "I need something more complex than the basic functions"
+                "I need something more complex than the basic functions",
             ],
             parameters={},
             function_code="""
@@ -585,32 +582,34 @@ def execute():
 """,
             verified=False,
             scope="local",
-            role="advanced"
+            role="advanced",
         )
         self.register_skill(custom_python_skill)
-    
+
     def execute_custom_python_script(self, script: str) -> str:
         """Execute a custom Python script generated by AI.
-        
+
         Args:
             script: Python script to execute
-            
+
         Returns:
             Output from the script execution
         """
         self.log("[Custom Python Shell] Executing AI-generated script")
-        
+
         # Create a safe namespace for execution
         namespace = {
-            '__builtins__': __builtins__,
-            'print': lambda *args, **kwargs: self.log(f"[Script Output] {' '.join(str(arg) for arg in args)}"),
-            'math': __import__('math'),
-            'json': json,
-            'datetime': datetime,
-            'os': os,
-            'sys': sys,
+            "__builtins__": __builtins__,
+            "print": lambda *args, **kwargs: self.log(
+                f"[Script Output] {' '.join(str(arg) for arg in args)}"
+            ),
+            "math": __import__("math"),
+            "json": json,
+            "datetime": datetime,
+            "os": os,
+            "sys": sys,
         }
-        
+
         try:
             # Execute the script
             exec(script, namespace)
@@ -620,11 +619,11 @@ def execute():
             error_msg = f"[Custom Python Shell] Error executing script: {str(e)}"
             self.log(error_msg)
             return error_msg
-    
+
     def get_all_skills(self) -> Dict[str, Skill]:
         """Get all registered skills."""
         return self.skills.copy()
-    
+
     def get_skills_with_vibe_tests(self) -> Dict[str, Skill]:
         """Get all skills that have vibe test phrases."""
         return {
@@ -632,43 +631,48 @@ def execute():
             for name, skill in self.skills.items()
             if skill.vibe_test_phrases
         }
-    
+
     def select_and_execute_skill(self, ai_query: AIQuery, conversation_context: str):
         """Select a skill using AI and execute it."""
         self.clear_logs()
         skill_names = list(self.skills.keys())
-        
+
         # Special handling for custom Python shell
         if "customPythonShell" in skill_names:
             # Check if the context suggests custom script need
             custom_keywords = ["custom", "script", "complex", "specific", "analyze"]
-            if any(keyword in conversation_context.lower() for keyword in custom_keywords):
+            if any(
+                keyword in conversation_context.lower() for keyword in custom_keywords
+            ):
                 # Ask AI to generate a script
                 script_result = ai_query.file_write(
-                    requirements="Generate a Python script to help with: " + conversation_context,
-                    context="Create a standalone Python script that solves the user's request. Use print() for output."
+                    requirements="Generate a Python script to help with: "
+                    + conversation_context,
+                    context="Create a standalone Python script that solves the user's request. Use print() for output.",
                 )
-                
+
                 if script_result.content:
                     self.log("[Custom Python Shell] AI generated the following script:")
                     self.log(script_result.content)
-                    exec_result = self.execute_custom_python_script(script_result.content)
+                    exec_result = self.execute_custom_python_script(
+                        script_result.content
+                    )
                     return
-        
+
         # Regular skill selection
         result = ai_query.multiple_choice(
             question="Based on the recent conversation, which skill should be used?",
             options=skill_names,
-            context=conversation_context
+            context=conversation_context,
         )
-        
+
         print(f"AI chose skill: {result.value} (Confidence: {result.confidence:.0%})")
-        
+
         if result.confidence < 0.5:
             print("AI is not confident. Please select a skill manually.")
             for i, skill_name in enumerate(skill_names):
                 print(f"{i+1}. {skill_name}")
-            
+
             try:
                 choice = int(input("Choose a skill: ")) - 1
                 chosen_skill_name = skill_names[choice]
@@ -677,21 +681,23 @@ def execute():
                 return
         else:
             chosen_skill_name = result.value
-        
+
         skill = self.skills.get(chosen_skill_name)
-        
+
         if not skill:
             print(f"Invalid skill: {chosen_skill_name}")
             return
-        
+
         params = {}
         if skill.parameters:
             print(f"Skill '{chosen_skill_name}' requires parameters.")
             for param_name, param_info in skill.parameters.items():
-                if param_info.get('required', False):
-                    user_val = input(f"Enter value for '{param_name}' ({param_info['description']}): ")
+                if param_info.get("required", False):
+                    user_val = input(
+                        f"Enter value for '{param_name}' ({param_info['description']}): "
+                    )
                     params[param_name] = user_val
-        
+
         self.execute_skill(chosen_skill_name, params)
 
 
@@ -715,10 +721,10 @@ def get_available_actions() -> Dict[str, Dict[str, Any]]:
     skills = SKILL_REGISTRY.get_all_skills()
     return {
         name: {
-            'function': SKILL_REGISTRY.compiled_functions.get(name),
-            'description': skill.description,
-            'vibe_test_phrases': skill.vibe_test_phrases,
-            'parameters': skill.parameters
+            "function": SKILL_REGISTRY.compiled_functions.get(name),
+            "description": skill.description,
+            "vibe_test_phrases": skill.vibe_test_phrases,
+            "parameters": skill.parameters,
         }
         for name, skill in skills.items()
     }
@@ -729,16 +735,18 @@ def get_actions_with_vibe_tests() -> Dict[str, Dict[str, Any]]:
     skills = SKILL_REGISTRY.get_skills_with_vibe_tests()
     return {
         name: {
-            'function': SKILL_REGISTRY.compiled_functions.get(name),
-            'description': skill.description,
-            'vibe_test_phrases': skill.vibe_test_phrases,
-            'parameters': skill.parameters
+            "function": SKILL_REGISTRY.compiled_functions.get(name),
+            "description": skill.description,
+            "vibe_test_phrases": skill.vibe_test_phrases,
+            "parameters": skill.parameters,
         }
         for name, skill in skills.items()
     }
 
 
-def execute_action(action_name: str, parameters: Optional[Dict[str, Any]] = None) -> None:
+def execute_action(
+    action_name: str, parameters: Optional[Dict[str, Any]] = None
+) -> None:
     """Execute a skill (backward compatibility)."""
     SKILL_REGISTRY.execute_skill(action_name, parameters)
 

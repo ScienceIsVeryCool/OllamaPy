@@ -6,24 +6,26 @@ import pytest
 def pytest_addoption(parser):
     """Add custom command line options for vibe tests."""
     parser.addoption(
-        "--model", 
-        action="store", 
-        default="gemma3:4b", 
-        help="Model to use for vibe tests (default: gemma3:4b)"
+        "--model",
+        action="store",
+        default="gemma3:4b",
+        help="Model to use for vibe tests (default: gemma3:4b)",
     )
     parser.addoption(
-        "-N", "--iterations", 
-        action="store", 
-        type=int, 
-        default=1, 
-        help="Number of iterations to run each vibe test (default: 1)"
+        "-N",
+        "--iterations",
+        action="store",
+        type=int,
+        default=1,
+        help="Number of iterations to run each vibe test (default: 1)",
     )
 
 
 def pytest_configure(config):
     """Configure pytest with custom markers."""
     config.addinivalue_line(
-        "markers", "vibetest: marks tests as vibe tests for AI decision-making evaluation"
+        "markers",
+        "vibetest: marks tests as vibe tests for AI decision-making evaluation",
     )
 
 
