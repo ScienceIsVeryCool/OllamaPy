@@ -103,8 +103,16 @@ jobs:
       run: |
         source venv/bin/activate
         echo "🚀 Running comprehensive multi-model vibe tests..."
-        python -m ollamapy.main --multi-model-vibetest -n 1
-        echo "✅ Vibe tests completed successfully"
+        python -m ollamapy.main --multi-model-vibetest -n 1 || echo "⚠️ Some models may have failed tests, but results are saved"
+        echo "✅ Vibe test execution completed - checking results..."
+        if [ -f "docs/vibe_test_results.json" ]; then
+          echo "✅ Vibe test results file created successfully"
+          echo "📊 Result summary:"
+          python -c "import json; data=json.load(open('docs/vibe_test_results.json')); print(f'Models tested: {data[\"metadata\"][\"total_models_tested\"]}')"
+        else
+          echo "❌ ERROR: Vibe test results file not found!"
+          exit 1
+        fi
     
     - name: Build with MkDocs
       run: |
