@@ -1,19 +1,79 @@
 {
+  "hardware_profile": {
+    "gpu": "RTX 3080 (10GB VRAM)",
+    "ram": "64GB DDR4",
+    "cpu_fallback": "Models >8GB fall back to CPU/RAM",
+    "tested_on": "2025-09-01",
+    "performance_notes": "GPU models: 2-5s, CPU fallback: 15-35s per query"
+  },
   "models": [
     {
+      "name": "gemma3:1b",
+      "display_name": "Gemma 3 1B",
+      "description": "Ultra-compact 1B parameter model for maximum speed (GPU: ~2.2s)",
+      "size": "815MB", 
+      "execution_target": "GPU",
+      "timeout": 15
+    },
+    {
       "name": "gemma3:4b",
-      "display_name": "Gemma 3 4B",
-      "description": "Compact 4B parameter model optimized for speed",
+      "display_name": "Gemma 3 4B", 
+      "description": "Compact 4B parameter model optimized for speed (GPU: ~2.6s)",
+      "size": "3.3GB",
+      "execution_target": "GPU", 
+      "timeout": 20
+    },
+    {
+      "name": "codellama:7b",
+      "display_name": "CodeLlama 7B",
+      "description": "Code-focused 7B parameter model specialized for programming tasks (GPU: ~3-4s)",
+      "size": "3.8GB",
+      "execution_target": "GPU",
+      "timeout": 25
+    },
+    {
+      "name": "qwen2.5:7b",
+      "display_name": "Qwen2.5 7B", 
+      "description": "Advanced 7B parameter model with strong reasoning capabilities (GPU: ~4-5s)",
+      "size": "4.7GB",
+      "execution_target": "GPU",
+      "timeout": 30
+    },
+    {
+      "name": "qwen3:8b",
+      "display_name": "Qwen3 8B",
+      "description": "Latest 8B parameter model with enhanced performance (GPU: ~4-5s)",
+      "size": "5.2GB", 
+      "execution_target": "GPU",
+      "timeout": 30
+    },
+    {
+      "name": "deepseek-r1:8b", 
+      "display_name": "DeepSeek R1 8B",
+      "description": "Reasoning-focused 8B parameter model with chain-of-thought capabilities (GPU: ~4-5s)",
+      "size": "5.2GB",
+      "execution_target": "GPU", 
+      "timeout": 30
+    },
+    {
+      "name": "gemma3:12b",
+      "display_name": "Gemma 3 12B",
+      "description": "Full-featured 12B parameter model for comprehensive performance (CPU: ~15s)",
+      "size": "8.1GB",
+      "execution_target": "CPU/RAM",
       "timeout": 60
     },
     {
-      "name": "gemma3:12b", 
-      "display_name": "Gemma 3 12B",
-      "description": "Full-featured 12B parameter model for comprehensive performance",
-      "timeout": 180
+      "name": "gpt-oss:20b",
+      "display_name": "GPT-OSS 20B", 
+      "description": "Large 20B parameter open-source model for complex tasks (CPU: ~34s)",
+      "size": "13GB",
+      "execution_target": "CPU/RAM",
+      "timeout": 120
     }
   ],
   "test_config": {
-    "iterations": 5
+    "iterations": 1,
+    "reason_for_single_iteration": "With 8 models and CPU fallback times of 15-34s per query, single iteration provides comprehensive comparison while keeping total test time reasonable (~10 minutes total vs 30+ minutes with multiple iterations)"
   }
 }

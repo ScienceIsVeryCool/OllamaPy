@@ -83,9 +83,7 @@ class MultiModelVibeTestRunner:
             try:
                 response = self.client.generate(
                     model=model_name,
-                    prompt="Hello",
-                    stream=False,
-                    options={"num_predict": 1},
+                    prompt="Hello"
                 )
                 signal.alarm(0)  # Cancel timeout
                 return response is not None
