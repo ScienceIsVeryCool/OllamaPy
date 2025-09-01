@@ -127,7 +127,7 @@ jobs:
   deploy-coverage:
     runs-on: self-hosted
     needs: test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix-github-pages'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fix-github-pages' || github.event_name == 'pull_request'
     permissions:
       contents: read
       pages: write
