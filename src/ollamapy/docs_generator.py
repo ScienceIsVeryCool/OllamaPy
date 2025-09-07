@@ -582,13 +582,15 @@ class DocsGenerator:
         print("🌐 DOCUMENTATION SERVER")
         print("=" * 80)
         
+        # Create a handler class with the correct directory
+        docs_directory = str(self.config.output_dir)
+        
         class Handler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
-                super().__init__(*args, directory=str(self.server.docs_dir), **kwargs)
+                super().__init__(*args, directory=docs_directory, **kwargs)
                 
         try:
             with socketserver.TCPServer(("", self.config.serve_port), Handler) as httpd:
-                httpd.docs_dir = self.config.output_dir
                 
                 url = f"http://localhost:{self.config.serve_port}"
                 print(f"📡 Serving documentation at: {url}")
