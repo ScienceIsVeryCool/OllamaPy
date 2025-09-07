@@ -201,7 +201,7 @@ class VribeTestRunner:
                 "median": overall_timing.median,
                 "min": overall_timing.min,
                 "max": overall_timing.max,
-                "std": overall_timing.std,
+                "std": overall_timing.std_dev,
             },
             "detailed_results": detailed_results,
             "timestamp": datetime.now().isoformat()

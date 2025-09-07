@@ -8,9 +8,60 @@ Vibe tests evaluate the consistency and reliability of AI models by testing thei
 
 The results below are automatically generated from the most recent vibe test run. They show performance metrics across different models and test scenarios.
 
-<div style="width: 100%; height: 1200px; border: none; border-radius: 8px; overflow: hidden;">
-    <iframe src="../vibe_test_results.html" width="100%" height="100%" style="border: none;"></iframe>
+<div id="vibe-test-container" style="width: 100%; height: 1200px; border: none; border-radius: 8px; overflow: hidden;">
+    <iframe 
+        id="vibe-test-iframe"
+        src="../vibe_test_results.html" 
+        width="100%" 
+        height="100%" 
+        style="border: none;"
+        onload="handleIframeLoad()"
+        onerror="showFallback()"
+    ></iframe>
 </div>
+
+<div id="vibe-test-fallback" style="display: none; padding: 20px; border: 2px dashed #ccc; border-radius: 8px; text-align: center; background: #f9f9f9;">
+    <h3>🔬 Vibe Test Results</h3>
+    <p>Vibe test results are generated during the build process and will be available here once generated.</p>
+    <div style="margin: 20px 0;">
+        <strong>To view results:</strong>
+        <ul style="list-style: none; padding: 0; margin: 10px 0;">
+            <li>🏠 <strong>Locally:</strong> Run <code>ollamapy --unified-docs</code> to generate and serve</li>
+            <li>🌐 <strong>Online:</strong> Visit the <a href="https://scienceisverycool.github.io/OllamaPy/" target="_blank">live documentation</a></li>
+        </ul>
+    </div>
+    <p><em>Fresh vibe tests are automatically generated with each deployment to ensure accuracy.</em></p>
+</div>
+
+<script>
+function handleIframeLoad() {
+    const iframe = document.getElementById('vibe-test-iframe');
+    const fallback = document.getElementById('vibe-test-fallback');
+    
+    // Check if iframe actually loaded content
+    try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        if (iframeDoc.body.children.length === 0 || 
+            iframeDoc.body.innerHTML.trim() === '') {
+            showFallback();
+        }
+    } catch (e) {
+        // Cross-origin restriction or other error - try to detect by checking if src exists
+        fetch(iframe.src).then(response => {
+            if (!response.ok) {
+                showFallback();
+            }
+        }).catch(() => {
+            showFallback();
+        });
+    }
+}
+
+function showFallback() {
+    document.getElementById('vibe-test-container').style.display = 'none';
+    document.getElementById('vibe-test-fallback').style.display = 'block';
+}
+</script>
 
 ### Understanding the Metrics
 

@@ -44,3 +44,58 @@ env/
 skill_docs/*
 skill_docs_test/*
 src/ollamapy/skills_data/
+
+
+
+# Build outputs - generated locally
+site/
+build/
+dist/
+*.egg-info/
+__pycache__/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local test outputs
+test_results/
+*.log
+
+# MkDocs build directory
+site/
+
+# Generated documentation files (should not be committed)
+docs/*.html
+docs/*.json
+docs/coverage/
+!docs/index.md
+!docs/installation.md
+!docs/usage.md
+!docs/features/
+!docs/skill-editor.md
+!docs/mkdocs.yml
+
+# Vibe test generated files
+vibe_test_report*
+.trash/
+
+# Skill showcase generated files
+docs/*Showcase.html
+docs/*Reader.html
+docs/calculate.html
+docs/getTime.html
+docs/getWeather.html
+docs/fear.html
+docs/square_root.html
+docs/customPythonShell.html
