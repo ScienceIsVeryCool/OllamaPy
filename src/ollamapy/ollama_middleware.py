@@ -272,8 +272,8 @@ class OllamaMiddlewareServer:
         try:
             logger.info(f"🔍 [MIDDLEWARE] Processing request: '{prompt[:100]}{'...' if len(prompt) > 100 else ''}'")
             
-            # Silently check if we should use skills for this prompt
-            skill_results = self._execute_skills_silently(prompt)
+            # Use the full analysis engine (same as CLI) but silently
+            skill_results = self._execute_skills_with_full_analysis(prompt)
             
             if skill_results:
                 logger.info(f"✅ [MIDDLEWARE] Skills executed: {[r['skill'] for r in skill_results]}")
@@ -294,122 +294,92 @@ class OllamaMiddlewareServer:
             # Always fallback to direct Ollama on any error
             return self.client.generate(model, prompt, system, show_context=False)
     
-    def _execute_skills_silently(self, prompt: str) -> list:
-        """Execute applicable skills silently and return results."""
+    def _execute_skills_with_full_analysis(self, prompt: str) -> list:
+        """Use the full analysis engine (same as CLI) to execute skills silently."""
         try:
+            logger.info(f"🔎 [SKILLS] Using full AI analysis engine (same as CLI)...")
+            
+            # Use the same analysis engine as the CLI
+            selected_actions = self.analysis_engine.select_all_applicable_actions(prompt)
+            
             skill_results = []
-            prompt_lower = prompt.lower()
             
-            logger.info(f"🔎 [SKILLS] Analyzing prompt for skill triggers...")
-            
-            # Check for calculation requests
-            calc_triggers = ['calculate', 'compute', '+', '-', '*', '/', 'math', 'square root', '=', 'what is']
-            if any(word in prompt_lower for word in calc_triggers):
-                logger.info(f"🧮 [SKILLS] Math keywords detected: {[w for w in calc_triggers if w in prompt_lower]}")
+            if selected_actions:
+                logger.info(f"🎯 [SKILLS] AI selected {len(selected_actions)} actions: {[a[0] for a in selected_actions]}")
                 
-                if 'calculate' in SKILL_REGISTRY.skills:
-                    try:
-                        logger.info(f"⚡ [SKILLS] Executing 'calculate' skill...")
-                        # Clear logs first
-                        SKILL_REGISTRY.execution_logs.clear()
-                        SKILL_REGISTRY.execute_skill('calculate', {'expression': prompt})
-                        logs = SKILL_REGISTRY.get_logs()
-                        
-                        logger.info(f"📋 [SKILLS] Calculate skill logs: {logs}")
-                        
-                        if logs:
-                            result = '\n'.join([log for log in logs if '[calculate]' in log])
-                            if result:
-                                clean_result = result.replace('[calculate]', '').strip()
-                                skill_results.append({
-                                    'skill': 'calculate',
-                                    'result': clean_result
-                                })
-                                logger.info(f"✅ [SKILLS] Calculate result: '{clean_result}'")
+                for action_name, action_params in selected_actions:
+                    logger.info(f"⚡ [SKILLS] Executing '{action_name}' with params: {action_params}")
+                    
+                    if action_name in SKILL_REGISTRY.skills:
+                        try:
+                            # Clear logs and execute skill
+                            SKILL_REGISTRY.execution_logs.clear()
+                            SKILL_REGISTRY.execute_skill(action_name, action_params)
+                            logs = SKILL_REGISTRY.get_logs()
+                            
+                            logger.info(f"📋 [SKILLS] {action_name} logs ({len(logs)} entries): {logs[:3]}{'...' if len(logs) > 3 else ''}")
+                            
+                            if logs:
+                                # Get all the skill output
+                                all_output = '\n'.join(logs)
+                                # Clean up common log prefixes
+                                clean_result = self._clean_skill_output(all_output, action_name)
+                                
+                                if clean_result.strip():
+                                    skill_results.append({
+                                        'skill': action_name,
+                                        'result': clean_result
+                                    })
+                                    logger.info(f"✅ [SKILLS] {action_name} result captured ({len(clean_result)} chars)")
+                                else:
+                                    logger.warning(f"⚠️ [SKILLS] {action_name} produced no usable output")
                             else:
-                                logger.warning(f"⚠️ [SKILLS] Calculate skill ran but no result found")
-                        else:
-                            logger.warning(f"⚠️ [SKILLS] Calculate skill ran but no logs generated")
-                    except Exception as e:
-                        logger.error(f"❌ [SKILLS] Calculate skill failed: {e}")
-                else:
-                    logger.warning(f"⚠️ [SKILLS] Calculate skill not found in registry")
-            
-            # Check for weather requests
-            weather_triggers = ['weather', 'temperature', 'forecast', 'climate']
-            if any(word in prompt_lower for word in weather_triggers):
-                logger.info(f"🌤️ [SKILLS] Weather keywords detected: {[w for w in weather_triggers if w in prompt_lower]}")
-                
-                if 'getWeather' in SKILL_REGISTRY.skills:
-                    try:
-                        logger.info(f"⚡ [SKILLS] Executing 'getWeather' skill...")
-                        SKILL_REGISTRY.execution_logs.clear()
-                        SKILL_REGISTRY.execute_skill('getWeather', {})
-                        logs = SKILL_REGISTRY.get_logs()
-                        
-                        logger.info(f"📋 [SKILLS] Weather skill logs: {logs}")
-                        
-                        if logs:
-                            # Look for weather-related log entries
-                            weather_logs = [log for log in logs if any(tag in log for tag in ['[Weather]', '[getWeather]', '[Weather Check]'])]
-                            if weather_logs:
-                                # Clean up the weather data
-                                clean_result = '\n'.join(weather_logs)
-                                clean_result = clean_result.replace('[Weather Check]', '').replace('[Weather]', '').replace('[getWeather]', '').strip()
-                                skill_results.append({
-                                    'skill': 'weather',
-                                    'result': clean_result
-                                })
-                                logger.info(f"✅ [SKILLS] Weather result captured ({len(weather_logs)} entries)")
-                    except Exception as e:
-                        logger.error(f"❌ [SKILLS] Weather skill failed: {e}")
-                else:
-                    logger.warning(f"⚠️ [SKILLS] getWeather skill not found in registry")
-            
-            # Check for time requests
-            time_triggers = ['time', 'date', 'today', 'now', 'current']
-            if any(word in prompt_lower for word in time_triggers):
-                logger.info(f"🕐 [SKILLS] Time keywords detected: {[w for w in time_triggers if w in prompt_lower]}")
-                
-                if 'getTime' in SKILL_REGISTRY.skills:
-                    try:
-                        logger.info(f"⚡ [SKILLS] Executing 'getTime' skill...")
-                        SKILL_REGISTRY.execution_logs.clear()
-                        SKILL_REGISTRY.execute_skill('getTime', {})
-                        logs = SKILL_REGISTRY.get_logs()
-                        
-                        logger.info(f"📋 [SKILLS] Time skill logs: {logs}")
-                        
-                        if logs:
-                            # Look for time-related log entries  
-                            time_logs = [log for log in logs if any(tag in log for tag in ['[Time]', '[getTime]', '[Current Time]'])]
-                            if time_logs:
-                                # Clean up the time data
-                                clean_result = '\n'.join(time_logs)
-                                clean_result = clean_result.replace('[Time]', '').replace('[getTime]', '').replace('[Current Time]', '').strip()
-                                skill_results.append({
-                                    'skill': 'time',
-                                    'result': clean_result
-                                })
-                                logger.info(f"✅ [SKILLS] Time result captured ({len(time_logs)} entries)")
-                    except Exception as e:
-                        logger.error(f"❌ [SKILLS] Time skill failed: {e}")
-                else:
-                    logger.warning(f"⚠️ [SKILLS] getTime skill not found in registry")
-            
-            if not skill_results:
-                logger.info(f"ℹ️ [SKILLS] No skill triggers found in prompt")
+                                logger.warning(f"⚠️ [SKILLS] {action_name} produced no logs")
+                                
+                        except Exception as e:
+                            logger.error(f"❌ [SKILLS] {action_name} execution failed: {e}")
+                    else:
+                        logger.warning(f"⚠️ [SKILLS] {action_name} not found in skill registry")
+            else:
+                logger.info(f"ℹ️ [SKILLS] AI analysis found no applicable actions")
             
             if skill_results:
-                logger.info(f"✅ [SKILLS] Total skills executed: {len(skill_results)}")
+                logger.info(f"✅ [SKILLS] Total skills executed successfully: {len(skill_results)}")
             else:
                 logger.info(f"⚪ [SKILLS] No skills executed")
                 
             return skill_results
             
         except Exception as e:
-            logger.error(f"❌ [SKILLS] Silent skill execution failed: {e}")
+            logger.error(f"❌ [SKILLS] Full analysis execution failed: {e}")
             return []
+    
+    def _clean_skill_output(self, output: str, skill_name: str) -> str:
+        """Clean up skill output by removing common log prefixes."""
+        import re
+        
+        # Common log prefixes to remove
+        prefixes_to_remove = [
+            f'[{skill_name}]',
+            '[calculate]', '[Weather]', '[Weather Check]', '[Time]', '[getTime]', 
+            '[Current Time]', '[System]', '[Error]', '[Python]', '[File]'
+        ]
+        
+        lines = output.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            cleaned_line = line
+            # Remove any of the prefixes
+            for prefix in prefixes_to_remove:
+                if prefix in cleaned_line:
+                    cleaned_line = cleaned_line.replace(prefix, '').strip()
+            
+            # Only keep non-empty lines
+            if cleaned_line.strip():
+                cleaned_lines.append(cleaned_line)
+        
+        return '\n'.join(cleaned_lines)
     
     def _build_enhanced_prompt(self, original_prompt: str, skill_results: list) -> str:
         """Build enhanced prompt with skill results embedded as context."""
