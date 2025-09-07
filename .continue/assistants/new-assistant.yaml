@@ -1,0 +1,27 @@
+# For Continue, make this your config.yaml inside of /home/.continue/
+name: OllamaPy Enhanced Assistant
+version: 1.0.0
+schema: v1
+
+# Models configuration - pointing to your middleware
+models:
+  - name: gemma-with-skills
+    provider: ollama
+    model: gemma3:4b  # Or whatever model you're using
+    apiBase: http://localhost:11435  # Your middleware port (not Ollama's 11434)
+    
+  # You can add multiple models if your middleware supports them
+  - name: llama-with-skills
+    provider: ollama
+    model: llama3.2:latest
+    apiBase: http://localhost:11435
+
+# Context providers remain the same
+context:
+  - provider: code
+  - provider: docs
+  - provider: diff
+  - provider: terminal
+  - provider: problems
+  - provider: folder
+  - provider: codebase
