@@ -90,8 +90,14 @@ class OllamaMiddlewareServer:
                     # Direct passthrough to Ollama
                     response_text = self.client.generate(model, prompt, system, show_context=False)
                 
-                # Clean response to ensure no tool-call patterns leak through
-                response_text = self._clean_response_for_continue(response_text)
+                # Just return the AI's natural response - no cleaning needed
+                # The AI should generate normal conversational responses using the skill-enhanced context
+                logger.info(f"📤 [MIDDLEWARE] Returning raw AI response ({len(response_text)} chars)")
+                
+                # Only safety check: ensure we have some response
+                if not response_text or len(response_text.strip()) == 0:
+                    logger.error(f"🚨 [MIDDLEWARE] AI generated empty response! Providing fallback.")
+                    response_text = "I apologize, but I couldn't generate a response to your request. Please try asking your question differently."
                 
                 if stream:
                     # Return streaming response
@@ -145,8 +151,14 @@ class OllamaMiddlewareServer:
                     # Direct passthrough to Ollama
                     response_text = self.client.generate(model, prompt, system, show_context=False)
                 
-                # Clean response to ensure no tool-call patterns leak through
-                response_text = self._clean_response_for_continue(response_text)
+                # Just return the AI's natural response - no cleaning needed
+                # The AI should generate normal conversational responses using the skill-enhanced context
+                logger.info(f"📤 [MIDDLEWARE] Returning raw AI response ({len(response_text)} chars)")
+                
+                # Only safety check: ensure we have some response
+                if not response_text or len(response_text.strip()) == 0:
+                    logger.error(f"🚨 [MIDDLEWARE] AI generated empty response! Providing fallback.")
+                    response_text = "I apologize, but I couldn't generate a response to your request. Please try asking your question differently."
                 
                 if stream:
                     # Return streaming response
@@ -417,40 +429,59 @@ Please provide a helpful response using the context above where relevant."""
         
         logger.info(f"🧹 [CLEAN] Original response length: {len(response_text)} chars")
         
-        # Remove common patterns that Continue might interpret as tool calls
-        patterns_to_remove = [
-            r'🔍.*?\n',           # Analysis indicators
-            r'✓.*?\n',            # Success indicators  
-            r'✗.*?\n',            # Failure indicators
-            r'🎯.*?\n',           # Target indicators
-            r'\[.*?\].*?\n',      # Bracketed action indicators
-            r'Context:.*?\n',     # Context usage indicators
-            r'Analyzing.*?\n',    # Analysis mentions
-            r'Selected.*action.*?\n', # Action selection mentions
-            r'Extracting.*parameter.*?\n', # Parameter extraction
-            r'Executing.*?\n',    # Execution mentions
-            r'<think>.*?</think>', # Thinking blocks
-            r'```.*?```',         # Code blocks that might look like tools
-        ]
+        # Be MUCH more conservative - only remove very specific tool indicators
+        # DO NOT remove legitimate code content, variable names, or function calls
+        
+        # For now, let's disable aggressive cleaning since it's removing legitimate content
+        # The AI response should be clean enough if skills are executed properly
         
         cleaned = response_text
-        patterns_found = []
         
-        for pattern in patterns_to_remove:
-            matches = re.findall(pattern, cleaned, flags=re.DOTALL | re.IGNORECASE)
-            if matches:
-                patterns_found.extend(matches)
-            cleaned = re.sub(pattern, '', cleaned, flags=re.DOTALL | re.IGNORECASE)
+        # Only remove obvious tool-call markers that would never appear in legitimate content
+        if '<function_calls>' in cleaned:
+            cleaned = re.sub(r'<function_calls>.*?</function_calls>', '', cleaned, flags=re.DOTALL)
+            logger.info(f"🧹 [CLEAN] Removed function_calls tags")
         
-        # Remove multiple newlines
-        cleaned = re.sub(r'\n\n+', '\n\n', cleaned)
+        if '<tool_use>' in cleaned:
+            cleaned = re.sub(r'<tool_use>.*?</tool_use>', '', cleaned, flags=re.DOTALL)
+            logger.info(f"🧹 [CLEAN] Removed tool_use tags")
         
-        if patterns_found:
-            logger.info(f"🧹 [CLEAN] Removed patterns: {patterns_found}")
+        # Remove any lines that start with obvious tool indicators (but be very specific)
+        lines = cleaned.split('\n')
+        filtered_lines = []
+        removed_count = 0
         
-        logger.info(f"✅ [CLEAN] Cleaned response length: {len(cleaned.strip())} chars")
+        for line in lines:
+            # Only remove lines that start with very specific patterns
+            if (line.strip().startswith('🔍 Analyzing user input') or 
+                line.strip().startswith('✓ Selected!') or
+                line.strip().startswith('🎯 Selected') or
+                line.strip().startswith('⚡ [SKILLS]') or
+                line.strip().startswith('📋 [SKILLS]')):
+                removed_count += 1
+                continue
+            filtered_lines.append(line)
         
-        return cleaned.strip()
+        cleaned = '\n'.join(filtered_lines)
+        
+        if removed_count > 0:
+            logger.info(f"🧹 [CLEAN] Removed {removed_count} tool indicator lines")
+        
+        # Clean up excessive whitespace
+        cleaned = re.sub(r'\n\n\n+', '\n\n', cleaned)
+        
+        final_response = cleaned.strip()
+        
+        # Safety check: never return empty responses
+        if not final_response or len(final_response) == 0:
+            logger.error(f"🚨 [CLEAN] Response was completely empty after cleaning! Original was {len(response_text)} chars")
+            # Return a helpful error message instead of empty response
+            final_response = "I apologize, but I encountered an issue processing your request. The response was filtered out during processing. Please try rephrasing your question or contact support if this continues."
+            logger.info(f"🔧 [CLEAN] Using fallback error message ({len(final_response)} chars)")
+        
+        logger.info(f"✅ [CLEAN] Final response length: {len(final_response)} chars")
+        
+        return final_response
     
     def _messages_to_prompt(self, messages: list) -> str:
         """Convert chat messages to a single prompt."""
