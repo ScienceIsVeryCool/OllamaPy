@@ -35,7 +35,7 @@
       "execution_target": "GPU", 
       "timeout": 20,
       "context_window": 128000,
-      "enabled": true
+      "enabled": false
     },
     {
       "name": "codellama:7b",

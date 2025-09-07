@@ -115,10 +115,13 @@ def run_skill_editor(port: int = 5000, skills_directory: Optional[str] = None):
     return True
 
 
-def run_unified_documentation():
+def run_unified_documentation(use_cached_vibe_tests=True):
     """
     Generate complete unified documentation including vibe tests.
     This creates the exact same experience locally as on GitHub Pages.
+    
+    Args:
+        use_cached_vibe_tests: If True, uses existing vibe test results instead of running fresh tests
     """
     import subprocess
     from pathlib import Path
@@ -130,18 +133,32 @@ def run_unified_documentation():
     docs_dir = Path("docs")
     docs_dir.mkdir(exist_ok=True)
     
-    print("📊 Step 1/4: Running vibe tests...")
-    # Run vibe tests and generate both JSON and HTML
-    try:
-        from .multi_model_vibe_tests import run_multi_model_tests
-        results = run_multi_model_tests(
-            iterations=5,
-            output_path="docs/vibe_test_results.json"
-        )
-        print("✅ Vibe tests complete")
-    except Exception as e:
-        print(f"⚠️ Vibe tests failed: {e}")
-        print("   Continuing with documentation generation...")
+    print("📊 Step 1/4: Vibe tests...")
+    
+    if use_cached_vibe_tests and Path("docs/vibe_test_results.json").exists():
+        print("📋 Using cached vibe test results...")
+        try:
+            # Still generate HTML from existing JSON
+            from .multi_model_vibe_tests import generate_vibe_test_html
+            generate_vibe_test_html(
+                "docs/vibe_test_results.json", 
+                "docs/vibe_test_results.html"
+            )
+            print("✅ Vibe test HTML generated from cache")
+        except Exception as e:
+            print(f"⚠️ Could not generate HTML from cached results: {e}")
+    else:
+        print("🔄 Running fresh vibe tests...")
+        try:
+            from .multi_model_vibe_tests import run_multi_model_tests
+            results = run_multi_model_tests(
+                iterations=5,
+                output_path="docs/vibe_test_results.json"
+            )
+            print("✅ Fresh vibe tests complete")
+        except Exception as e:
+            print(f"⚠️ Vibe tests failed: {e}")
+            print("   Continuing with documentation generation...")
     
     print("\n📚 Step 2/4: Generating skills documentation...")
     # Generate skills showcase if needed
@@ -169,11 +186,70 @@ def run_unified_documentation():
         print("❌ MkDocs not installed. Install with: pip install mkdocs mkdocs-material")
         return False
     
-    print("\n🌐 Step 4/4: Serving documentation locally...")
+    print("\n🛠️  Step 4/5: Starting skill editor...")
     print("=" * 60)
-    print("📍 Documentation available at: http://localhost:8000")
+    
+    # Check if skill editor dependencies are available and start it
+    skill_editor_process = None
+    import socket
+    
+    # Check if skill editor port is already in use
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        result = sock.connect_ex(('localhost', 5000))
+        if result == 0:
+            print("📍 Skill editor already running at: http://localhost:5000")
+        else:
+            # Try to start skill editor in background subprocess
+            try:
+                import sys
+                import time
+                
+                print("📝 Starting skill editor on port 5000...")
+                
+                # Start skill editor in background subprocess
+                print("   Starting subprocess...")
+                skill_editor_process = subprocess.Popen([
+                    "ollamapy", "--skill-editor", "--port", "5000"
+                ])
+                
+                time.sleep(3)  # Give it a moment to start
+                
+                # Check if it started successfully
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    result = sock.connect_ex(('localhost', 5000))
+                    if result == 0:
+                        print("✅ Skill editor started successfully at: http://localhost:5000")
+                    else:
+                        print("⚠️  Skill editor may not have started properly")
+                        # Try to terminate the process if it failed
+                        try:
+                            skill_editor_process.terminate()
+                        except:
+                            pass
+                        
+            except Exception as e:
+                print(f"⚠️  Could not start skill editor: {e}")
+    
+    print("\n🌐 Step 5/5: Serving documentation locally...")
+    print("=" * 60)
+    
+    # Check if port 8000 is already in use
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        result = sock.connect_ex(('localhost', 8000))
+        if result == 0:
+            print("📍 Documentation already available at: http://localhost:8000")
+            print("📍 This is identical to: https://scienceisverycool.github.io/OllamaPy/")
+            print("📍 Skill editor available at: http://localhost:5000")
+            print("⚠️  MkDocs server is already running on port 8000")
+            print("💡 Open http://localhost:8000 in your browser to view the updated docs")
+            print("💡 If you need to restart the server, kill existing processes first")
+            print("=" * 60)
+            return True
+    
+    print("📍 Documentation will be available at: http://localhost:8000")
+    print("📍 Skill editor will be available at: http://localhost:5000")
     print("📍 This is identical to: https://scienceisverycool.github.io/OllamaPy/")
-    print("Press Ctrl+C to stop the server")
+    print("Press Ctrl+C to stop both servers")
     print("=" * 60)
     
     # Serve the site
@@ -184,8 +260,14 @@ def run_unified_documentation():
         print("\n👋 Documentation server stopped")
         return True
     except Exception as e:
-        print(f"❌ Error serving documentation: {e}")
-        return False
+        if "Address already in use" in str(e):
+            print("⚠️  Port 8000 is already in use")
+            print("📍 Documentation likely already available at: http://localhost:8000")
+            print("💡 Kill existing processes if you need to restart the server")
+            return True
+        else:
+            print(f"❌ Error serving documentation: {e}")
+            return False
 
 
 def generate_documentation(
@@ -258,6 +340,8 @@ Examples:
   ollamapy --generate-docs --serve  # Generate and serve locally
   ollamapy --generate-docs --vibe-models "gemma2:2b,llama3.2:3b" # Test specific models
   ollamapy --generate-docs --use-cached-vibe-tests # Use cached results
+  ollamapy --unified-docs           # Generate and serve complete docs (uses cached vibe tests)
+  ollamapy --unified-docs --fresh-vibe-tests # Generate docs with fresh vibe tests
         """,
     )
 
@@ -395,7 +479,13 @@ Examples:
     parser.add_argument(
         "--unified-docs",
         action="store_true",
-        help="Generate and serve complete unified documentation (vibe tests + all docs)"
+        help="Generate and serve complete unified documentation (uses cached vibe tests by default)"
+    )
+    
+    parser.add_argument(
+        "--fresh-vibe-tests",
+        action="store_true",
+        help="Force fresh vibe tests (only affects --unified-docs, otherwise tests are cached)"
     )
 
     args = parser.parse_args()
@@ -470,7 +560,9 @@ Examples:
         )
         sys.exit(0 if success else 1)
     elif args.unified_docs:
-        success = run_unified_documentation()
+        # Default to cached vibe tests unless --fresh-vibe-tests is specified
+        use_cached = not args.fresh_vibe_tests
+        success = run_unified_documentation(use_cached_vibe_tests=use_cached)
         sys.exit(0 if success else 1)
     else:
         chat(

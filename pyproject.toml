@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ollamapy"
-version = "0.8.0"
+version = "0.8.1"
 description = "A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities, dynamic skill generation, and interactive skill editing"
 authors = [{name = "The Lazy Artist", email = "noreply@github.com"}]
 requires-python = ">=3.8"

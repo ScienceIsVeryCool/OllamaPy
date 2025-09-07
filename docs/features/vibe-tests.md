@@ -11,7 +11,7 @@ The results below are automatically generated from the most recent vibe test run
 <div id="vibe-test-container" style="width: 100%; height: 1200px; border: none; border-radius: 8px; overflow: hidden;">
     <iframe 
         id="vibe-test-iframe"
-        src="../vibe_test_results.html" 
+        src="/OllamaPy/vibe_test_results.html" 
         width="100%" 
         height="100%" 
         style="border: none;"
