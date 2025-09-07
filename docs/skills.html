@@ -311,7 +311,7 @@
     
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-number">16</div>
+            <div class="stat-number">8</div>
             <div class="stat-label">Total Skills</div>
         </div>
         <div class="stat-card">
@@ -319,7 +319,7 @@
             <div class="stat-label">Verified Skills</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">6</div>
+            <div class="stat-number">5</div>
             <div class="stat-label">Skill Roles</div>
         </div>
         <div class="stat-card">
@@ -329,7 +329,7 @@
     </div>
     
     <div class="navigation">
-        <div class="nav-links"><a href="#advanced" class="nav-link">Advanced (1)</a><a href="#emotional_response" class="nav-link">Emotional_Response (1)</a><a href="#file_operations" class="nav-link">File_Operations (2)</a><a href="#general" class="nav-link">General (8)</a><a href="#information" class="nav-link">Information (2)</a><a href="#mathematics" class="nav-link">Mathematics (2)</a>
+        <div class="nav-links"><a href="#advanced" class="nav-link">Advanced (1)</a><a href="#emotional_response" class="nav-link">Emotional_Response (1)</a><a href="#file_operations" class="nav-link">File_Operations (2)</a><a href="#information" class="nav-link">Information (2)</a><a href="#mathematics" class="nav-link">Mathematics (2)</a>
             <a href="coverage.html" class="nav-link">📊 Test Coverage</a>
             <a href="https://github.com/ScienceIsVeryCool/OllamaPy" class="nav-link">📦 GitHub Repo</a>
         </div>
@@ -491,303 +491,6 @@
                         🔍 View Implementation
                     </summary>
                     <div class="function-code"><span class="line-number">  1</span> <br><span class="line-number">  2</span> <span class="def-keyword">def execute(filePath: str):</span><br><span class="line-number">  3</span>     log(f"[fileReader] Starting File Reading process.")<br><span class="line-number">  4</span>     try:<br><span class="line-number">  5</span>         with open(filePath, 'r') as f:<br><span class="line-number">  6</span>             content = f.read()<br><span class="line-number">  7</span>             log(f"[fileReader] here is the filePath: {filePath} contents:\n\n{content}")<br><span class="line-number">  8</span>     except Exception as e:<br><span class="line-number">  9</span>         log(f"[fileReader] There was an exception thrown when trying to read filePath: {filePath}. Error: {e}")<br><span class="line-number"> 10</span> </div>
-                </details></div></div></div>
-    <div id="general" class="role-section">
-        <div class="role-header">
-            General Skills (8)
-        </div>
-        <div class="skills-grid">
-            <div class="skill-card">
-                <div class="skill-name">CheckIfTwoStringsAreAnagrams</div>
-                <div class="skill-description">Use when the user wants to quickly determine if two words or phrases are anagrams – essentially, if they can be rearranged to form the same word.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">"Do 'dormitory' and 'dirty room' have the same letters?"</div><div class="vibe-test">"Are 'astronomer' and 'moon starer' anagrams?"</div><div class="vibe-test">"I’m trying to solve a puzzle. Can you see if 'listen' and 'silent' are anagrams?"</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="parameters">
-                    <h4>⚙️ Parameters</h4>
-                    <div class="parameter">
-                        <span class="param-name">input_string_1</span>
-                        <span class="param-type">string (required)</span>
-                        <br><span class="param-desc">The first string to be checked for anagram status.</span>
-                    </div>
-                    <div class="parameter">
-                        <span class="param-name">input_string_2</span>
-                        <span class="param-type">string (required)</span>
-                        <br><span class="param-desc">The second string to be checked for anagram status.</span>
-                    </div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">""Do 'dormitory' and 'dirty room' have the same letters?""</li><li style="margin-bottom: 5px;">""Are 'astronomer' and 'moon starer' anagrams?""</li><li style="margin-bottom: 5px;">""I’m trying to solve a puzzle. Can you see if 'listen' and 'silent' are anagrams?""</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#CheckIfTwoStringsAreAnagrams" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="def-keyword">def execute():</span><br><span class="line-number">  2</span>     """<br><span class="line-number">  3</span>     Checks if two strings are anagrams.<br><span class="line-number">  4</span>     """<br><span class="line-number">  5</span>     try:<br><span class="line-number">  6</span>         string1 = input_string_1.lower().replace(" ", "")<br><span class="line-number">  7</span>         string2 = input_string_2.lower().replace(" ", "")<br><span class="line-number">  8</span> <br><span class="line-number">  9</span>         if len(string1) != len(string2):<br><span class="line-number"> 10</span>             log("Strings have different lengths, not anagrams.")<br><span class="line-number"> 11</span>             return "No, the strings are not anagrams."<br><span class="line-number"> 12</span> <br><span class="line-number"> 13</span>         sorted_string1 = sorted(string1)<br><span class="line-number"> 14</span>         sorted_string2 = sorted(string2)<br><span class="line-number"> 15</span> <br><span class="line-number"> 16</span>         if sorted_string1 == sorted_string2:<br><span class="line-number"> 17</span>             log("Strings are anagrams.")<br><span class="line-number"> 18</span>             return "Yes, the strings are anagrams."<br><span class="line-number"> 19</span>         else:<br><span class="line-number"> 20</span>             log("Strings are not anagrams.")<br><span class="line-number"> 21</span>             return "No, the strings are not anagrams."<br><span class="line-number"> 22</span> <br><span class="line-number"> 23</span>     except Exception as e:<br><span class="line-number"> 24</span>         log(f"An error occurred: {e}")<br><span class="line-number"> 25</span>         return "An error occurred while processing the strings."</div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">ExtractFirstSentence</div>
-                <div class="skill-description">Use when the user needs to quickly grab the opening sentence of a piece of text.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">“What’s the beginning of this article about?”</div><div class="vibe-test">“Can you just give me the intro to this email?”</div><div class="vibe-test">“Pull out the first sentence from that paragraph.”</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">"“What’s the beginning of this article about?”"</li><li style="margin-bottom: 5px;">"“Can you just give me the intro to this email?”"</li><li style="margin-bottom: 5px;">"“Pull out the first sentence from that paragraph.”"</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#ExtractFirstSentence" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="def-keyword">def execute():</span><br><span class="line-number">  2</span>     """<br><span class="line-number">  3</span>     Extracts the first sentence from a given text based on the first period.<br><span class="line-number">  4</span>     """<br><span class="line-number">  5</span>     try:<br><span class="line-number">  6</span>         log("Starting sentence extraction...")<br><span class="line-number">  7</span>         text = log("Input text:")<br><span class="line-number">  8</span>         if not text:<br><span class="line-number">  9</span>             log("No text provided.")<br><span class="line-number"> 10</span>             return ""<br><span class="line-number"> 11</span> <br><span class="line-number"> 12</span>         first_period_index = text.find('.')<br><span class="line-number"> 13</span>         if first_period_index == -1:<br><span class="line-number"> 14</span>             log("No period found in the text.")<br><span class="line-number"> 15</span>             return text<br><span class="line-number"> 16</span> <br><span class="line-number"> 17</span>         first_sentence = text[:first_period_index + 1]<br><span class="line-number"> 18</span>         log("Extracted sentence: " + first_sentence)<br><span class="line-number"> 19</span>         return first_sentence<br><span class="line-number"> 20</span> <br><span class="line-number"> 21</span>     except Exception as e:<br><span class="line-number"> 22</span>         log("An error occurred: " + str(e))<br><span class="line-number"> 23</span>         return ""</div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">GenerateARandomPasswordOfASpecifiedLength</div>
-                <div class="skill-description">Use when the user needs a randomly generated password of a specific length for account security or other applications.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">“I need a random password, make it 8 characters long, please.”</div><div class="vibe-test">“Can you generate a random password for my new account? Let’s go with 10 characters.”</div><div class="vibe-test">“Just give me a random password of about 15 characters, nothing too complicated.”</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="parameters">
-                    <h4>⚙️ Parameters</h4>
-                    <div class="parameter">
-                        <span class="param-name">length</span>
-                        <span class="param-type">number (required)</span>
-                        <br><span class="param-desc">The desired length of the password in characters.  A minimum length of 8 is recommended for security.</span>
-                    </div>
-                    <div class="parameter">
-                        <span class="param-name">character_set</span>
-                        <span class="param-type">string (optional)</span>
-                        <br><span class="param-desc">Character set for password generation. Options: 'letters', 'numbers', 'symbols', 'all', or custom string. Default: 'all' (letters + numbers + symbols).</span>
-                    </div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">"“I need a random password, make it 8 characters long, please.”"</li><li style="margin-bottom: 5px;">"“Can you generate a random password for my new account? Let’s go with 10 characters.”"</li><li style="margin-bottom: 5px;">"“Just give me a random password of about 15 characters, nothing too complicated.”"</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#GenerateARandomPasswordOfASpecifiedLength" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="import-keyword">import random</span><br><span class="line-number">  2</span> <span class="import-keyword">import string</span><br><span class="line-number">  3</span> <br><span class="line-number">  4</span> <span class="def-keyword">def execute(length=12):</span><br><span class="line-number">  5</span>     """<br><span class="line-number">  6</span>     Generates a simple random password of a specified length.<br><span class="line-number">  7</span> <br><span class="line-number">  8</span>     Args:<br><span class="line-number">  9</span>         length (int): The desired length of the password. Defaults to 12.<br><span class="line-number"> 10</span> <br><span class="line-number"> 11</span>     Returns:<br><span class="line-number"> 12</span>         str: The generated random password.<br><span class="line-number"> 13</span>     """<br><span class="line-number"> 14</span>     try:<br><span class="line-number"> 15</span>         if not isinstance(length, int) or length &lt;= 0:<br><span class="line-number"> 16</span>             raise ValueError("Password length must be a positive integer.")<br><span class="line-number"> 17</span>         characters = string.ascii_letters + string.digits + string.punctuation<br><span class="line-number"> 18</span>         password = ''.join(random.choice(characters) for i in range(length))<br><span class="line-number"> 19</span>         log(f"Generated password of length {length} with characters: {characters}")<br><span class="line-number"> 20</span>         log(f"Password: {password}")<br><span class="line-number"> 21</span>         return password<br><span class="line-number"> 22</span>     except ValueError as e:<br><span class="line-number"> 23</span>         log(f"Error: {e}")<br><span class="line-number"> 24</span>         return None</div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">GenerateaSimpleHaiku</div>
-                <div class="skill-description">Use when the user wants a short, evocative poem following a 5-7-5 syllable structure – a simple haiku.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">“Could you write a short poem for me?”</div><div class="vibe-test">“I’m feeling creative – give me a haiku.”</div><div class="vibe-test">“Just a quick verse, please.”</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">"“Could you write a short poem for me?”"</li><li style="margin-bottom: 5px;">"“I’m feeling creative – give me a haiku.”"</li><li style="margin-bottom: 5px;">"“Just a quick verse, please.”"</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#GenerateaSimpleHaiku" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="import-keyword">import random</span><br><span class="line-number">  2</span> <br><span class="line-number">  3</span> <span class="def-keyword">def execute():</span><br><span class="line-number">  4</span>     """<br><span class="line-number">  5</span>     Generates a simple haiku following a 5-7-5 syllable structure.<br><span class="line-number">  6</span>     """<br><span class="line-number">  7</span>     try:<br><span class="line-number">  8</span> <span class="comment">        # Word lists for each syllable count (simplified for demonstration)</span><br><span class="line-number">  9</span>         syllable_5_words = ["Winter's grace", "Silent snow falls", "Empty blue sky", "Darkness descends", "Gentle breeze sighs"]<br><span class="line-number"> 10</span>         syllable_7_words = ["Snowflakes dance upon the breeze", "Whispers carried on the air", "Golden sunlight, warm and bright", "Shadows lengthen, softly deep", "Lost in contemplation's dream"]<br><span class="line-number"> 11</span>         syllable_5_words_alt = ["Moonlight shining down", "Stars are twinkling bright", "Rivers flowing free", "Nature’s sweet delight", "Peaceful harmony"]<br><span class="line-number"> 12</span>         <br><span class="line-number"> 13</span> <span class="comment">        # Randomly select words</span><br><span class="line-number"> 14</span>         line1 = random.choice(syllable_5_words)<br><span class="line-number"> 15</span>         line2 = random.choice(syllable_7_words)<br><span class="line-number"> 16</span>         line3 = random.choice(syllable_5_words)<br><span class="line-number"> 17</span> <br><span class="line-number"> 18</span> <span class="comment">        # Construct the haiku</span><br><span class="line-number"> 19</span>         haiku = f"{line1}\n{line2}\n{line3}"<br><span class="line-number"> 20</span> <br><span class="line-number"> 21</span>         log(f"Generated haiku: {haiku}")<br><span class="line-number"> 22</span>         return haiku<br><span class="line-number"> 23</span> <br><span class="line-number"> 24</span>     except Exception as e:<br><span class="line-number"> 25</span>         log(f"Error generating haiku: {e}")<br><span class="line-number"> 26</span>         return "Could not generate haiku at this time."</div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">Generatesimple</div>
-                <div class="skill-description">Use when the user wants a short, rhyming poem consisting of two lines.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">“Could you write a little rhyme for me?”</div><div class="vibe-test">“I need a couple of lines that rhyme, please.”</div><div class="vibe-test">“Give me a short poem, rhyming!”</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">"“Could you write a little rhyme for me?”"</li><li style="margin-bottom: 5px;">"“I need a couple of lines that rhyme, please.”"</li><li style="margin-bottom: 5px;">"“Give me a short poem, rhyming!”"</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#Generatesimple" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="import-keyword">import re</span><br><span class="line-number">  2</span> <span class="import-keyword">import logging</span><br><span class="line-number">  3</span> <br><span class="line-number">  4</span> logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')<br><span class="line-number">  5</span> <br><span class="line-number">  6</span> <span class="def-keyword">def execute():</span><br><span class="line-number">  7</span>     """<br><span class="line-number">  8</span>     Generates a simple rhyming couplet.<br><span class="line-number">  9</span>     """<br><span class="line-number"> 10</span>     try:<br><span class="line-number"> 11</span> <span class="comment">        # Generate a simple rhyming couplet.  This is a placeholder for a more sophisticated rhyme generation logic.</span><br><span class="line-number"> 12</span>         line1 = "The stars above, a silent love,"<br><span class="line-number"> 13</span>         line2 = "Sent from the heavens, from up above."<br><span class="line-number"> 14</span>         <br><span class="line-number"> 15</span>         logging.info("Generated rhyming couplet: {}".format(line1 + "\n" + line2))<br><span class="line-number"> 16</span>         return line1 + "\n" + line2<br><span class="line-number"> 17</span>     except Exception as e:<br><span class="line-number"> 18</span>         logging.error("An error occurred: {}".format(e))<br><span class="line-number"> 19</span>         return "An error occurred while generating the couplet."</div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">SummarizeLegalContractsIntoPlainLanguage</div>
-                <div class="skill-description">Use this skill to understand complex legal contracts – like rental agreements or terms of service – by receiving a simplified, plain-language summary of key clauses, obligations, and potential risks.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">"Can you explain this rental agreement to me in simple terms? I don’t understand half of what’s written here."</div><div class="vibe-test">"I need help understanding this service contract. Could you break down the key points and what I'm actually agreeing to?"</div><div class="vibe-test">"This loan document is so confusing. Could you summarize it for me in plain language, highlighting what my responsibilities are?"</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="parameters">
-                    <h4>⚙️ Parameters</h4>
-                    <div class="parameter">
-                        <span class="param-name">contract_text</span>
-                        <span class="param-type">string (required)</span>
-                        <br><span class="param-desc">The complete text of the legal contract to be summarized. This can be pasted directly, or the content of a file.</span>
-                    </div>
-                    <div class="parameter">
-                        <span class="param-name">file_upload</span>
-                        <span class="param-type">string (optional)</span>
-                        <br><span class="param-desc">Optional URL or file path containing contract text. Supports PDF, DOCX, TXT files (text extraction required for non-TXT formats).</span>
-                    </div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">""Can you explain this rental agreement to me in simple terms? I don’t understand half of what’s written here.""</li><li style="margin-bottom: 5px;">""I need help understanding this service contract. Could you break down the key points and what I'm actually agreeing to?""</li><li style="margin-bottom: 5px;">""This loan document is so confusing. Could you summarize it for me in plain language, highlighting what my responsibilities are?""</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#SummarizeLegalContractsIntoPlainLanguage" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="import-keyword">import math</span><br><span class="line-number">  2</span> <span class="import-keyword">import json</span><br><span class="line-number">  3</span> <span class="import-keyword">import datetime</span><br><span class="line-number">  4</span> <span class="import-keyword">import os</span><br><span class="line-number">  5</span> <span class="import-keyword">import re</span><br><span class="line-number">  6</span> <span class="import-keyword">import random</span><br><span class="line-number">  7</span> <br><span class="line-number">  8</span> <span class="def-keyword">def execute(contract_text: str = None, file_upload: str = None) -&gt; None:</span><br><span class="line-number">  9</span>     """<br><span class="line-number"> 10</span>     Summarizes a legal contract into plain language.<br><span class="line-number"> 11</span> <br><span class="line-number"> 12</span>     Args:<br><span class="line-number"> 13</span>         contract_text (str): The text of the contract.<br><span class="line-number"> 14</span>         file_upload (str):  Path to a file containing the contract text.  Not implemented in this simple version.<br><span class="line-number"> 15</span> <br><span class="line-number"> 16</span>     Returns:<br><span class="line-number"> 17</span>         None.  Prints results to the log.<br><span class="line-number"> 18</span>     """<br><span class="line-number"> 19</span> <br><span class="line-number"> 20</span>     log("Starting contract summarization...")<br><span class="line-number"> 21</span> <br><span class="line-number"> 22</span>     try:<br><span class="line-number"> 23</span>         if file_upload:<br><span class="line-number"> 24</span>             try:<br><span class="line-number"> 25</span>                 with open(file_upload, 'r') as f:<br><span class="line-number"> 26</span>                     contract_text = f.read()<br><span class="line-number"> 27</span>             except FileNotFoundError:<br><span class="line-number"> 28</span>                 log(f"Error: File not found: {file_upload}")<br><span class="line-number"> 29</span>                 return<br><span class="line-number"> 30</span>             except Exception as e:<br><span class="line-number"> 31</span>                 log(f"Error reading file: {e}")<br><span class="line-number"> 32</span>                 return<br><span class="line-number"> 33</span>         elif not contract_text:<br><span class="line-number"> 34</span>             log("Error: No contract text provided.")<br><span class="line-number"> 35</span>             return<br><span class="line-number"> 36</span> <br><span class="line-number"> 37</span>         log("Contract text received.")<br><span class="line-number"> 38</span> <br><span class="line-number"> 39</span> <span class="comment">        # Simple Jargon Replacement (Illustrative - needs a much more comprehensive dictionary)</span><br><span class="line-number"> 40</span>         jargon_map = {<br><span class="line-number"> 41</span>             "notwithstanding": "even if",<br><span class="line-number"> 42</span>             "hereby": "now",<br><span class="line-number"> 43</span>             "pursuant to": "according to",<br><span class="line-number"> 44</span>             "shall": "will",<br><span class="line-number"> 45</span>             "agreeing to": "accepting",<br><span class="line-number"> 46</span>             "obligations": "responsibilities"<br><span class="line-number"> 47</span>         }<br><span class="line-number"> 48</span> <br><span class="line-number"> 49</span> <span class="comment">        # Replace jargon - Simple version, can be improved</span><br><span class="line-number"> 50</span>         for jargon, plain_lang in jargon_map.items():<br><span class="line-number"> 51</span>             contract_text = contract_text.replace(jargon, plain_lang)<br><span class="line-number"> 52</span> <br><span class="line-number"> 53</span> <span class="comment">        # Example Clause Breakdown - rudimentary</span><br><span class="line-number"> 54</span>         if "governed by the laws of" in contract_text:<br><span class="line-number"> 55</span>             clause_start = contract_text.find("governed by the laws of")<br><span class="line-number"> 56</span>             clause_end = contract_text.find(".", clause_start)<br><span class="line-number"> 57</span>             clause = contract_text[clause_start:clause_end + 1]<br><span class="line-number"> 58</span>             summary = f"This agreement is interpreted under the laws of {contract_text[contract_text.find('laws of ')+len('laws of '):contract_text.find(' ', contract_text.find('laws of ')+len('laws of '))]}."<br><span class="line-number"> 59</span>             log(f"Original clause: {clause}")<br><span class="line-number"> 60</span>             log(f"Plain language summary: {summary}")<br><span class="line-number"> 61</span> <br><span class="line-number"> 62</span> <br><span class="line-number"> 63</span>         log("Generating plain language summary...")<br><span class="line-number"> 64</span> <br><span class="line-number"> 65</span>         summary = f"Disclaimer: This is a simplified summary for informational purposes only and is NOT legal advice.  Consult with a qualified legal professional for specific guidance.\n\n"<br><span class="line-number"> 66</span>         summary += f"Plain Language Summary: {contract_text[:500]}... (truncated)"  #Show first few hundred chars as a demonstration<br><span class="line-number"> 67</span> <br><span class="line-number"> 68</span>         log(f"Summary generated: {summary}")<br><span class="line-number"> 69</span> <br><span class="line-number"> 70</span>         log("Contract summarization complete.")<br><span class="line-number"> 71</span> <br><span class="line-number"> 72</span>     except Exception as e:<br><span class="line-number"> 73</span>         log(f"An error occurred: {e}")</div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">testSkill</div>
-                <div class="skill-description">A simple test skill for validation</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">test me</div><div class="vibe-test">run test</div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">"test me"</li><li style="margin-bottom: 5px;">"run test"</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#testSkill" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="def-keyword">def execute():</span><br><span class="line-number">  2</span> <span class="import-keyword">    from ollamapy.skills import log</span><br><span class="line-number">  3</span>     log('[TestSkill] This is a test skill')<br><span class="line-number">  4</span>     return 'Test completed'<br><span class="line-number">  5</span> </div>
-                </details></div>
-            <div class="skill-card">
-                <div class="skill-name">TranslateSingleWordIntoRandomSynonym</div>
-                <div class="skill-description">Use when the user wants a quick alternative word for a single word, instantly expanding their vocabulary or offering a different phrasing option.</div>
-                
-                <div class="skill-meta">
-                    <span class="meta-badge unverified">
-                        ⚠️ Unverified
-                    </span>
-                    <span class="meta-badge scope-local">
-                        🌍 Local
-                    </span>
-                </div>
-                <div class="vibe-tests">
-                    <h4>📝 Example Use Cases</h4><div class="vibe-test">"What's another word for 'tired'?"</div><div class="vibe-test">"Can you give me a different word for 'sad'?"</div><div class="vibe-test">"I need a synonym for 'difficult'."</div><div class="vibe-test"><em>... and 2 more examples</em></div></div>
-                <div class="vibe-test-section" style="margin-top: 15px; padding: 15px; background: #f8f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 0.9em;">🧪 Vibe Test Phrases</h4>
-                    <ul style="margin: 0; padding-left: 20px; font-size: 0.85em; color: #666;">
-<li style="margin-bottom: 5px;">""What's another word for 'tired'?""</li><li style="margin-bottom: 5px;">""Can you give me a different word for 'sad'?""</li><li style="margin-bottom: 5px;">""I need a synonym for 'difficult'.""</li><li style="margin-bottom: 5px; color: #888; font-style: italic;">... and 2 more phrases</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        <a href="vibe_tests.html#TranslateSingleWordIntoRandomSynonym" style="color: #667eea; text-decoration: none; font-size: 0.85em; font-weight: 500;">
-                            📊 View Model Performance Results →
-                        </a>
-                    </div>
-                </div>
-
-                <details style="margin-top: 15px;">
-                    <summary style="cursor: pointer; font-weight: 600; color: #495057; margin-bottom: 10px;">
-                        🔍 View Implementation
-                    </summary>
-                    <div class="function-code"><span class="line-number">  1</span> <span class="import-keyword">import json</span><br><span class="line-number">  2</span> <span class="import-keyword">import random</span><br><span class="line-number">  3</span> <br><span class="line-number">  4</span> <span class="def-keyword">def execute():</span><br><span class="line-number">  5</span>     """<br><span class="line-number">  6</span>     Translates a single word into a random synonym from a predefined dictionary.<br><span class="line-number">  7</span>     """<br><span class="line-number">  8</span>     try:<br><span class="line-number">  9</span>         with open("synonym_dictionary.json", "r") as f:<br><span class="line-number"> 10</span>             synonym_data = json.load(f)<br><span class="line-number"> 11</span>             synonyms = list(synonyms.keys())<br><span class="line-number"> 12</span>             if not synonyms:<br><span class="line-number"> 13</span>                 log("Error: Synonym dictionary is empty.")<br><span class="line-number"> 14</span>                 return "No synonyms found."<br><span class="line-number"> 15</span>             random_synonym = random.choice(synonyms)<br><span class="line-number"> 16</span>             log(f"Selected synonym: {random_synonym}")<br><span class="line-number"> 17</span>             log(f"Returning synonym: {random_synonym}")<br><span class="line-number"> 18</span>             return random_synonym<br><span class="line-number"> 19</span>     except FileNotFoundError:<br><span class="line-number"> 20</span>         log("Error: Synonym dictionary file not found.")<br><span class="line-number"> 21</span>         return "Error: Synonym dictionary not found."<br><span class="line-number"> 22</span>     except json.JSONDecodeError:<br><span class="line-number"> 23</span>         log("Error: Invalid JSON format in synonym dictionary.")<br><span class="line-number"> 24</span>         return "Error: Invalid JSON format."<br><span class="line-number"> 25</span>     except Exception as e:<br><span class="line-number"> 26</span>         log(f"An unexpected error occurred: {e}")<br><span class="line-number"> 27</span>         return f"An unexpected error occurred: {e}"</div>
                 </details></div></div></div>
     <div id="information" class="role-section">
         <div class="role-header">
@@ -957,7 +660,7 @@
                 </details></div></div></div>
     <div class="footer">
         <p><strong>OllamaPy Skills Showcase</strong></p>
-        <p>Generated on 2025-08-31 23:10:28 UTC</p>
+        <p>Generated on 2025-09-03 18:47:22 UTC</p>
         <p>This page showcases the current AI skill capabilities available in OllamaPy.</p>
         
         <div class="footer-links">

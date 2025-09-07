@@ -103,7 +103,24 @@ jobs:
       run: |
         source venv/bin/activate
         echo "🚀 Running comprehensive multi-model vibe tests..."
+        
+        # Run the vibe tests (this generates JSON)
         python -m ollamapy.main --multi-model-vibetest -n 1 || echo "⚠️ Some models may have failed tests, but results are saved"
+        
+        # Generate HTML from the JSON results
+        python -c "
+        import json
+        from pathlib import Path
+        from src.ollamapy.multi_model_vibe_tests import generate_vibe_test_html
+        
+        json_path = Path('docs/vibe_test_results.json')
+        if json_path.exists():
+            generate_vibe_test_html(str(json_path), 'docs/vibe_test_results.html')
+            print('✅ Vibe test HTML generated')
+        else:
+            print('⚠️ No vibe test JSON found, skipping HTML generation')
+        "
+        
         echo "✅ Vibe test execution completed - checking results..."
         if [ -f "docs/vibe_test_results.json" ]; then
           echo "✅ Vibe test results file created successfully"
@@ -112,6 +129,12 @@ jobs:
         else
           echo "❌ ERROR: Vibe test results file not found!"
           exit 1
+        fi
+        
+        if [ -f "docs/vibe_test_results.html" ]; then
+          echo "✅ Vibe test HTML visualization created successfully"
+        else
+          echo "⚠️ Vibe test HTML not found, but continuing..."
         fi
     
     - name: Build with MkDocs

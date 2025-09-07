@@ -303,6 +303,8 @@ class MultiModelVibeTestRunner:
                 "generated_at": datetime.now().isoformat(),
                 "config_file": str(self.config_path),
                 "total_models_tested": len(self.all_results),
+                "total_tests_run": sum(r["summary"]["total_tests"] for r in self.all_results.values()),
+                "total_duration": sum(r["total_runtime"] for r in self.all_results.values()),
                 "test_config": self.config["test_config"],
             },
             "models": [],
@@ -339,6 +341,7 @@ class MultiModelVibeTestRunner:
                 "display_name": results["model_config"]["display_name"],
                 "description": results["model_config"]["description"],
                 "overall_success": results["success"],
+                "total_runtime": results["total_runtime"],
                 "summary": results["summary"],
                 "skills": processed_skills,
                 "timestamp": results["timestamp"],
@@ -392,6 +395,295 @@ class MultiModelVibeTestRunner:
         }
 
 
+def generate_plotly_charts(results):
+    """Generate Plotly JavaScript for charts."""
+    scripts = []
+    
+    # Extract model data
+    models = []
+    success_rates = []
+    avg_times = []
+    consistency_scores = []
+    
+    for model_data in results.get('models', []):
+        models.append(model_data['display_name'])
+        success_rates.append(model_data['summary']['overall_success_rate'])
+        avg_times.append(model_data['summary']['overall_timing_stats']['mean'])
+        consistency_scores.append(model_data['summary']['overall_timing_stats']['consistency_score'])
+    
+    # Success rate chart
+    scripts.append(f"""
+        var successData = [{{
+            x: {models!r},
+            y: {success_rates},
+            type: 'bar',
+            marker: {{color: '#667eea'}},
+            text: {[f'{sr:.1f}%' for sr in success_rates]!r},
+            textposition: 'outside'
+        }}];
+        var successLayout = {{
+            title: 'Success Rate by Model',
+            xaxis: {{title: 'Model'}},
+            yaxis: {{title: 'Success Rate (%)', range: [0, 105]}},
+            showlegend: false
+        }};
+        Plotly.newPlot('success-rate-chart', successData, successLayout);
+    """)
+    
+    # Timing chart
+    scripts.append(f"""
+        var timingData = [{{
+            x: {models!r},
+            y: {avg_times},
+            type: 'bar',
+            marker: {{color: '#48bb78'}},
+            text: {[f'{at:.2f}s' for at in avg_times]!r},
+            textposition: 'outside'
+        }}];
+        var timingLayout = {{
+            title: 'Average Response Time by Model',
+            xaxis: {{title: 'Model'}},
+            yaxis: {{title: 'Average Time (seconds)'}},
+            showlegend: false
+        }};
+        Plotly.newPlot('timing-chart', timingData, timingLayout);
+    """)
+    
+    # Consistency chart
+    scripts.append(f"""
+        var consistencyData = [{{
+            x: {models!r},
+            y: {consistency_scores},
+            type: 'bar',
+            marker: {{color: '#ed8936'}},
+            text: {[f'{cs:.1f}' for cs in consistency_scores]!r},
+            textposition: 'outside'
+        }}];
+        var consistencyLayout = {{
+            title: 'Consistency Score by Model',
+            xaxis: {{title: 'Model'}},
+            yaxis: {{title: 'Consistency Score (0-100)', range: [0, 105]}},
+            showlegend: false
+        }};
+        Plotly.newPlot('consistency-chart', consistencyData, consistencyLayout);
+    """)
+    
+    return '\n'.join(scripts)
+
+
+def generate_vibe_test_html(json_path=None, output_path="docs/vibe_test_results.html"):
+    """
+    Generate an HTML visualization of vibe test results.
+    
+    Args:
+        json_path: Path to the JSON results file (if None, use most recent)
+        output_path: Where to save the HTML output
+    """
+    from pathlib import Path
+    
+    # Load the JSON results
+    if json_path is None:
+        json_path = "docs/vibe_test_results.json"
+    
+    with open(json_path, 'r') as f:
+        results = json.load(f)
+    
+    # Extract summary data
+    metadata = results.get('metadata', {})
+    models = results.get('models', [])
+    
+    model_count = len(models)
+    total_tests = sum(m['summary']['total_tests'] for m in models)
+    avg_success = sum(m['summary']['overall_success_rate'] for m in models) / len(models) if models else 0
+    total_duration = sum(m.get('total_runtime', 0) for m in models)
+    
+    # Generate timestamp
+    timestamp = datetime.now().strftime('%B %d, %Y at %I:%M %p')
+    
+    # Create the HTML content
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Vibe Test Results</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }}
+        .container {{
+            max-width: 1400px;
+            margin: 0 auto;
+        }}
+        .summary-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+        .summary-card {{
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .summary-card h3 {{
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+        .summary-card .value {{
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }}
+        .summary-card .subtitle {{
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }}
+        .chart-container {{
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }}
+        h1 {{
+            color: #333;
+            margin-bottom: 10px;
+        }}
+        .timestamp {{
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }}
+        .model-details {{
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }}
+        .model-details h2 {{
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }}
+        th, td {{
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }}
+        th {{
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }}
+        .success {{ color: #48bb78; }}
+        .failure {{ color: #f56565; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Vibe Test Results</h1>
+        <div class="timestamp">Generated: {timestamp}</div>
+        
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3>Models Tested</h3>
+                <div class="value">{model_count}</div>
+                <div class="subtitle">AI models evaluated</div>
+            </div>
+            <div class="summary-card">
+                <h3>Total Tests</h3>
+                <div class="value">{total_tests}</div>
+                <div class="subtitle">Vibe tests executed</div>
+            </div>
+            <div class="summary-card">
+                <h3>Average Success</h3>
+                <div class="value">{avg_success:.1f}%</div>
+                <div class="subtitle">Across all models</div>
+            </div>
+            <div class="summary-card">
+                <h3>Test Duration</h3>
+                <div class="value">{total_duration:.1f}s</div>
+                <div class="subtitle">Total execution time</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="success-rate-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="timing-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="consistency-chart"></div>
+        </div>
+        
+        <div class="model-details">
+            <h2>Model Performance Details</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Description</th>
+                        <th>Success Rate</th>
+                        <th>Avg Response Time</th>
+                        <th>Consistency</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>"""
+    
+    # Add model details table rows
+    for model in models:
+        status_class = 'success' if model['overall_success'] else 'failure'
+        status_text = '✅ PASS' if model['overall_success'] else '❌ FAIL'
+        html_content += f"""
+                    <tr>
+                        <td><strong>{model['display_name']}</strong></td>
+                        <td>{model['description']}</td>
+                        <td>{model['summary']['overall_success_rate']:.1f}%</td>
+                        <td>{model['summary']['overall_timing_stats']['mean']:.2f}s</td>
+                        <td>{model['summary']['overall_timing_stats']['consistency_score']:.1f}/100</td>
+                        <td class="{status_class}">{status_text}</td>
+                    </tr>"""
+    
+    html_content += f"""
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        {generate_plotly_charts(results)}
+    </script>
+</body>
+</html>"""
+    
+    # Save the HTML file
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, 'w') as f:
+        f.write(html_content)
+    
+    print(f"✅ Vibe test HTML generated: {output_path}")
+    return output_path
+
+
 def run_multi_model_tests(
     config_path: Optional[str] = None,
     iterations: Optional[int] = None,
@@ -412,5 +704,9 @@ def run_multi_model_tests(
 
     if output_path:
         runner.save_results_json(output_path)
+        
+        # Generate HTML visualization
+        html_path = output_path.replace('.json', '.html')
+        generate_vibe_test_html(output_path, html_path)
 
     return success

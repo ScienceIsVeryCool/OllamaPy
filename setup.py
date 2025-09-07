@@ -41,7 +41,7 @@ extras_require["all"] = sum(extras_require.values(), [])
 
 setup(
     name="ollamapy",
-    version="0.8.0",
+    version="0.8.1",
     author="The Lazy Artist",
     author_email="noreply@github.com",
     description="A powerful terminal-based chat interface for Ollama with AI meta-reasoning capabilities, dynamic skill generation, and interactive skill editing",

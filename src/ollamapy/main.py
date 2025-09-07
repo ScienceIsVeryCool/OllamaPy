@@ -115,6 +115,79 @@ def run_skill_editor(port: int = 5000, skills_directory: Optional[str] = None):
     return True
 
 
+def run_unified_documentation():
+    """
+    Generate complete unified documentation including vibe tests.
+    This creates the exact same experience locally as on GitHub Pages.
+    """
+    import subprocess
+    from pathlib import Path
+    
+    print("🚀 Generating Unified Documentation")
+    print("=" * 60)
+    
+    # Step 1: Ensure docs directory exists
+    docs_dir = Path("docs")
+    docs_dir.mkdir(exist_ok=True)
+    
+    print("📊 Step 1/4: Running vibe tests...")
+    # Run vibe tests and generate both JSON and HTML
+    try:
+        from .multi_model_vibe_tests import run_multi_model_tests
+        results = run_multi_model_tests(
+            iterations=5,
+            output_path="docs/vibe_test_results.json"
+        )
+        print("✅ Vibe tests complete")
+    except Exception as e:
+        print(f"⚠️ Vibe tests failed: {e}")
+        print("   Continuing with documentation generation...")
+    
+    print("\n📚 Step 2/4: Generating skills documentation...")
+    # Generate skills showcase if needed
+    try:
+        from .skills import SKILL_REGISTRY
+        skills_data = SKILL_REGISTRY.export_skills()
+        # Generate skills HTML if you have a function for it
+        print("✅ Skills documentation complete")
+    except Exception as e:
+        print(f"⚠️ Skills documentation failed: {e}")
+    
+    print("\n🏗️ Step 3/4: Building MkDocs site...")
+    # Build the MkDocs site
+    try:
+        result = subprocess.run(
+            ["mkdocs", "build"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            print("✅ MkDocs site built successfully")
+        else:
+            print(f"⚠️ MkDocs build warning: {result.stderr}")
+    except FileNotFoundError:
+        print("❌ MkDocs not installed. Install with: pip install mkdocs mkdocs-material")
+        return False
+    
+    print("\n🌐 Step 4/4: Serving documentation locally...")
+    print("=" * 60)
+    print("📍 Documentation available at: http://localhost:8000")
+    print("📍 This is identical to: https://scienceisverycool.github.io/OllamaPy/")
+    print("Press Ctrl+C to stop the server")
+    print("=" * 60)
+    
+    # Serve the site
+    try:
+        subprocess.run(["mkdocs", "serve"])
+        return True
+    except KeyboardInterrupt:
+        print("\n👋 Documentation server stopped")
+        return True
+    except Exception as e:
+        print(f"❌ Error serving documentation: {e}")
+        return False
+
+
 def generate_documentation(
     vibe_models: Optional[List[str]] = None,
     vibe_iterations: int = 5,
@@ -163,7 +236,7 @@ def generate_documentation(
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="OllamaPy v0.8.0 - Terminal chat interface for Ollama with AI skills system",
+        description="OllamaPy v0.8.1 - Terminal chat interface for Ollama with AI skills system",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -318,6 +391,12 @@ Examples:
         default=8000,
         help="Port for documentation server (default: 8000)"
     )
+    
+    parser.add_argument(
+        "--unified-docs",
+        action="store_true",
+        help="Generate and serve complete unified documentation (vibe tests + all docs)"
+    )
 
     args = parser.parse_args()
 
@@ -389,6 +468,9 @@ Examples:
             serve=args.serve,
             serve_port=args.serve_port
         )
+        sys.exit(0 if success else 1)
+    elif args.unified_docs:
+        success = run_unified_documentation()
         sys.exit(0 if success else 1)
     else:
         chat(

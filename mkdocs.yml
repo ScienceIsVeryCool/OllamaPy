@@ -53,7 +53,7 @@ nav:
     - Contributing: development/contributing.md
     - Testing: development/testing.md
     - Release Process: development/releases.md
-  - API Reference: api/
+  - API Reference: api/index.md
 
 plugins:
   - search

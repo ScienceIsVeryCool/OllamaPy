@@ -362,153 +362,29 @@
             
             <div class="stats-summary">
                 <div class="stat-card">
-                    <div class="stat-number">2</div>
+                    <div class="stat-number">0</div>
                     <div class="stat-label">Models Tested</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">5</div>
+                    <div class="stat-number">0</div>
                     <div class="stat-label">Iterations Each</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">2</div>
+                    <div class="stat-number">0</div>
                     <div class="stat-label">Skills Tested</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">4</div>
+                    <div class="stat-number">0</div>
                     <div class="stat-label">Total Tests</div>
                 </div>
             </div>
             
-            <div class="timestamp">Generated: 2025-09-01 12:00:00 UTC</div>
+            <div class="timestamp">Generated: 2025-09-03 18:47:22 UTC</div>
         </div>
         
+        <p>No model results available.</p>
         
-    <div class="model-comparison">
-        <h2>🏆 Model Performance Comparison</h2>
-        <p class="subtitle">Tested 2 models with 5 iterations each</p>
-        
-        <div class="comparison-grid">
-
-            <div class="model-card">
-                <div class="model-rank">#1</div>
-                <h3 class="model-name">Gemma 3 12B</h3>
-                <p class="model-description">Full-featured 12B parameter model for comprehensive performance</p>
-                
-                <div class="model-stats">
-                    <div class="stat">
-                        <span class="stat-label">Success Rate</span>
-                        <span class="stat-value badge success">94.0%</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Average Response Time</span>
-                        <span class="stat-value">3.20s</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Consistency Score</span>
-                        <span class="stat-value">76/100</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Performance Category</span>
-                        <span class="stat-value">Moderate</span>
-                    </div>
-                </div>
-                
-                <div class="model-actions">
-                    <button class="btn btn-primary" onclick="showModelDetails('gemma3:12b')">
-                        View Detailed Results
-                    </button>
-                </div>
-            </div>
-        
-            <div class="model-card">
-                <div class="model-rank">#2</div>
-                <h3 class="model-name">Gemma 3 4B</h3>
-                <p class="model-description">Compact 4B parameter model optimized for speed</p>
-                
-                <div class="model-stats">
-                    <div class="stat">
-                        <span class="stat-label">Success Rate</span>
-                        <span class="stat-value badge success">84.0%</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Average Response Time</span>
-                        <span class="stat-value">1.80s</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Consistency Score</span>
-                        <span class="stat-value">88/100</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-label">Performance Category</span>
-                        <span class="stat-value">Fast</span>
-                    </div>
-                </div>
-                
-                <div class="model-actions">
-                    <button class="btn btn-primary" onclick="showModelDetails('gemma3:4b')">
-                        View Detailed Results
-                    </button>
-                </div>
-            </div>
-        
-        </div>
-    </div>
-    
-        
-        
-    <div class="skill-results">
-        <h2>📊 Skill Performance by Model</h2>
-        <p class="subtitle">Compare how different models perform on each skill</p>
-        
-        <div class="skill-grid">
-
-            <div class="skill-card" data-skill="calculate">
-                <div class="skill-header">
-                    <h3 class="skill-name">calculate</h3>
-                    <p class="skill-description">Perform mathematical calculations</p>
-                </div>
-                
-                <div class="model-selector">
-                    <label for="model-select-calculate">Select Model:</label>
-                    <select id="model-select-calculate" onchange="updateSkillDisplay('calculate', this.value)">
-
-                        <option value="gemma3:4b">Gemma 3 4B</option>
-
-                        <option value="gemma3:12b">Gemma 3 12B</option>
-
-                    </select>
-                </div>
-                
-                <div id="skill-content-calculate" class="skill-content">
-                    <!-- Content will be populated by JavaScript -->
-                </div>
-            </div>
-        
-            <div class="skill-card" data-skill="getWeather">
-                <div class="skill-header">
-                    <h3 class="skill-name">getWeather</h3>
-                    <p class="skill-description">Get weather information for a location</p>
-                </div>
-                
-                <div class="model-selector">
-                    <label for="model-select-getWeather">Select Model:</label>
-                    <select id="model-select-getWeather" onchange="updateSkillDisplay('getWeather', this.value)">
-
-                        <option value="gemma3:4b">Gemma 3 4B</option>
-
-                        <option value="gemma3:12b">Gemma 3 12B</option>
-
-                    </select>
-                </div>
-                
-                <div id="skill-content-getWeather" class="skill-content">
-                    <!-- Content will be populated by JavaScript -->
-                </div>
-            </div>
-        
-        </div>
-    </div>
-    
+        <p>No skill results available.</p>
         
         <div class="nav-links">
             <a href="index.html">← Main Dashboard</a>
@@ -520,184 +396,153 @@
     <script>
         // Store the full results data for JavaScript access
         const vibeTestResults = {
-  "metadata": {
-    "generated_at": "2025-09-01T12:00:00.000000",
-    "config_file": "config/vibe_test_models.json",
-    "total_models_tested": 2,
+  "timestamp": "2025-09-03T18:41:40.756194",
+  "config": {
+    "hardware_profile": {
+      "gpu": "RTX 3080 (10GB VRAM)",
+      "ram": "64GB DDR4",
+      "cpu_fallback": "Models >8GB fall back to CPU/RAM",
+      "tested_on": "2025-09-01",
+      "performance_notes": "GPU models: 2-5s, CPU fallback: 15-35s per query"
+    },
+    "models": [
+      {
+        "name": "gemma3:270m",
+        "display_name": "Gemma 3 270M",
+        "description": "Compact 270M parameter model optimized for size (GPU: ~2.6s)",
+        "size": "292MB",
+        "execution_target": "GPU",
+        "timeout": 20,
+        "context_window": 32000,
+        "enabled": true
+      },
+      {
+        "name": "gemma3:1b",
+        "display_name": "Gemma 3 1B",
+        "description": "Ultra-compact 1B parameter model for maximum speed (GPU: ~2.2s)",
+        "size": "815MB",
+        "execution_target": "GPU",
+        "timeout": 15,
+        "context_window": 32000,
+        "enabled": true
+      },
+      {
+        "name": "gemma3:4b",
+        "display_name": "Gemma 3 4B",
+        "description": "Compact 4B parameter model optimized for speed (GPU: ~2.6s)",
+        "size": "3.3GB",
+        "execution_target": "GPU",
+        "timeout": 20,
+        "context_window": 128000,
+        "enabled": false
+      },
+      {
+        "name": "codellama:7b",
+        "display_name": "CodeLlama 7B",
+        "description": "Code-focused 7B parameter model specialized for programming tasks (GPU: ~3-4s)",
+        "size": "3.8GB",
+        "execution_target": "GPU",
+        "timeout": 25,
+        "context_window": 128000,
+        "enabled": false
+      },
+      {
+        "name": "qwen2.5:7b",
+        "display_name": "Qwen2.5 7B",
+        "description": "Advanced 7B parameter model with strong reasoning capabilities (GPU: ~4-5s)",
+        "size": "4.7GB",
+        "execution_target": "GPU",
+        "timeout": 30,
+        "context_window": 128000,
+        "enabled": false
+      },
+      {
+        "name": "qwen3:8b",
+        "display_name": "Qwen3 8B",
+        "description": "Latest 8B parameter model with enhanced performance (GPU: ~4-5s)",
+        "size": "5.2GB",
+        "execution_target": "GPU",
+        "timeout": 30,
+        "context_window": 40000,
+        "enabled": false
+      },
+      {
+        "name": "qwen3:4b",
+        "display_name": "Qwen3 4B",
+        "description": "Latest 4B parameter model with enhanced context window size (GPU: ~4-5s)",
+        "size": "2.5GB",
+        "execution_target": "GPU",
+        "timeout": 30,
+        "context_window": 256000,
+        "enabled": false
+      },
+      {
+        "name": "deepseek-r1:8b",
+        "display_name": "DeepSeek R1 8B",
+        "description": "Reasoning-focused 8B parameter model with chain-of-thought capabilities (GPU: ~4-5s)",
+        "size": "5.2GB",
+        "execution_target": "GPU",
+        "timeout": 30,
+        "context_window": 128000,
+        "enabled": false
+      },
+      {
+        "name": "gemma3:12b",
+        "display_name": "Gemma 3 12B",
+        "description": "Full-featured 12B parameter model for comprehensive performance (CPU: ~15s)",
+        "size": "8.1GB",
+        "execution_target": "CPU/RAM",
+        "timeout": 60,
+        "context_window": 128000,
+        "enabled": false
+      },
+      {
+        "name": "gpt-oss:20b",
+        "display_name": "GPT-OSS 20B",
+        "description": "Large 20B parameter open-source model for complex tasks (CPU: ~34s)",
+        "size": "13GB",
+        "execution_target": "CPU/RAM",
+        "timeout": 120,
+        "context_window": 128000,
+        "enabled": false
+      }
+    ],
     "test_config": {
-      "iterations": 5
+      "iterations": 1,
+      "reason_for_single_iteration": "With 8 models and CPU fallback times of 15-34s per query, single iteration provides comprehensive comparison while keeping total test time reasonable (~10 minutes total vs 30+ minutes with multiple iterations)"
     }
   },
-  "models": [
-    {
-      "model_name": "gemma3:4b",
-      "display_name": "Gemma 3 4B",
-      "description": "Compact 4B parameter model optimized for speed",
-      "overall_success": true,
-      "summary": {
-        "total_tests": 50,
-        "total_correct": 42,
-        "overall_success_rate": 84.0,
-        "overall_timing_stats": {
-          "count": 50,
-          "mean": 1.8,
-          "median": 1.6,
-          "min": 0.8,
-          "max": 3.2,
-          "std_dev": 0.4,
-          "consistency_score": 88.5,
-          "performance_category": "Fast"
-        }
-      },
-      "skills": {
-        "getWeather": {
-          "action_name": "getWeather",
-          "action_description": "Get weather information for a location",
-          "passed": true,
-          "success_rate": 90.0,
-          "total_tests": 10,
-          "total_correct": 9,
-          "timing_stats": {
-            "mean": 1.5,
-            "consistency_score": 92.0,
-            "performance_category": "Fast"
-          },
-          "phrase_results": {
-            "What's the weather like?": {
-              "success_rate": 100.0,
-              "timing_stats": {
-                "mean": 1.3,
-                "consistency_score": 95.0
-              },
-              "expected_params": {},
-              "secondary_actions": {}
-            },
-            "Is it raining right now?": {
-              "success_rate": 80.0,
-              "timing_stats": {
-                "mean": 1.7,
-                "consistency_score": 89.0
-              },
-              "expected_params": {},
-              "secondary_actions": {}
-            }
-          }
-        },
-        "calculate": {
-          "action_name": "calculate",
-          "action_description": "Perform mathematical calculations",
-          "passed": true,
-          "success_rate": 95.0,
-          "total_tests": 10,
-          "total_correct": 9,
-          "timing_stats": {
-            "mean": 1.2,
-            "consistency_score": 94.0,
-            "performance_category": "Very Fast"
-          },
-          "phrase_results": {
-            "What is 2 + 2?": {
-              "success_rate": 100.0,
-              "timing_stats": {
-                "mean": 1.1,
-                "consistency_score": 96.0
-              },
-              "expected_params": {
-                "expression": "2+2"
-              },
-              "secondary_actions": {}
-            }
-          }
-        }
-      },
-      "timestamp": "2025-09-01T12:00:00",
-      "iterations": 5
+  "results": {
+    "gemma3:270m": {
+      "model_name": "gemma3:270m",
+      "display_name": "Gemma 3 270M",
+      "description": "Compact 270M parameter model optimized for size (GPU: ~2.6s)",
+      "success": false,
+      "error": "'TimingStats' object has no attribute 'std'"
     },
-    {
-      "model_name": "gemma3:12b",
-      "display_name": "Gemma 3 12B",
-      "description": "Full-featured 12B parameter model for comprehensive performance",
-      "overall_success": true,
-      "summary": {
-        "total_tests": 50,
-        "total_correct": 47,
-        "overall_success_rate": 94.0,
-        "overall_timing_stats": {
-          "count": 50,
-          "mean": 3.2,
-          "median": 3.0,
-          "min": 2.1,
-          "max": 5.8,
-          "std_dev": 0.8,
-          "consistency_score": 76.0,
-          "performance_category": "Moderate"
-        }
-      },
-      "skills": {
-        "getWeather": {
-          "action_name": "getWeather",
-          "action_description": "Get weather information for a location",
-          "passed": true,
-          "success_rate": 100.0,
-          "total_tests": 10,
-          "total_correct": 10,
-          "timing_stats": {
-            "mean": 3.1,
-            "consistency_score": 78.0,
-            "performance_category": "Moderate"
-          },
-          "phrase_results": {
-            "What's the weather like?": {
-              "success_rate": 100.0,
-              "timing_stats": {
-                "mean": 2.9,
-                "consistency_score": 82.0
-              },
-              "expected_params": {},
-              "secondary_actions": {}
-            },
-            "Is it raining right now?": {
-              "success_rate": 100.0,
-              "timing_stats": {
-                "mean": 3.3,
-                "consistency_score": 74.0
-              },
-              "expected_params": {},
-              "secondary_actions": {}
-            }
-          }
-        },
-        "calculate": {
-          "action_name": "calculate",
-          "action_description": "Perform mathematical calculations",
-          "passed": true,
-          "success_rate": 100.0,
-          "total_tests": 10,
-          "total_correct": 10,
-          "timing_stats": {
-            "mean": 2.8,
-            "consistency_score": 85.0,
-            "performance_category": "Moderate"
-          },
-          "phrase_results": {
-            "What is 2 + 2?": {
-              "success_rate": 100.0,
-              "timing_stats": {
-                "mean": 2.8,
-                "consistency_score": 85.0
-              },
-              "expected_params": {
-                "expression": "2+2"
-              },
-              "secondary_actions": {}
-            }
-          }
-        }
-      },
-      "timestamp": "2025-09-01T12:00:00",
-      "iterations": 5
+    "gemma3:1b": {
+      "model_name": "gemma3:1b",
+      "display_name": "Gemma 3 1B",
+      "description": "Ultra-compact 1B parameter model for maximum speed (GPU: ~2.2s)",
+      "success": false,
+      "error": "'TimingStats' object has no attribute 'std'"
     }
-  ]
+  },
+  "summary": {
+    "total_models_tested": 2,
+    "successful_models": 0,
+    "failed_models": 2,
+    "skipped_models": 0,
+    "average_success_rate": 0,
+    "model_names": {
+      "successful": [],
+      "failed": [
+        "gemma3:270m",
+        "gemma3:1b"
+      ],
+      "skipped": []
+    }
+  }
 };
         
         function updateSkillDisplay(skillName, modelName) {
