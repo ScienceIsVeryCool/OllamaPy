@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from typing import Optional
+from typing import Optional, List
 from .ollama_client import OllamaClient
 from .model_manager import ModelManager
 from .analysis_engine import AnalysisEngine
@@ -115,6 +115,51 @@ def run_skill_editor(port: int = 5000, skills_directory: Optional[str] = None):
     return True
 
 
+def generate_documentation(
+    vibe_models: Optional[List[str]] = None,
+    vibe_iterations: int = 5,
+    output_dir: str = "./site",
+    docs_dir: str = "./docs",
+    with_coverage: bool = False,
+    use_cached_vibe_tests: bool = False,
+    serve: bool = False,
+    serve_port: int = 8000
+):
+    """Generate unified documentation for the project.
+    
+    Args:
+        vibe_models: List of models to test (None = use config)
+        vibe_iterations: Number of iterations per vibe test
+        output_dir: Directory for generated site
+        docs_dir: Directory for documentation artifacts
+        with_coverage: Run tests with coverage
+        use_cached_vibe_tests: Use existing vibe test results
+        serve: Serve documentation after generation
+        serve_port: Port for documentation server
+    """
+    from .docs_generator import DocsGenerator, DocsConfig
+    
+    # Create configuration
+    config = DocsConfig({
+        "vibe_models": vibe_models.split(",") if vibe_models and isinstance(vibe_models, str) else vibe_models,
+        "vibe_iterations": vibe_iterations,
+        "output_dir": output_dir,
+        "docs_output_dir": docs_dir,
+        "with_coverage": with_coverage,
+        "use_cached_vibe_tests": use_cached_vibe_tests,
+        "serve": serve,
+        "serve_port": serve_port,
+        "run_vibe_tests": not use_cached_vibe_tests,
+        "generate_skills_docs": True,
+        "generate_vibe_showcase": True,
+        "build_mkdocs": True
+    })
+    
+    # Create and run generator
+    generator = DocsGenerator(config)
+    return generator.generate_all()
+
+
 def main():
     """CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -136,6 +181,10 @@ Examples:
   ollamapy --skillgen --count 3 --model llama3.2:7b  # Use specific model
   ollamapy --skill-editor           # Launch interactive skill editor web interface
   ollamapy --skill-editor --port 8080  # Use custom port for skill editor
+  ollamapy --generate-docs          # Generate all documentation
+  ollamapy --generate-docs --serve  # Generate and serve locally
+  ollamapy --generate-docs --vibe-models "gemma2:2b,llama3.2:3b" # Test specific models
+  ollamapy --generate-docs --use-cached-vibe-tests # Use cached results
         """,
     )
 
@@ -219,6 +268,56 @@ Examples:
         "--skills-dir",
         help="Directory containing skill files (auto-detected if not specified)",
     )
+    
+    # Documentation generation arguments
+    parser.add_argument(
+        "--generate-docs",
+        action="store_true",
+        help="Generate unified documentation including vibe tests, skills docs, and MkDocs site"
+    )
+    
+    parser.add_argument(
+        "--docs-output",
+        default="./site",
+        help="Output directory for generated documentation site (default: ./site)"
+    )
+    
+    parser.add_argument(
+        "--vibe-models",
+        help="Comma-separated list of models for vibe testing (e.g., 'gemma2:2b,llama3.2:3b')"
+    )
+    
+    parser.add_argument(
+        "--vibe-iterations",
+        type=int,
+        default=5,
+        help="Number of iterations for vibe tests in documentation (default: 5)"
+    )
+    
+    parser.add_argument(
+        "--use-cached-vibe-tests",
+        action="store_true",
+        help="Use cached vibe test results instead of running new tests"
+    )
+    
+    parser.add_argument(
+        "--with-coverage",
+        action="store_true",
+        help="Run tests with coverage reporting during documentation generation"
+    )
+    
+    parser.add_argument(
+        "--serve",
+        action="store_true",
+        help="Serve generated documentation locally after building"
+    )
+    
+    parser.add_argument(
+        "--serve-port",
+        type=int,
+        default=8000,
+        help="Port for documentation server (default: 8000)"
+    )
 
     args = parser.parse_args()
 
@@ -278,6 +377,18 @@ Examples:
         sys.exit(0 if success else 1)
     elif args.skill_editor:
         success = run_skill_editor(port=args.port, skills_directory=args.skills_dir)
+        sys.exit(0 if success else 1)
+    elif args.generate_docs:
+        success = generate_documentation(
+            vibe_models=args.vibe_models,
+            vibe_iterations=args.vibe_iterations,
+            output_dir=args.docs_output,
+            docs_dir="./docs",
+            with_coverage=args.with_coverage,
+            use_cached_vibe_tests=args.use_cached_vibe_tests,
+            serve=args.serve,
+            serve_port=args.serve_port
+        )
         sys.exit(0 if success else 1)
     else:
         chat(

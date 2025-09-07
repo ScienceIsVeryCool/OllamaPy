@@ -549,44 +549,77 @@ def generate_skills_showcase_html(skills: List[Dict[str, Any]]) -> str:
     
     return html
 
-def main():
-    """Main function to generate the skills showcase."""
+def generate_showcase(output_file: str = None, skills_dir: str = None) -> bool:
+    """Generate skills showcase HTML.
+    
+    Args:
+        output_file: Path to save the HTML output
+        skills_dir: Directory containing skill JSON files
+        
+    Returns:
+        True if successful
+    """
     # Determine paths
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
-    skills_dir = project_root / "src" / "ollamapy" / "skills_data"
-    output_file = project_root / "docs" / "skills.html"
     
-    print(f"Looking for skills in: {skills_dir}")
-    print(f"Output file: {output_file}")
+    if skills_dir:
+        skills_path = Path(skills_dir)
+    else:
+        skills_path = project_root / "src" / "ollamapy" / "skills_data"
+        
+    if output_file:
+        output_path = Path(output_file)
+    else:
+        output_path = project_root / "docs" / "skills.html"
+    
+    print(f"Looking for skills in: {skills_path}")
+    print(f"Output file: {output_path}")
     
     # Load skills
-    skills = load_skills(skills_dir)
+    skills = load_skills(skills_path)
     print(f"Found {len(skills)} skills")
     
     if not skills:
         print("No skills found. Exiting.")
-        return
+        return False
     
     # Generate HTML
     html_content = generate_skills_showcase_html(skills)
     
     # Ensure output directory exists
-    output_file.parent.mkdir(exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Write HTML file
-    with open(output_file, 'w', encoding='utf-8') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     
-    print(f"Skills showcase generated: {output_file}")
-    # Print skills by role summary
-    role_counts = {}
-    for skill in skills:
-        role = skill.get('role', 'unknown')
-        role_counts[role] = role_counts.get(role, 0) + 1
+    print(f"Skills showcase generated: {output_path}")
+    return True
+
+
+def main():
+    """Main function for command-line usage."""
+    success = generate_showcase()
+    if success:
+        # Determine paths
+        script_dir = Path(__file__).parent
+        project_root = script_dir.parent
+        skills_dir = project_root / "src" / "ollamapy" / "skills_data"
+        
+        # Load skills for summary
+        skills = load_skills(skills_dir)
+        
+        # Print skills by role summary
+        role_counts = {}
+        for skill in skills:
+            role = skill.get('role', 'unknown')
+            role_counts[role] = role_counts.get(role, 0) + 1
+        
+        role_summary = ', '.join([f'{role}({count})' for role, count in sorted(role_counts.items())])
+        print(f"Skills by role: {role_summary}")
     
-    role_summary = ', '.join([f'{role}({count})' for role, count in sorted(role_counts.items())])
-    print(f"Skills by role: {role_summary}")
+    return success
 
 if __name__ == "__main__":
     main()

@@ -604,13 +604,15 @@ class SkillDocumentationGenerator:
 </html>"""
     
     def generate_index_page(self, all_skills: Dict[str, Dict], new_skills: List[str], 
-                           generation_results: List[Dict] = None) -> str:
+                           generation_results: List[Dict] = None,
+                           vibe_results: Dict[str, Any] = None) -> str:
         """Generate the main index page with links to all skills.
         
         Args:
             all_skills: Dictionary of all skills
             new_skills: List of newly generated skill names
             generation_results: Optional list of generation results for reporting
+            vibe_results: Optional vibe test results to display
             
         Returns:
             HTML content for the index page
@@ -675,6 +677,11 @@ class SkillDocumentationGenerator:
         charts_html = ""
         if generation_results:
             charts_html = self.generate_report_charts(generation_results)
+        
+        # Add vibe test results section if available
+        vibe_html = ""
+        if vibe_results:
+            vibe_html = self.generate_vibe_results_section(vibe_results)
         
         common_styles = self.get_common_styles()
         return f"""<!DOCTYPE html>
@@ -836,6 +843,8 @@ class SkillDocumentationGenerator:
         <div class="search-box">
             <input type="text" id="skillSearch" placeholder="Search skills..." onkeyup="filterSkills()">
         </div>
+        
+        {vibe_html}
         
         {charts_html}
         
@@ -1104,11 +1113,198 @@ class SkillDocumentationGenerator:
         """Escape HTML special characters."""
         return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&#39;')
     
-    def generate_documentation(self, generation_results: List[Dict] = None) -> str:
+    def generate_vibe_results_section(self, vibe_results: Dict[str, Any]) -> str:
+        """Generate HTML section for vibe test results.
+        
+        Args:
+            vibe_results: Dictionary containing vibe test results
+            
+        Returns:
+            HTML string for the vibe results section
+        """
+        if not vibe_results:
+            return ""
+            
+        summary = vibe_results.get("summary", {})
+        models = vibe_results.get("models", {})
+        
+        if not models:
+            return ""
+            
+        # Build HTML for vibe test results
+        html = """
+        <div class="vibe-results-section" style="margin: 40px 0; padding: 30px; background: #f0f8ff; border-radius: 15px;">
+            <h2 style="color: #333; margin-bottom: 20px;">🧪 Vibe Test Results</h2>
+        """
+        
+        if summary:
+            html += f"""
+            <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+                <div style="background: white; padding: 15px 25px; border-radius: 8px; flex: 1;">
+                    <div style="font-size: 2em; font-weight: bold; color: #667eea;">{summary.get('total_models_tested', 0)}</div>
+                    <div style="color: #666;">Models Tested</div>
+                </div>
+                <div style="background: white; padding: 15px 25px; border-radius: 8px; flex: 1;">
+                    <div style="font-size: 2em; font-weight: bold; color: #28a745;">{summary.get('successful_models', 0)}</div>
+                    <div style="color: #666;">Successful</div>
+                </div>
+                <div style="background: white; padding: 15px 25px; border-radius: 8px; flex: 1;">
+                    <div style="font-size: 2em; font-weight: bold; color: #17a2b8;">{summary.get('average_success_rate', 0):.1f}%</div>
+                    <div style="color: #666;">Avg Success Rate</div>
+                </div>
+            </div>
+            """
+            
+        # Add model results table
+        html += """
+        <table style="width: 100%; background: white; border-radius: 8px; overflow: hidden;">
+            <thead style="background: #667eea; color: white;">
+                <tr>
+                    <th style="padding: 12px; text-align: left;">Model</th>
+                    <th style="padding: 12px; text-align: center;">Success Rate</th>
+                    <th style="padding: 12px; text-align: center;">Tests Run</th>
+                    <th style="padding: 12px; text-align: center;">Avg Time</th>
+                    <th style="padding: 12px; text-align: center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        
+        for model_name, model_result in models.items():
+            if isinstance(model_result, dict):
+                success_rate = model_result.get("overall_success_rate", 0)
+                total_tests = model_result.get("total_tests", 0)
+                timing = model_result.get("timing_stats", {})
+                avg_time = timing.get("mean", 0) if timing else 0
+                success = model_result.get("success", False)
+                skipped = model_result.get("skipped", False)
+                
+                status_color = "#28a745" if success else "#dc3545" if not skipped else "#ffc107"
+                status_text = "✓ Passed" if success else "⚠️ Skipped" if skipped else "✗ Failed"
+                
+                html += f"""
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px; font-weight: 500;">{model_result.get('display_name', model_name)}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span style="font-weight: bold; color: {status_color};">{success_rate:.1f}%</span>
+                    </td>
+                    <td style="padding: 12px; text-align: center;">{total_tests}</td>
+                    <td style="padding: 12px; text-align: center;">{avg_time:.2f}s</td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span style="color: {status_color};">{status_text}</span>
+                    </td>
+                </tr>
+                """
+                
+        html += """
+            </tbody>
+        </table>
+        <div style="margin-top: 20px;">
+            <a href="vibe_tests.html" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;">
+                View Detailed Results →
+            </a>
+        </div>
+        </div>
+        """
+        
+        return html
+    
+    def generate_markdown_documentation(self, output_path: str = None) -> str:
+        """Generate markdown documentation for all skills.
+        
+        Args:
+            output_path: Optional path to save the markdown file
+            
+        Returns:
+            Path to the generated markdown file
+        """
+        all_skills = self.load_all_skills()
+        
+        md_content = "# OllamaPy Skills Documentation\n\n"
+        md_content += f"Generated: {self.timestamp}\n\n"
+        md_content += f"Total Skills: {len(all_skills)}\n\n"
+        
+        # Group by role
+        skills_by_role = {}
+        for skill_name, skill_data in all_skills.items():
+            role = skill_data.get('role', 'general')
+            if role not in skills_by_role:
+                skills_by_role[role] = []
+            skills_by_role[role].append((skill_name, skill_data))
+        
+        # Generate markdown for each role
+        for role in sorted(skills_by_role.keys()):
+            role_title = role.replace('_', ' ').title()
+            md_content += f"\n## {role_title}\n\n"
+            
+            for skill_name, skill_data in sorted(skills_by_role[role], key=lambda x: x[0]):
+                md_content += f"### {skill_name}\n\n"
+                md_content += f"**Description:** {skill_data.get('description', 'No description')}\n\n"
+                
+                if skill_data.get('parameters'):
+                    md_content += "**Parameters:**\n\n"
+                    for param_name, param_info in skill_data['parameters'].items():
+                        required = " (required)" if param_info.get('required', False) else ""
+                        md_content += f"- `{param_name}` ({param_info.get('type', 'unknown')}){required}: {param_info.get('description', '')}\n"
+                    md_content += "\n"
+                
+                if skill_data.get('vibe_test_phrases'):
+                    md_content += "**Vibe Test Phrases:**\n\n"
+                    for phrase in skill_data['vibe_test_phrases']:
+                        md_content += f"- {phrase}\n"
+                    md_content += "\n"
+        
+        # Save to file if path provided
+        if output_path:
+            output_file = Path(output_path)
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(md_content)
+            return str(output_file)
+        
+        return md_content
+    
+    def generate_html_documentation(self, output_path: str = None, vibe_results: Dict[str, Any] = None) -> str:
+        """Generate HTML documentation for all skills with optional vibe test results.
+        
+        Args:
+            output_path: Optional path to save the HTML file
+            vibe_results: Optional vibe test results to integrate
+            
+        Returns:
+            Path to the generated HTML file or HTML content
+        """
+        # Generate using the main documentation method
+        doc_path = self.generate_documentation(generation_results=None, vibe_results=vibe_results)
+        
+        # If output_path is specified, copy to that location
+        if output_path and doc_path:
+            import shutil
+            output_file = Path(output_path)
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Copy the entire documentation directory
+            doc_dir = Path(doc_path).parent
+            if doc_dir.exists():
+                # Copy index file
+                shutil.copy2(doc_path, output_file)
+                
+                # Copy all skill pages
+                for skill_page in doc_dir.glob("*.html"):
+                    if skill_page.name != "index.html":
+                        dest = output_file.parent / skill_page.name
+                        shutil.copy2(skill_page, dest)
+                        
+            return str(output_file)
+        
+        return doc_path
+    
+    def generate_documentation(self, generation_results: List[Dict] = None, vibe_results: Dict[str, Any] = None) -> str:
         """Generate complete documentation for all skills.
         
         Args:
             generation_results: Optional list of recent generation results
+            vibe_results: Optional vibe test results to integrate
             
         Returns:
             Path to the generated documentation
@@ -1137,8 +1333,8 @@ class SkillDocumentationGenerator:
             with open(skill_file, 'w', encoding='utf-8') as f:
                 f.write(skill_html)
         
-        # Generate index page
-        index_html = self.generate_index_page(all_skills, new_skills, generation_results)
+        # Generate index page with vibe results if available
+        index_html = self.generate_index_page(all_skills, new_skills, generation_results, vibe_results)
         index_file = self.output_dir / "index.html"
         with open(index_file, 'w', encoding='utf-8') as f:
             f.write(index_html)

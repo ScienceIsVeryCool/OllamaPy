@@ -661,14 +661,30 @@ def generate_vibe_test_page(results: Dict[str, Any]) -> str:
     return html
 
 
-def main():
-    """Generate vibe test showcase page."""
-    # Get the project root directory
+def generate_showcase(results_file: str = None, output_file: str = None) -> bool:
+    """Generate vibe test showcase HTML from results.
+    
+    Args:
+        results_file: Path to vibe test results JSON file
+        output_file: Path to save the HTML output
+        
+    Returns:
+        True if successful
+    """
+    # Get project root and docs directory
     project_root = Path(__file__).parent.parent
     docs_dir = project_root / "docs"
     
-    # Default results path
-    results_path = docs_dir / "vibe_test_results.json"
+    # Use provided paths or defaults
+    if results_file:
+        results_path = Path(results_file)
+    else:
+        results_path = docs_dir / "vibe_test_results.json"
+        
+    if output_file:
+        output_path = Path(output_file)
+    else:
+        output_path = docs_dir / "vibe_tests.html"
     
     # Check if results file exists
     if not results_path.exists():
@@ -679,22 +695,28 @@ def main():
     print(f"📊 Generating vibe test showcase from {results_path}")
     
     # Load results
-    results = load_vibe_test_results(results_path)
+    results = load_vibe_test_results(str(results_path))
     if not results:
         return False
     
     # Generate HTML
     html_content = generate_vibe_test_page(results)
     
-    # Write to docs directory
-    output_path = docs_dir / "vibe_tests.html"
+    # Ensure output directory exists
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Write HTML
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
     
     print(f"✅ Vibe test showcase generated: {output_path}")
-    print(f"🌐 View at: https://scienceisverycool.github.io/OllamaPy/vibe_tests.html")
     
     return True
+
+
+def main():
+    """Main function for command-line usage."""
+    return generate_showcase()
 
 
 if __name__ == "__main__":
