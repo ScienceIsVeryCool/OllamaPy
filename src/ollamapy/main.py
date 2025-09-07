@@ -425,6 +425,38 @@ Examples:
         "--skills-dir",
         help="Directory containing skill files (auto-detected if not specified)",
     )
+
+    # Ollama middleware server arguments
+    parser.add_argument(
+        "--middleware",
+        action="store_true",
+        help="Run as Ollama-compatible middleware server with skills enhancement",
+    )
+
+    parser.add_argument(
+        "--middleware-port",
+        type=int,
+        default=11435,
+        help="Port for middleware server (default: 11435)",
+    )
+
+    parser.add_argument(
+        "--upstream-ollama",
+        default="http://localhost:11434",
+        help="URL of upstream Ollama server (default: http://localhost:11434)",
+    )
+
+    parser.add_argument(
+        "--disable-skills",
+        action="store_true",
+        help="Disable skills system in middleware mode",
+    )
+
+    parser.add_argument(
+        "--disable-analysis",
+        action="store_true",
+        help="Disable analysis engine in middleware mode",
+    )
     
     # Documentation generation arguments
     parser.add_argument(
@@ -547,6 +579,15 @@ Examples:
     elif args.skill_editor:
         success = run_skill_editor(port=args.port, skills_directory=args.skills_dir)
         sys.exit(0 if success else 1)
+    elif args.middleware:
+        from .ollama_middleware import run_middleware_server
+        run_middleware_server(
+            port=args.middleware_port,
+            upstream_ollama=args.upstream_ollama,
+            enable_skills=not args.disable_skills,
+            enable_analysis=not args.disable_analysis,
+            analysis_model=args.analysis_model if args.analysis_model else "gemma3:4b"
+        )
     elif args.generate_docs:
         success = generate_documentation(
             vibe_models=args.vibe_models,
