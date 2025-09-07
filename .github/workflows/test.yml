@@ -20,13 +20,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python (use system Python)
+    - name: Set up Python Environment
       run: |
-        # Use system Python which is available on the local runner
+        echo "🐍 Setting up Python environment (matching user instructions)..."
         python3 --version
-        which python3
-        # Ensure pip is available and up to date
-        python3 -m pip install --upgrade pip
+        
+        # Create virtual environment (as users would)
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
     
     - name: Cache dependencies
       uses: actions/cache@v4
@@ -39,44 +41,46 @@ jobs:
           ${{ runner.os }}-venv-${{ matrix.python-version }}-
           ${{ runner.os }}-venv-
     
-    - name: Install dependencies
+    - name: Install dependencies (matching user instructions)
       run: |
-        # Create and activate virtual environment
-        python3 -m venv venv
+        echo "📦 Installing dependencies (as users would with: pip install -e .)..."
         source venv/bin/activate
-        python3 -m pip install --upgrade pip
-        python3 -m pip install -e .[dev]
+        
+        # Install from source (matching user instructions)
+        pip install -e .[dev]
+        
         # Install additional test dependencies
-        python3 -m pip install toml psutil
+        pip install toml psutil
+        
         # Install editor dependencies for full testing
-        python3 -m pip install -e .[editor] || echo "Editor dependencies not available on this platform"
+        pip install -e .[editor] || echo "Editor dependencies not available on this platform"
     
     - name: Lint with flake8
       run: |
         source venv/bin/activate
         # Stop the build if there are Python syntax errors or undefined names
-        python3 -m flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
         # Exit-zero treats all errors as warnings
-        python3 -m flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Format check with black
       run: |
         source venv/bin/activate
         echo "🔍 Running Black formatter check (warning-only)..."
-        python3 -m black --check --diff src/ tests/ --exclude="src/ollamapy/skillgen_report.py" || echo "⚠️ Black formatting suggestions found (not blocking pipeline)"
+        black --check --diff src/ tests/ --exclude="src/ollamapy/skillgen_report.py" || echo "⚠️ Black formatting suggestions found (not blocking pipeline)"
     
     - name: Run tests with pytest
       run: |
         source venv/bin/activate
         # Run tests with timeout to prevent hanging and exclude slow performance tests
-        timeout 300 python3 -m pytest tests/ -v --cov=src/ollamapy --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=30 --junit-xml=pytest-results.xml -m "not slow" --tb=short
+        timeout 300 pytest tests/ -v --cov=src/ollamapy --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=30 --junit-xml=pytest-results.xml -m "not slow" --tb=short
     
     - name: Run performance tests (optional)
       continue-on-error: true
       run: |
         source venv/bin/activate
         # Run performance tests with timeout - these can fail without breaking CI
-        timeout 120 python3 -m pytest tests/ -v -m "slow" --tb=short || echo "Performance tests completed with issues"
+        timeout 120 pytest tests/ -v -m "slow" --tb=short || echo "Performance tests completed with issues"
     
     - name: Upload test results
       if: always()
@@ -218,24 +222,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python (use system Python)
+    - name: Set up Python Environment
       run: |
+        echo "🐍 Setting up Python environment for security checks..."
         python3 --version
-        python3 -m pip install --upgrade pip
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
     
     - name: Install security tools
       run: |
-        python3 -m pip install bandit safety
+        source venv/bin/activate
+        pip install bandit safety
     
     - name: Run security scan with bandit
       run: |
-        python3 -m bandit -r src/ -f json -o bandit-report.json || true
-        python3 -m bandit -r src/ --severity-level medium || true
+        source venv/bin/activate
+        bandit -r src/ -f json -o bandit-report.json || true
+        bandit -r src/ --severity-level medium || true
     
     - name: Check for known vulnerabilities
       run: |
-        python3 -m safety check --json --output safety-report.json || true
-        python3 -m safety check || true
+        source venv/bin/activate
+        safety check --json --output safety-report.json || true
+        safety check || true
     
     - name: Upload security reports
       uses: actions/upload-artifact@v4

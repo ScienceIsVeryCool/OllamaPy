@@ -1,4 +1,4 @@
-name: Build & Package
+name: Build & Install Test
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
     types: [created]
 
 jobs:
-  build:
+  install-test:
     runs-on: self-hosted
     permissions:
       contents: read
@@ -18,66 +18,56 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python (use system Python)
+    - name: Test Installation (PyPI Method)
       run: |
+        echo "🐍 Testing installation method that users follow:"
+        echo "Setting up Python environment..."
         python3 --version
-        python3 -m pip install --upgrade pip
+        
+        # Create virtual environment (as users would)
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        
+        echo "📦 Installing from source (as users would with: pip install -e .)..."
+        pip install -e .
+        
+        echo "🧪 Testing basic functionality..."
+        python -c "import ollamapy; print('✅ Package imported successfully')"
+        ollamapy --help | head -5
+        
+        echo "✅ Installation test completed successfully"
     
-    - name: Install build dependencies
+    - name: Test Build Process
       run: |
-        python3 -m pip install build twine wheel pytest
+        echo "🏗️ Testing build process..."
+        source venv/bin/activate
+        
+        # Install build tools
+        pip install build twine
+        
+        # Build package
+        python -m build
+        
+        # Check package integrity
+        python -m twine check dist/*
+        
+        echo "✅ Build process completed successfully"
     
-    - name: Run quick tests before building
+    - name: Test Package Installation (Simulating PyPI)
       run: |
-        python3 -m pip install -e .
-        python3 -c "from src.ollamapy.main import main; print('✅ Basic import successful')"
-    
-    - name: Build package
-      run: |
-        python3 -m build
-    
-    - name: Check package
-      run: |
-        python3 -m twine check dist/*
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist
-        path: dist/
-        retention-days: 30
-
-  test-install:
-    needs: build
-    runs-on: self-hosted
-    permissions:
-      contents: read
-      actions: read
-    strategy:
-      matrix:
-        python-version: ['3.11']
-    
-    steps:
-    - name: Set up Python (use system Python)
-      run: |
-        python3 --version
-        python3 -m pip install --upgrade pip
-    
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist
-        path: dist/
-    
-    - name: Test wheel installation
-      run: |
-        python3 -m pip install dist/*.whl
-        python3 -c "import ollamapy; print('✅ Package installed successfully')"
-        python3 -m ollamapy.main --hello
-    
-    - name: Test source installation
-      run: |
-        python3 -m pip uninstall -y ollamapy
-        python3 -m pip install dist/*.tar.gz
-        python3 -c "import ollamapy; print('✅ Source package installed successfully')"
-        python3 -m ollamapy.main --hello
+        echo "📦 Testing wheel installation (simulating: pip install ollamapy)..."
+        
+        # Create fresh environment
+        python3 -m venv test_env
+        source test_env/bin/activate
+        pip install --upgrade pip
+        
+        # Install from built wheel
+        pip install dist/*.whl
+        
+        # Test functionality
+        python -c "import ollamapy; print('✅ Wheel installation successful')"
+        ollamapy --help | head -5
+        
+        echo "✅ Package installation test completed successfully"
