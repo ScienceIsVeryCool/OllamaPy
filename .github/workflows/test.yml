@@ -18,7 +18,7 @@ jobs:
         python-version: ['3.11']
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Set up Python Environment
       run: |
@@ -142,7 +142,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Download test artifacts
       uses: actions/download-artifact@v4
@@ -220,7 +220,7 @@ jobs:
       actions: read
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     
     - name: Set up Python Environment
       run: |
