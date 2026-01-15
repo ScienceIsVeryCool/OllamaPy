@@ -68,7 +68,7 @@ jobs:
         zip -r ../ollamapy-standalone.zip .
     
     - name: Upload Release Assets
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: ./ollamapy-standalone.zip
         token: ${{ secrets.GITHUB_TOKEN }}
